@@ -162,6 +162,21 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .spread .ghost { visibility: hidden; }
 .pager { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .pager input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+.pedit { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex-basis: 100%; padding-top: 6px; border-top: 1px dashed var(--line); }
+.pedit .psel { font-size: 12px; color: var(--muted); margin-right: 4px; }
+.spread canvas[data-p] { cursor: pointer; }
+.spread .ovl { position: absolute; pointer-events: none; }
+.spread .ovl .blk { position: absolute; pointer-events: auto; cursor: pointer; border: 1.5px solid rgba(40,90,180,.45); border-radius: 3px; background: rgba(40,90,180,.06); }
+.spread .ovl .blk:hover { background: rgba(40,90,180,.2); }
+.spread .ovl .blk.head { border-color: rgba(150,60,170,.6); background: rgba(150,60,170,.07); }
+.spread .ovl .blk.fig { border-color: rgba(30,140,90,.6); background: rgba(30,140,90,.08); }
+.spread .ovl .blk.on { border: 2px solid #c0262d; background: rgba(192,38,45,.22); }
+#vSelMode[aria-pressed=true] { background: var(--accent); color: #fff; }
+.spread canvas.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
+.vdlg { width: min(720px, 94vw); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; background: var(--paper, #fff); color: var(--ink); }
+.vdlg::backdrop { background: rgba(0,0,0,.4); }
+.vdlg h3 { margin: 0 0 6px; font-size: 16px; }
+.vdlg textarea { width: 100%; box-sizing: border-box; margin: 10px 0; font: 13.5px/1.5 var(--f-mono, monospace); padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); color: var(--ink); resize: vertical; }
 .pager .pg { font: 500 12.5px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9em; text-align: right; }
 .empty { max-width: 34em; text-align: center; color: var(--muted); display: grid; gap: 8px; }
 .empty strong { font: italic 500 22px var(--f-display); color: var(--ink); }
@@ -361,6 +376,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
   .row, .row.three, .checks, .colors { grid-template-columns: 1fr; }
   .bar .status { display: none; }
 }
+.ol-part .pintro{margin-top:4px;font-size:12px;font-weight:400;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
 </style>
 
 <div class="app">
@@ -813,10 +829,35 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         <input type="range" id="pageSlider" min="1" max="1" value="1" aria-label="Page">
         <button class="btn small" id="nextBtn" type="button" aria-label="Next spread">Next ›</button>
         <span class="pg" id="pageLabel"></span>
+        <div class="pedit" id="pedit" hidden>
+          <span class="psel" id="pSel"></span>
+          <button class="btn small" id="vSelMode" type="button" aria-pressed="false" title="Click items on the page to select them">Select items</button>
+          <button class="btn small primary" id="vRemSel" type="button" hidden>Remove selected</button>
+          <button class="btn small" id="vEditSel" type="button" hidden>Edit selected</button>
+          <button class="btn small ghost" id="vClearSel" type="button" hidden>Clear selection</button>
+          <button class="btn small" id="vEdit" type="button" title="Edit the text on the selected page">Edit text</button>
+          <button class="btn small" id="vDelPage" type="button" title="Remove everything on the selected page: text, pictures and their footnotes">Delete page</button>
+          <button class="btn small" id="vRemPage" type="button" title="Remove the paragraphs that start on the selected page">Remove page text</button>
+          <button class="btn small" id="vRemSec" type="button">Remove chapter</button>
+          <button class="btn small" id="vRemPart" type="button" hidden>Remove part</button>
+          <button class="btn small ghost" id="vUndo" type="button" hidden>Undo</button>
+          <button class="btn small primary" id="vRebuild" type="button" hidden>Rebuild PDF</button>
+        </div>
       </div>
     </section>
   </div>
 </div>
+<dialog id="vDlg" class="vdlg">
+  <h3 id="vTitle">Edit text</h3>
+  <p class="hint" id="vHint"></p>
+  <div class="seg" id="vScope"><button type="button" data-v="page" aria-pressed="true">This page’s paragraphs</button><button type="button" data-v="section" aria-pressed="false">Whole section</button></div>
+  <textarea id="vText" rows="16" spellcheck="true" aria-label="Text to edit"></textarea>
+  <div class="kbtns">
+    <button class="btn primary" type="button" id="vSave">Save</button>
+    <button class="btn" type="button" id="vSaveBuild">Save and rebuild PDF</button>
+    <button class="btn ghost" type="button" id="vCancel">Cancel</button>
+  </div>
+</dialog>
 <div class="toast" id="toast" hidden></div>
 <div class="gpop" id="gpop" hidden role="tooltip"></div>
 

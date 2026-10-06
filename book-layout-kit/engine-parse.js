@@ -193,7 +193,8 @@ BK.defaults = () => ({
   kdp: { on: false, paper: 'white', pages: 0, spine_text: true, barcode: true, barcode_image: '' },
   cover: { style: 'auto', band: '#2f4858', mid: '#f4efe6', ink: '#1a1a1a', band_ink: '#ffffff', label: '', footer: '',
     title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '' },
-  roles: {}
+  roles: {},
+  part_intro_off: {}
 });
 
 const LAYOUT_KEYS = ['page', 'font_size', 'opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break',
@@ -452,7 +453,9 @@ BK.parse = function (mdIn, cfg) {
       const pkey = 'part:' + BK.slug(head);
       part = { pid: 'part' + (++pnum), key: pkey, label, title: name, rawSub: paras[0] || '', subRuns: paras[0] ? BK.inlineMd(paras[0]) : [],
         intro: paras.slice(1).join('\n\n'), chapters: [] };
-      part.introParsed = part.intro.trim() ? parseSectionBody(part.intro) : null;
+      part.hasIntro = !!part.intro.trim();
+      part.introOff = !!(cfg.part_intro_off && cfg.part_intro_off[pkey]);
+      part.introParsed = part.hasIntro && !part.introOff ? parseSectionBody(part.intro) : null;
       model.parts.push(part);
       model.outline.push({ type: 'part', key: pkey, label, title: name, part });
       continue;

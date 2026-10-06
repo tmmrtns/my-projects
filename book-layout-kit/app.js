@@ -117,6 +117,17 @@ function renderStructure() {
       d.innerHTML = `<div class="pl"></div><div class="pt"></div>`;
       d.querySelector('.pl').textContent = o.label || 'Part';
       d.querySelector('.pt').textContent = o.title;
+      if (o.part.hasIntro) {
+        const lb = document.createElement('label'); lb.className = 'pintro';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !o.part.introOff;
+        lb.append(cb, document.createTextNode(' Introduction page'));
+        cb.addEventListener('change', () => {
+          S.cfg.part_intro_off = S.cfg.part_intro_off || {};
+          if (cb.checked) delete S.cfg.part_intro_off[o.key]; else S.cfg.part_intro_off[o.key] = true;
+          changed(); parse();
+        });
+        d.append(lb);
+      }
       out.append(d); continue;
     }
     const s = o.sec;
@@ -601,7 +612,7 @@ async function importEntries(entries) {
     S.md = md; S.isSample = false;
     if (roles) S.cfg.roles = roles;
     else if (!cfg) {
-      S.cfg.roles = {};
+      S.cfg.roles = {}; S.cfg.part_intro_off = {};
       if (S.isSampleCfg) { const d = BK.defaults(); S.cfg = merge(d, { lang: S.cfg.lang }); S.isSampleCfg = false; }
       if (meta.title && !S.cfg.title) S.cfg.title = meta.title;
       if (meta.subtitle && !S.cfg.subtitle) S.cfg.subtitle = meta.subtitle;
@@ -974,6 +985,7 @@ async function renderSpread() {
     cv.width = vp.width; cv.height = vp.height;
     cv.style.width = vp.width / dpr + 'px'; cv.style.maxWidth = '50%';
     if (!pn) { cv.className = 'ghost'; return cv; }
+    cv.dataset.p = pn; cv.addEventListener('click', () => { S.sel = pn; markSel(); });
     const page = await S.pdfDoc.getPage(pn);
     await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
     return cv;
@@ -983,11 +995,352 @@ async function renderSpread() {
   const g = document.createElement('div'); g.className = 'gutter';
   spread.append(cl, g, cr);
   stage.replaceChildren(spread);
+  if (S.sel !== l && S.sel !== r) S.sel = r || l;
+  markSel();
+  drawOverlays();
   const n = S.pdfDoc.numPages, co = S.pdf.covers ? 1 : 0;
   const lab = p => p == null ? '' : (co && p === 1 ? 'front cover' : (co && p === n ? 'back cover' : 'page ' + (p - co)));
   $('#pageLabel').textContent = [lab(l), lab(r)].filter(Boolean).join(' · ') + ` / ${n - 2 * co}`;
   $('#pageSlider').max = n; $('#pageSlider').value = r || l;
 }
+
+// ---------------------------------------------------------------- edit from the page viewer
+// Pages are mapped back to the manuscript: a page belongs to the section (chapter, part ...) that started last, and the
+// paragraphs "on" a page are the ones whose first words are found on that page.
+const letters = s => String(s).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+function mdItemsOf(md) {
+  const norm = BK.unescapeExport(md || '').replace(/\r\n?/g, '\n'), items = [];
+  let off = 0, fence = false;
+  for (const ln of norm.split('\n')) {
+    if (/^\s*(```|~~~)/.test(ln)) fence = !fence;
+    const m = !fence && /^(#{1,2})[ \t]+(.*?)[ \t]*#*[ \t]*$/.exec(ln);
+    if (m) items.push({ level: m[1].length, start: off, bodyStart: Math.min(norm.length, off + ln.length + 1) });
+    off += ln.length + 1;
+  }
+  items.forEach((it, i) => { it.end = i + 1 < items.length ? items[i + 1].start : norm.length; });
+  const lead = items.length ? norm.slice(0, items[0].start) : norm;
+  const wc = (lead.replace(/!\[[^\]]*\]\([^)]*\)/g, '').match(/[\p{L}\p{N}]+/gu) || []).length;
+  if (lead.trim() && wc > 0) items.unshift({ level: 2, start: 0, bodyStart: 0, end: items.length ? items[0].start : norm.length, implicit: true });
+  return { norm, items };
+}
+const pageTextCache = new Map();
+async function pageLetters(p) {
+  const key = (S.pdfDoc && S.pdfDoc.fingerprints ? S.pdfDoc.fingerprints[0] : '') + ':' + p;
+  if (pageTextCache.has(key)) return pageTextCache.get(key);
+  const tc = await (await S.pdfDoc.getPage(p)).getTextContent();
+  const t = letters(tc.items.map(i => i.str).join(' '));
+  pageTextCache.set(key, t); return t;
+}
+const plainMd = s => s.replace(/^:::.*$/gm, '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^[#>\-*+\s]+|^\d+[.)]\s+/gm, '').replace(/[*_~`]/g, '');
+// where a page sits in the manuscript: { index, item, pages: [first, last], generated }
+function locate(page) {
+  if (!S.pdf || !S.pdf.ids || !S.model) return null;
+  if (S.pdf.covers && page === S.pdfDoc.numPages) return { generated: true };
+  const ids = S.pdf.ids, outline = S.model.outline, idOf = o => o.type === 'part' ? o.part.pid : o.sec.id;
+  const starts = Object.entries(ids).map(([id, p]) => ({ id, p })).filter(x => x.id !== 'BACKCOVER').sort((a, b) => a.p - b.p || 0);
+  let cur = null;
+  for (const x of starts) if (x.p <= page) cur = x;
+  if (!cur) return { generated: true };
+  const base = cur.id.replace(/-intro$/, ''), index = outline.findIndex(o => idOf(o) === base);
+  if (index < 0) return { generated: true };
+  const next = starts.find(x => x.p > cur.p && (x.id.replace(/-intro$/, '') !== base)), last = next ? next.p - 1 : S.pdfDoc.numPages - (S.pdf.covers ? 1 : 0);
+  const first = Math.min(...starts.filter(x => x.id.replace(/-intro$/, '') === base).map(x => x.p));
+  return { index, o: outline[index], pages: [first, last] };
+}
+// the paragraphs of an item and the ones that start on `page`
+// blocks of the manuscript text: blank-line paragraphs, with ::: containers and code fences kept whole
+function splitBlocks(norm, a0, b0) {
+  const body = norm.slice(a0, b0), blocks = [];
+  let pos = 0, cur = null, depth = 0, fence = null;
+  const flush = () => { if (cur) { blocks.push({ a: a0 + cur.a, b: a0 + cur.b, text: body.slice(cur.a, cur.b) }); cur = null; } };
+  for (const ln of body.split('\n')) {
+    const start = pos, end = pos + ln.length; pos = end + 1;
+    if (fence) { cur.b = end; if (/^\s*(```|~~~)/.test(ln)) { fence = null; flush(); } continue; }
+    if (depth > 0) { cur.b = end; if (/^:::\s*$/.test(ln)) { depth--; if (!depth) flush(); } else if (/^:::\s*\S/.test(ln)) depth++; continue; }
+    if (!ln.trim()) { flush(); continue; }
+    if (!cur) {
+      cur = { a: start, b: end };
+      if (/^:::\s*\S/.test(ln)) depth = 1; else if (/^\s*(```|~~~)/.test(ln)) fence = '```';
+    } else cur.b = end;
+  }
+  flush();
+  return blocks;
+}
+async function pageParas(item, norm, loc, page) {
+  const paras = splitBlocks(norm, item.bodyStart, item.end);
+  const texts = {};
+  for (let p = loc.pages[0]; p <= loc.pages[1]; p++) texts[p] = await pageLetters(p);
+  const hit = [];
+  for (const par of paras) {
+    const pl = letters(plainMd(par.text)), snip = pl.length > 30 ? pl.slice(4, 28) : pl.slice(0, 24);
+    if (snip.length < 6) continue;
+    let sp = null;
+    for (let p = loc.pages[0]; p <= loc.pages[1]; p++) if (texts[p].includes(snip)) { sp = p; break; }
+    if (sp === page) hit.push(par);
+  }
+  return { paras, hit };
+}
+
+// where things sit on a page: text spans (with their position in the page's letters) and pictures
+const geoCache = new Map();
+async function pageGeo(p) {
+  const key = (S.pdfDoc && S.pdfDoc.fingerprints ? S.pdfDoc.fingerprints[0] : '') + ':' + p;
+  if (geoCache.has(key)) return geoCache.get(key);
+  const page = await S.pdfDoc.getPage(p), vp = page.getViewport({ scale: 1 }), tc = await page.getTextContent();
+  const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+  let str = ''; const spans = [];
+  for (const it of tc.items) {
+    const lt = letters(it.str || ''); if (!lt) continue;
+    const t = mul(vp.transform, it.transform), h = Math.hypot(t[2], t[3]) || 8;
+    spans.push({ s: str.length, e: str.length + lt.length, x: t[4], y: t[5] - h * .85, w: it.width, h: h * 1.15 });
+    str += lt;
+  }
+  const imgs = [];
+  try {
+    const ops = await page.getOperatorList(), O = pdfjsLib.OPS; let ctm = [1, 0, 0, 1, 0, 0]; const stack = [];
+    ops.fnArray.forEach((fn, i) => {
+      const a = ops.argsArray[i];
+      if (fn === O.save) stack.push(ctm.slice()); else if (fn === O.restore) ctm = stack.pop() || ctm;
+      else if (fn === O.transform) ctm = mul(ctm, a);
+      else if (fn === O.paintImageXObject || fn === O.paintInlineImageXObject || fn === O.paintImageMaskXObject) {
+        const m = mul(vp.transform, ctm), xs = [m[4], m[4] + m[0], m[4] + m[2], m[4] + m[0] + m[2]], ys = [m[5], m[5] + m[1], m[5] + m[3], m[5] + m[1] + m[3]];
+        const x = Math.min(...xs), y = Math.min(...ys); imgs.push({ x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y });
+      }
+    });
+  } catch (e) { /* no picture positions: text blocks still work */ }
+  const g = { w: vp.width, h: vp.height, str, spans, imgs: imgs.filter(r => r.w > 24 && r.h > 24).sort((a, b) => a.y - b.y || a.x - b.x) };
+  geoCache.set(key, g); return g;
+}
+const unionRect = rs => { const x0 = Math.min(...rs.map(r => r.x)), y0 = Math.min(...rs.map(r => r.y)), x1 = Math.max(...rs.map(r => r.x + r.w)), y1 = Math.max(...rs.map(r => r.y + r.h)); return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; };
+// the selectable items of a page, each with its place in the manuscript and a rectangle on the page
+async function pageBlocks(page) {
+  const loc = locate(page); if (!loc || loc.generated) return [];
+  const { norm, items } = mdItemsOf(S.md); if (items.length !== S.model.outline.length) return [];
+  const item = items[loc.index], geo = await pageGeo(page), out = [];
+  const spansIn = (s0, e0, clamp) => geo.spans.filter(sp => sp.e > s0 && sp.s < e0 && (!clamp || (sp.y > geo.h * .07 && sp.y < geo.h * .93)));
+  // the heading: its title is found on the opening page of the section
+  const headRaw = norm.slice(item.start, item.bodyStart).replace(/^#+\s*/, '').replace(/^\*\s+|^~\s+/, '');
+  const title = letters(plainMd(headRaw.split(' | ')[0]));
+  if (!item.implicit && title.length >= 3 && page === loc.pages[0]) {
+    const hi = geo.str.indexOf(title);
+    if (hi >= 0) { const sp = spansIn(hi, hi + title.length); if (sp.length) out.push({ kind: 'head', a: item.start, b: item.end, text: headRaw, rect: unionRect(sp), label: 'heading (removes the whole ' + (loc.o.type === 'part' ? 'part intro' : 'section') + ')' }); }
+  }
+  const blocks = splitBlocks(norm, item.bodyStart, item.end);
+  let cursor = 0; const matched = [];
+  blocks.forEach((b, bi) => {
+    const pl = letters(plainMd(b.text)); if (pl.length < 6 || /^!\[/.test(b.text.trim())) return;
+    const skip = pl.length > 26 ? 3 : 0, sn = pl.slice(skip, skip + 20), en = pl.slice(-20);
+    let si = geo.str.indexOf(sn, cursor), start, end, cont = false, goes = false;
+    if (si >= 0) { start = Math.max(cursor, si - skip); const ei = geo.str.indexOf(en, si); if (ei >= 0) end = ei + en.length; else { end = geo.str.length; goes = true; } }
+    else { const ei = geo.str.indexOf(en, cursor); if (ei < 0) return; start = cursor; end = ei + en.length; cont = true; }
+    const sp = spansIn(start, end, cont || goes); if (!sp.length) return;
+    cursor = end; matched.push(bi);
+    out.push({ kind: 'text', a: b.a, b: b.b, text: b.text, rect: unionRect(sp), label: cont ? 'continues from the page before' : goes ? 'continues on the next page' : '' });
+  });
+  // pictures: the figure paragraphs around the text on this page, matched with the pictures in order
+  if (geo.imgs.length) {
+    const lo = matched.length ? Math.max(0, matched[0] - 1) : 0, hi = matched.length ? Math.min(blocks.length - 1, matched[matched.length - 1] + 1) : blocks.length - 1;
+    let k = 0;
+    for (let bi = lo; bi <= hi && k < geo.imgs.length; bi++) {
+      const n = (blocks[bi].text.match(/!\[[^\]]*\]\([^)]*\)/g) || []).length; if (!n) continue;
+      const take = geo.imgs.slice(k, k + n); k += take.length; if (!take.length) break;
+      out.push({ kind: 'fig', a: blocks[bi].a, b: blocks[bi].b, text: blocks[bi].text, rect: unionRect(take), label: 'picture' });
+    }
+  }
+  return out;
+}
+S.vSel = new Map();
+let ovlTok = 0;
+const blkKey = b => b.kind + ':' + b.a;
+async function drawOverlays() {
+  $$('#stage .ovl').forEach(e => e.remove());
+  const tok = ++ovlTok;
+  if (!S.selMode || !S.pdfDoc) return;
+  const spread = $('#stage .spread'); if (!spread) return;
+  spread.style.position = 'relative';
+  for (const cv of $$('#stage canvas[data-p]')) {
+    const pn = +cv.dataset.p, blocks = await pageBlocks(pn); if (tok !== ovlTok) return;
+    const geo = await pageGeo(pn), f = cv.offsetWidth / geo.w;
+    const ov = document.createElement('div'); ov.className = 'ovl';
+    Object.assign(ov.style, { left: cv.offsetLeft + 'px', top: cv.offsetTop + 'px', width: cv.offsetWidth + 'px', height: cv.offsetHeight + 'px' });
+    for (const b of blocks) {
+      const d = document.createElement('div'), pad = 3;
+      d.className = 'blk ' + b.kind + (S.vSel.has(blkKey(b)) ? ' on' : '');
+      Object.assign(d.style, { left: (b.rect.x * f - pad) + 'px', top: (b.rect.y * f - pad) + 'px', width: (b.rect.w * f + 2 * pad) + 'px', height: (b.rect.h * f + 2 * pad) + 'px' });
+      d.title = (b.label ? b.label + ': ' : '') + (b.kind === 'fig' ? (b.text.match(/!\[([^\]]*)\]\(([^)]*)\)/) || []).slice(1).join(' · ') : plainMd(b.text).replace(/\s+/g, ' ').trim().slice(0, 90));
+      d.addEventListener('click', ev => {
+        ev.stopPropagation(); S.sel = pn;
+        const k = blkKey(b); if (S.vSel.has(k)) S.vSel.delete(k); else S.vSel.set(k, { kind: b.kind, a: b.a, b: b.b, text: b.text, page: pn });
+        d.classList.toggle('on', S.vSel.has(k)); markSel();
+      });
+      ov.append(d);
+    }
+    spread.append(ov);
+  }
+}
+// remove blocks (and their footnote texts) from the manuscript; headings take their section along
+function vRemoveBlocks(selIn, label, extraNote) {
+  const { norm, items } = mdItemsOf(S.md); if (items.length !== S.model.outline.length) { toast('The pages no longer match the text. Build again first.'); return; }
+  let sel = selIn.slice();
+  const dead = [];
+  for (const b of sel.filter(x => x.kind === 'head')) {
+    const i = items.findIndex(it => it.start === b.a); if (i < 0) continue;
+    let end = items[i].end;
+    if (S.model.outline[i].type === 'part') for (let j = i + 1; j < items.length && items[j].level !== 1; j++) end = items[j].end;
+    dead.push([items[i].start, end]);
+  }
+  sel = sel.filter(x => x.kind !== 'head' && !dead.some(d => x.a >= d[0] && x.b <= d[1]));
+  // footnote texts that belong to removed paragraphs go too
+  const ids = new Set(); sel.forEach(x => { for (const m of x.text.matchAll(/\[\^([^\]]+)\](?!:)/g)) ids.add(m[1]); });
+  if (ids.size) {
+    const seen = new Set(sel.map(x => x.a));
+    for (const it of items) for (const bl of splitBlocks(norm, it.bodyStart, it.end)) {
+      const m = /^\[\^([^\]]+)\]:/.exec(bl.text.trim());
+      if (m && ids.has(m[1]) && !seen.has(bl.a) && !dead.some(d => bl.a >= d[0] && bl.b <= d[1])) sel.push({ kind: 'text', a: bl.a, b: bl.b, text: bl.text });
+    }
+  }
+  const ranges = dead.concat(sel.map(b => { let e = b.b; while (norm[e] === '\n' || norm[e] === ' ') e++; return [b.a, e]; })).sort((x, y) => y[0] - x[0]);
+  let nm = norm; for (const [a, b] of ranges) nm = nm.slice(0, a) + nm.slice(b);
+  S.vSel.clear();
+  vApply(label, nm);
+  drawOverlays();
+  if (extraNote) setTimeout(() => toast(extraNote), 50);
+}
+function vSelRemove() {
+  if (!S.vSel.size) return;
+  const all = [...S.vSel.values()], n = all.length, first = plainMd(all[0].text).replace(/\s+/g, ' ').trim().slice(0, 40);
+  vRemoveBlocks(all, n === 1 ? `Removed “${first}${first.length >= 40 ? '…' : ''}”` : `Removed ${n} items`);
+}
+async function vDeletePage() {
+  const loc = locate(S.sel);
+  if (!loc || loc.generated) { toast('This page is generated (title page, contents or index). Change it on the Book tab.'); return; }
+  const blocks = await pageBlocks(S.sel), co = S.pdf.covers ? 1 : 0, no = S.sel - co;
+  const heads = blocks.filter(b => b.kind === 'head'), rest = blocks.filter(b => b.kind !== 'head' && !/^\[\^[^\]]+\]:/.test(b.text.trim()));
+  if (!rest.length) {
+    toast(heads.length ? 'Only the chapter heading is on this page. Use “Remove chapter” to delete it with its text.' : 'Nothing to delete: this page is empty. Blank pages come from “Chapters start on right-hand page” on the Book tab.');
+    return;
+  }
+  const over = rest.filter(b => b.label).length;
+  vRemoveBlocks(rest, `Deleted page ${no}`, over ? `${over} paragraph${over > 1 ? 's' : ''} ran over to another page and ${over > 1 ? 'were' : 'was'} removed whole.` : (heads.length ? 'The chapter heading stays: use “Remove chapter” to delete it too.' : ''));
+}
+function vSelEdit() {
+  if (S.vSel.size !== 1) return;
+  const b = [...S.vSel.values()][0], { norm } = mdItemsOf(S.md);
+  vState = { norm, scope: 'block', range: [b.a, b.kind === 'head' ? mdItemsOf(S.md).items.find(it => it.start === b.a).bodyStart - 1 : b.b], hit: [], item: {} };
+  $('#vTitle').textContent = b.kind === 'head' ? 'Edit heading' : b.kind === 'fig' ? 'Edit picture line' : 'Edit text block';
+  $('#vScope').hidden = true; vFill(); $('#vDlg').showModal();
+}
+function markSel() {
+  $$('#stage canvas[data-p]').forEach(c => c.classList.toggle('sel', +c.dataset.p === S.sel));
+  const co = S.pdf && S.pdf.covers ? 1 : 0, n = S.pdfDoc ? S.pdfDoc.numPages : 0;
+  const lab = !S.sel ? '' : (co && S.sel === 1 ? 'front cover' : co && S.sel === n ? 'back cover' : 'page ' + (S.sel - co));
+  $('#pSel').textContent = lab ? 'Selected: ' + lab + ' (click a page to select it)' : '';
+  const loc = S.sel ? locate(S.sel) : null, gen = !loc || loc.generated;
+  const real = !gen && loc.o;
+  $('#pedit').hidden = !S.pdfDoc;
+  $('#vDelPage').disabled = gen;
+  $('#vEdit').disabled = gen; $('#vRemPage').disabled = gen || real.type === 'part'; $('#vRemSec').disabled = gen;
+  $('#vRemSec').textContent = gen ? 'Remove chapter' : real.type === 'part' ? 'Remove part and its chapters' : real.sec.role === 'chapter' || real.sec.role === 'plain' || real.sec.role === 'appendix' ? 'Remove chapter' : 'Remove section';
+  let part = -1;
+  if (!gen && real.type !== 'part') for (let i = loc.index - 1; i >= 0; i--) if (S.model.outline[i] && S.model.outline[i].type === 'part') { part = i; break; }
+  $('#vRemPart').hidden = part < 0; $('#vRemPart').dataset.part = part;
+  $('#vUndo').hidden = !(S.vUndo && S.vUndo.length); $('#vUndo').textContent = `Undo (${(S.vUndo || []).length})`;
+  $('#vRebuild').hidden = !(S.stale && S.pdfDoc);
+  $('#vSelMode').setAttribute('aria-pressed', String(!!S.selMode));
+  const ns = S.vSel ? S.vSel.size : 0;
+  $('#vRemSel').hidden = !S.selMode || !ns; $('#vRemSel').textContent = `Remove selected (${ns})`;
+  $('#vEditSel').hidden = !S.selMode || ns !== 1; $('#vClearSel').hidden = !S.selMode || !ns;
+  if (S.selMode) $('#pSel').textContent = ns ? `${ns} item${ns > 1 ? 's' : ''} selected. Click an outlined item on the page to select or deselect it.` : 'Click outlined items on the page to select them (text blocks, headings, pictures).';
+}
+function vApply(label, newMd) {
+  (S.vUndo = S.vUndo || []).push({ md: S.md, label }); if (S.vUndo.length > 30) S.vUndo.shift();
+  S.vSel.clear(); S.md = newMd; $('#editor').value = S.md; S.isSample = false; sampleTag(); undoMd = null; $('#undoFmtBtn').hidden = true;
+  changed(); parse(); markSel();
+  toast(label + '. Rebuild the PDF to update the pages.');
+}
+function vContext() {
+  const loc = locate(S.sel);
+  if (!loc || loc.generated) { toast('This page is generated (title page, contents or index). Change it on the Book tab.'); return null; }
+  const { norm, items } = mdItemsOf(S.md);
+  if (items.length !== S.model.outline.length) { toast('The pages no longer match the text. Build again first.'); return null; }
+  return { loc, norm, items, item: items[loc.index] };
+}
+let vState = null;
+async function vOpenEdit() {
+  const c = vContext(); if (!c) return;
+  const { hit } = await pageParas(c.item, c.norm, c.loc, S.sel);
+  vState = Object.assign(c, { hit, scope: hit.length ? 'page' : 'section' });
+  const co = S.pdf.covers ? 1 : 0;
+  $('#vTitle').textContent = `Edit text · page ${S.sel - co}`;
+  $('#vScope').querySelectorAll('button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.v === vState.scope)); });
+  $('#vScope').querySelector('[data-v=page]').disabled = !hit.length;
+  $('#vScope').hidden = false; vFill(); $('#vDlg').showModal();
+}
+function vRange() {
+  const s = vState;
+  if (s.scope === 'block') return s.range;
+  if (s.scope === 'page' && s.hit.length) return [s.hit[0].a, s.hit[s.hit.length - 1].b];
+  return [s.item.start, s.item.end];
+}
+function vFill() {
+  const [a, b] = vRange();
+  $('#vText').value = vState.norm.slice(a, b).replace(/\s+$/, '');
+  $('#vHint').textContent = vState.scope === 'block' ? 'One block of the manuscript, in markdown. Picture lines look like ![caption](file.jpg).' : vState.scope === 'page'
+    ? 'The paragraphs that start on this page. A paragraph that began on the page before is in the section view.'
+    : 'The heading and all the text of this section, in the manuscript’s markdown.';
+}
+async function vSave(rebuild) {
+  const [a, b] = vRange(), s = vState;
+  const trailing = s.norm.slice(a, b).match(/\s*$/)[0];
+  const nm = s.norm.slice(0, a) + $('#vText').value.replace(/\s+$/, '') + trailing + s.norm.slice(b);
+  $('#vDlg').close();
+  if (nm !== s.norm) vApply('Text changed', nm);
+  if (rebuild) build('pdf');
+}
+$('#vEdit').addEventListener('click', vOpenEdit);
+$('#vScope').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  if (b.disabled || !vState) return; vState.scope = b.dataset.v;
+  $('#vScope').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); vFill();
+}));
+$('#vSave').addEventListener('click', () => vSave(false));
+$('#vSaveBuild').addEventListener('click', () => vSave(true));
+$('#vCancel').addEventListener('click', () => $('#vDlg').close());
+$('#vRemPage').addEventListener('click', async () => {
+  const c = vContext(); if (!c) return;
+  const { hit } = await pageParas(c.item, c.norm, c.loc, S.sel);
+  if (!hit.length) { toast('No paragraph starts on this page. Use “Remove chapter” or edit the section.'); return; }
+  const a = hit[0].a; let b = hit[hit.length - 1].b;
+  while (c.norm[b] === '\n' || c.norm[b] === ' ') b++;
+  vApply(`Removed ${hit.length} paragraph${hit.length > 1 ? 's' : ''} from page ${S.sel - (S.pdf.covers ? 1 : 0)}`, c.norm.slice(0, a) + c.norm.slice(b));
+});
+$('#vRemSec').addEventListener('click', () => {
+  const c = vContext(); if (!c) return;
+  const it = c.item; let end = it.end;
+  if (c.loc.o.type === 'part') for (let i = c.loc.index + 1; i < c.items.length && c.items[i].level !== 1; i++) end = c.items[i].end;
+  const name = c.loc.o.type === 'part' ? c.loc.o.title : c.loc.o.sec.title;
+  vApply(`Removed “${name}”`, c.norm.slice(0, it.start) + c.norm.slice(end));
+});
+$('#vRemPart').addEventListener('click', () => {
+  const c = vContext(); if (!c) return;
+  const pi = +$('#vRemPart').dataset.part, it = c.items[pi]; let end = it.end;
+  for (let i = pi + 1; i < c.items.length && c.items[i].level !== 1; i++) end = c.items[i].end;
+  vApply(`Removed part “${S.model.outline[pi].title}”`, c.norm.slice(0, it.start) + c.norm.slice(end));
+});
+$('#vUndo').addEventListener('click', () => {
+  const u = (S.vUndo || []).pop(); if (!u) return;
+  S.md = u.md; $('#editor').value = S.md; changed(); parse(); markSel(); toast('Undone: ' + u.label);
+});
+$('#vRebuild').addEventListener('click', () => build('pdf'));
+$('#vSelMode').addEventListener('click', () => { S.selMode = !S.selMode; markSel(); drawOverlays(); });
+$('#vRemSel').addEventListener('click', vSelRemove);
+$('#vDelPage').addEventListener('click', vDeletePage);
+$('#vEditSel').addEventListener('click', vSelEdit);
+$('#vClearSel').addEventListener('click', () => { S.vSel.clear(); markSel(); drawOverlays(); });
+document.addEventListener('keydown', e => {
+  if (!S.selMode || S.view !== 'pages' || !S.vSel.size || $('#vDlg').open || /input|textarea|select/i.test((document.activeElement || {}).tagName)) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); vSelRemove(); }
+  if (e.key === 'Escape') { S.vSel.clear(); markSel(); drawOverlays(); }
+});
 $('#prevBtn').addEventListener('click', () => { if (!S.pdfDoc) return; const [l, r] = spreadOf(S.page); S.page = Math.max(1, (l || r) - 1); renderSpread(); });
 $('#nextBtn').addEventListener('click', () => { if (!S.pdfDoc) return; const [l, r] = spreadOf(S.page); S.page = Math.min(S.pdfDoc.numPages, (r || l) + 1); renderSpread(); });
 $('#pageSlider').addEventListener('input', debounce(e => { S.page = +e.target.value; renderSpread(); }, 60));
@@ -1182,12 +1535,12 @@ $('#coverClear').addEventListener('click', () => { S.cfg.cover.image = ''; fillF
 // ---------------------------------------------------------------- start
 // hooks for the Extract tab (ocr.js)
 window.BKAPP = {
-  pdfjs, setView, status, toast, showTab, saveFile, projectZip, imagesZip, kitFiles,
+  pdfjs, pageBlocks, pageGeo, setView, status, toast, showTab, saveFile, projectZip, imagesZip, kitFiles,
   get view() { return S.view; },
   async useExtract(r) {
     for (const im of r.images || []) await addImage(im.name, im.blob);
     if (S.isSampleCfg || S.isSample) { S.cfg = merge(BK.defaults(), { lang: S.cfg.lang }); S.isSampleCfg = false; }
-    S.md = r.md; S.isSample = false; S.cfg.roles = {};
+    S.md = r.md; S.isSample = false; S.cfg.roles = {}; S.cfg.part_intro_off = {};
     const m = r.meta || {};
     for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (m[k]) S.cfg[k] = m[k];
     if (m.colophon && m.colophon.length) S.cfg.colophon = m.colophon;
