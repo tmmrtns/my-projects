@@ -25,7 +25,11 @@
    }
   },
   "createdAt": 1791287386986,
-  "updatedAt": 1791287387001
+  "updatedAt": 1791287387001,
+  "cover": {
+   "path": "data/books/b3b8e671-f611-42ca-826c-45728cdaf32a/cover/mux873r7.jpg",
+   "at": 1791324242150
+  }
  },
  {
   "id": "b840f721-e476-49b1-a656-53245b48e9ae",
