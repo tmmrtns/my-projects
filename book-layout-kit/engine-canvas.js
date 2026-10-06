@@ -184,6 +184,35 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     c.fillStyle = col; c.fillRect(left, X(y0), fullW, X(y1 - y0) + 1);
   };
   const hide = cv.hide || {}, on = k => !hide[k];
+  // text that has to stay inside its band: measure it, and make the type smaller until it fits (and no word is wider than the line)
+  const sc0 = canvasOf(8, 8).getContext('2d');
+  const measureTxt = (txt, o) => {
+    const oo = Object.assign({ pxpt, fam, align: 'center', x: 0, width: X(W - 16), top: 0, color: '#000' }, o);
+    const h = textBlock(sc0, txt, oo), sp = (oo.spacing || 0) * oo.size * pxpt;
+    let wide = 0;
+    for (const p of (Array.isArray(txt) ? txt : String(txt).split('\n'))) for (const w of (oo.upper ? p.toUpperCase() : p).split(/\s+/).filter(Boolean)) wide = Math.max(wide, sc0.measureText(w).width + sp * [...w].length);
+    return { h, ok: wide <= oo.width + 1 };
+  };
+  const fitText = (txt, o, maxH, min) => {
+    let sz = o.size;
+    for (;;) {
+      const oo = Object.assign({}, o, { size: sz }), m = measureTxt(txt, oo);
+      if ((m.h <= maxH && m.ok) || sz <= min) return oo;
+      sz = Math.max(min, sz - .5);
+    }
+  };
+  // subtitles and author below each other: they push each other down and, when there is no room left in the band, shrink together
+  const flowBelow = (items, top0, limit, authorTop, color, gapA) => {
+    for (let k = 1; ; k -= .05) {
+      let y = top0, ok = true; const out = [];
+      items.forEach((it, i) => {
+        const o = Object.assign({}, it.o, { size: Math.max(5, it.o.size * k) }), m = measureTxt(it.t, o);
+        if (it.author) y = Math.max(y, authorTop, y + gapA);
+        out.push({ t: it.t, o: Object.assign({ top: y, color }, o) }); y += m.h + (it.author ? 0 : X(1)); if (!m.ok) ok = false;
+      });
+      if ((ok && y - X(1) <= limit) || k <= .5) { out.forEach(r => T(r.t, r.o)); return; }
+    }
+  };
   // which subtitle lines of the book go on the cover
   const src = cv.subtitle_source || 'auto', s1 = cfg.subtitle || '', s2 = cfg.subtitle2 || '';
   const subs = (src === 'both' ? [s1, s2] : src === 'first' ? [s1] : src === 'second' ? [s2] : src === 'none' ? [] : [s2 || s1]).filter(Boolean);
@@ -216,22 +245,24 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       }
       if (cv.label && on('label')) T(cv.label, { top: X(H * .045), size: 8, spacing: .45, upper: true, color: cv.band_ink });
       // title vertically centred in the box top .095H, height .15H
-      const lh = 1.15, sz = 21;
-      const probe = titleLines.flatMap(l => wrapCount(c, l, sz, pxpt, fam, X(W - 16), .08));
-      const th = probe.length * sz * lh * pxpt;
-      if (on('title')) T(titleLines, { top: X(H * .095) + (X(H * .15) - th) / 2, size: sz, lh, spacing: .08, upper: true, color: cv.band_ink });
-      if (subt) T(subt, { top: X(H * (subt2 ? .742 : .755)), size: 11, italic: true, color: cv.band_ink });
-      if (subt2) T(subt2, { top: X(H * .776), size: 9.5, color: cv.band_ink });
-      if (cfg.author && on('author')) T(cfg.author, { top: X(H * (subt2 ? .83 : .815)), size: 11, spacing: .3, upper: true, color: cv.band_ink });
+      const lh = 1.15;
+      if (on('title')) {
+        const to = fitText(titleLines, { size: 21, lh, spacing: .08, upper: true }, X(H * .15), 11), th = measureTxt(titleLines, to).h;
+        T(titleLines, Object.assign({ top: X(H * .095) + (X(H * .15) - th) / 2, color: cv.band_ink }, to));
+      }
+      const footTop = cv.footer && on('footer') ? X(H - H * .045) - 8 * 1.2 * pxpt : X(H - 6);
+      flowBelow([subt && { t: subt, o: { size: 11, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
+        cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
+        X(H * (subt2 ? .742 : .755)), footTop - X(2), X(H * (subt2 ? .83 : .815)), cv.band_ink, X(3));
       if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .045) - 8 * 1.2 * pxpt, size: 8, spacing: .35, upper: true, color: cv.band_ink });
     } else {
       band(0, H * .295, cv.band); band(H * .295, H * .41, cv.mid); band(H * .705, H * .295 + 1, cv.band);
       if (cv.label && on('label')) T(cv.label, { top: X(H * .115), size: 9, spacing: .45, upper: true, color: cv.band_ink });
-      if (on('title')) T(titleLines, { top: X(H * .37), size: 23, lh: 1.2, spacing: .08, upper: true, color: cv.ink });
+      if (on('title')) T(titleLines, Object.assign({ top: X(H * .37), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(H * .135), 12)));
       if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525), X(24), Math.max(1, .7 * pxpt)); }
-      if (subt) T(subt, { top: X(H * (subt2 ? .543 : .553)), size: 11.5, italic: true, color: cv.ink });
-      if (subt2) T(subt2, { top: X(H * .58), size: 9.5, color: cv.ink });
-      if (cfg.author && on('author')) T(cfg.author, { top: X(H * (subt2 ? .65 : .63)), size: 11, spacing: .3, upper: true, color: cv.ink });
+      flowBelow([subt && { t: subt, o: { size: 11.5, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
+        cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
+        X(H * (subt2 ? .543 : .553)), X(H * .705) - X(6), X(H * (subt2 ? .65 : .63)), cv.ink, X(4));
       if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .105) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
     }
   } else {
@@ -254,7 +285,8 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const blockH = (txt, o) => { const sc = scratch; return textBlock(sc, txt, Object.assign({ pxpt, fam, align: 'center', x: 0, width: X(W - 16), top: 0, color: '#000' }, o)); };
     const quote = cv.quote && on('quote') ? cv.quote : '';
     if (quote) {
-      const o = { size: 13, lh: 1.3, italic: true, width: X(W - 32) }, top = X(H * (cv.back_quote_y ?? 10.5) / 100), h = blockH(quote, o);
+      const top = X(H * (cv.back_quote_y ?? 10.5) / 100), below = Math.min(cv.back_subtitle_source && cv.back_subtitle_source !== 'none' ? X(H * (cv.back_subtitle_y ?? 22) / 100) : 1e9, X(H * (cv.back_blurb_y ?? 33) / 100));
+      const o = fitText(quote, { size: 13, lh: 1.3, italic: true, width: X(W - 32), x: 0 }, Math.max(X(10), below - top - X(6)), 8.5), h = blockH(quote, o);
       const inBand = top + h <= X(bbh);
       if (!inBand && panelOn) panel(X(16), top, X(W - 32), h, cv.band, .86);
       T(quote, Object.assign({ top, color: cv.band_ink }, o, { x: X(W / 2) }));
@@ -275,7 +307,12 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     }
     const blurb = (cv.blurb || []).filter(Boolean);
     if (blurb.length && on('blurb')) {
-      const o = { x: X(16), width: X(W - 32), align: 'justify', size: 10.2, lh: 1.42, paraGap: X(2.2) }, top = X(H * (cv.back_blurb_y ?? 33) / 100), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
+      const top = X(H * (cv.back_blurb_y ?? 33) / 100);
+      // the text stops above the QR code and the barcode box, and above the bottom margin
+      let lim = X(H - 10);
+      if (cv.qr && on('qr')) lim = Math.min(lim, X(H) - X(12) - X(34) - X(4));
+      if (opt && opt.barcode) lim = Math.min(lim, X(H - ((opt.barcodePos || {}).bottom ?? BK.KDP.barcodeMargin) - BK.KDP.barcode[1] - 3));
+      const o = Object.assign(fitText(blurb, { x: 0, width: X(W - 32), align: 'justify', size: 10.2, lh: 1.42, paraGap: X(2.2) }, Math.max(X(15), lim - top - X(5)), 7.5), { x: X(16) }), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
       const plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
       if (!plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
       T(blurb, Object.assign({ top, color: cv.ink }, o));

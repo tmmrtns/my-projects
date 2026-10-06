@@ -186,7 +186,7 @@ BK.defaults = () => ({
   title: '', subtitle: '', subtitle2: '', author: '', lang: 'en', output: '',
   page: 'A5', font_size: null, font: 'ebgaramond', opener: 'smallcaps', chapter_number_style: 'arabic', chapter_word: 'show',
   chapter_break: 'page', running_heads: { left: 'title', right: 'chapter' }, scene_break: '*   *   *',
-  toc: true, part_minitoc: true, dedication: [], epigraph: '', colophon: [], labels: {},
+  toc: true, part_minitoc: true, parts_in_book: true, dedication: [], epigraph: '', colophon: [], labels: {},
   index: false, index_sort: '', index_exclude: [],
   photos: { portrait_mm: 58, pair_height_mm: 66, wide_pair_height_mm: 66, small_mm: 62, qr_mm: 30 },
   bw_maps: false, hyphenate: true, include_covers: true, description: '',
@@ -194,7 +194,8 @@ BK.defaults = () => ({
   cover: { style: 'auto', band: '#2f4858', mid: '#f4efe6', ink: '#1a1a1a', band_ink: '#ffffff', label: '', footer: '',
     title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '' },
   roles: {},
-  part_intro_off: {}
+  part_intro_off: {},
+  excluded: {}
 });
 
 const LAYOUT_KEYS = ['page', 'font_size', 'opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break',
@@ -454,8 +455,9 @@ BK.parse = function (mdIn, cfg) {
       part = { pid: 'part' + (++pnum), key: pkey, label, title: name, rawSub: paras[0] || '', subRuns: paras[0] ? BK.inlineMd(paras[0]) : [],
         intro: paras.slice(1).join('\n\n'), chapters: [] };
       part.hasIntro = !!part.intro.trim();
+      if (cfg.excluded && cfg.excluded[pkey]) part.skip = part.excludedPage = true;
       part.introOff = !!(cfg.part_intro_off && cfg.part_intro_off[pkey]);
-      part.introParsed = part.hasIntro && !part.introOff ? parseSectionBody(part.intro) : null;
+      part.introParsed = part.hasIntro && !part.introOff && !part.skip ? parseSectionBody(part.intro) : null;
       model.parts.push(part);
       model.outline.push({ type: 'part', key: pkey, label, title: name, part });
       continue;
@@ -477,6 +479,7 @@ BK.parse = function (mdIn, cfg) {
     const parsed = parseSectionBody(it.body);
     const sec = { key, role, guessed, rawTitle: t, title: t, sub, blocks: parsed.blocks, notes: parsed.notes,
       words: wordCount(it.body), implicit: !!it.implicit, body: it.body };
+    if (cfg.excluded && cfg.excluded[key]) { sec.excluded = true; sec.partPid = part.pid; model.outline.push({ type: 'sec', sec }); continue; }
     if (role === 'front' || role === 'back') {
       sec.id = uid((role === 'front' ? 'f-' : 'b-') + base);
       sec.headTitle = t;
@@ -498,6 +501,7 @@ BK.parse = function (mdIn, cfg) {
     sec.partPid = part.pid;
     model.outline.push({ type: 'sec', sec });
   }
+  if (cfg.parts_in_book === false) model.parts.forEach(p => { if (p.pid) { p.skip = true; p.introParsed = null; } });
   model.parts = model.parts.filter(p => p.pid || p.chapters.length);
   if (!items.length) model.warnings.push('The manuscript is empty.');
   else if (!model.parts.some(p => p.chapters.length)) model.warnings.push('No chapters found. Start each chapter with a line "## Title".');

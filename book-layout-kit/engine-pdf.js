@@ -422,7 +422,7 @@ function tocRows(model, R) {
   const L = R.L, rows = [];
   model.front.forEach(s => rows.push([s.title, s.id, 0]));
   model.parts.forEach(p => {
-    if (p.pid) {
+    if (p.pid && !p.skip) {
       rows.push([(p.label ? p.label + ' – ' : '') + p.title, p.pid, 'p']);
       if (p.introParsed) rows.push([L.part_intro, p.pid + '-intro', 1]);
     }
@@ -551,7 +551,7 @@ function docDef(model, R) {
   c.push(...frontMatter(model, R));
   model.front.forEach(s => c.push(...sectionNodes(s, R, 'stitle')));
   model.parts.forEach(p => {
-    if (p.pid) c.push(...partNodes(p, R));
+    if (p.pid && !p.skip) c.push(...partNodes(p, R));
     p.chapters.forEach(ch => c.push(...sectionNodes(ch, R, 'chapter')));
   });
   model.back.forEach(s => c.push(...sectionNodes(s, R, 'stitle')));
