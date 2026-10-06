@@ -31,7 +31,7 @@
   "id": "b840f721-e476-49b1-a656-53245b48e9ae",
   "title": "Waar Jullie Vandaan Komen",
   "author": "Tom Mertens",
-  "notes": "Eerste druk, september 2026 (EPUB + KDP-bestanden)",
+  "notes": "Eerste druk, september 2026 (A5 PDF + EPUB + KDP-bestanden)",
   "files": {
    "epub": {
     "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/epub/muwmwnn6-Waar_Jullie_Vandaan_Komen.epub",
@@ -53,6 +53,6 @@
    }
   },
   "createdAt": 1791288473009,
-  "updatedAt": 1791288632628
+  "updatedAt": 1791297522008
  }
 ]
