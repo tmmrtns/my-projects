@@ -75,7 +75,11 @@
   "updatedAt": 1791323738256,
   "title": "The Origami Leader",
   "author": "Tom Mertens",
-  "notes": null
+  "notes": null,
+  "cover": {
+   "path": "data/books/370a5f11-9fcf-425f-8f65-c0e3221649ad/cover/mux86ua0.jpg",
+   "at": 1791324224148
+  }
  },
  {
   "id": "7cdcec08-92c3-4601-b04d-5112cae1466c",
