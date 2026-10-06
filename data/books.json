@@ -63,10 +63,16 @@
     "name": "The_Origami_Leader (2).pdf",
     "size": 5113032,
     "at": 1791323732345
+   },
+   "epub": {
+    "path": "data/books/370a5f11-9fcf-425f-8f65-c0e3221649ad/epub/mux7wa2u-The_Origami_Leader (1).epub",
+    "name": "The_Origami_Leader (1).epub",
+    "size": 4648656,
+    "at": 1791323737691
    }
   },
   "createdAt": 1791323717352,
-  "updatedAt": 1791323732673,
+  "updatedAt": 1791323738256,
   "title": "The Origami Leader",
   "author": "Tom Mertens",
   "notes": null
