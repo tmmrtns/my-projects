@@ -22,13 +22,14 @@
   .link { background:none; border:0; color:var(--soft); text-decoration:underline; padding:2px; font-size:.85rem; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(290px,100%),1fr)); gap:16px; }
   .card { min-width:0; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); padding:16px; display:grid; gap:12px; align-content:start; }
-  .head { display:grid; grid-template-columns:56px minmax(0,1fr); gap:12px; align-items:center; }
-  .cover { width:56px; height:76px; border-radius:4px 8px 8px 4px; display:grid; place-items:center; font-size:26px; color:#fff; box-shadow:inset 4px 0 0 rgba(0,0,0,.18); }
+  .head { display:grid; grid-template-columns:84px minmax(0,1fr); gap:12px; align-items:center; }
+  .cover { width:84px; aspect-ratio:3/4; border-radius:3px 6px 6px 3px; display:grid; place-items:center; font-size:30px; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.28), inset 4px 0 0 rgba(0,0,0,.18); overflow:hidden; background:#7a3b2e; }
+  .cover img { width:100%; height:100%; object-fit:cover; display:block; }
   .title { font-weight:700; font-size:1.05rem; line-height:1.2; overflow-wrap:anywhere; }
   .author { color:var(--soft); font-size:.9rem; overflow-wrap:anywhere; }
   .notes { color:var(--soft); font-size:.88rem; margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
   .files { display:grid; gap:8px; }
-  .file { min-width:0; display:grid; grid-template-columns:54px minmax(0,1fr); gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:10px; }
+  .file { min-width:0; display:grid; grid-template-columns:62px minmax(0,1fr); gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:10px; }
   .file.empty { border-style:dashed; }
   .kind { font:700 .75rem ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.06em; color:var(--soft); }
   .meta { font-size:.8rem; color:var(--soft); overflow-wrap:anywhere; word-break:break-word; min-width:0; }
@@ -67,7 +68,7 @@
     <h1>📚 My Books</h1>
     <button class="primary" id="addBook" type="button">Add book</button>
   </div>
-  <p class="sub">The latest PDF, EPUB and KDP file of each book. Read PDFs here, or download any file.</p>
+  <p class="sub">The latest PDF, EPUB and KDP file of each book, plus a zip with its source files. Read PDFs here, or download any file.</p>
   <p class="msg" id="status" role="status" hidden></p>
   <div class="grid" id="grid"></div>
   <p class="empty-state" id="empty" hidden>No books yet. Click <b>Add book</b> to start your library.</p>
@@ -108,8 +109,9 @@
 (function () {
   const api = window.localApi;
   const $ = id => document.getElementById(id);
-  const KIND_LABEL = { pdf: 'PDF', epub: 'EPUB', kdp: 'KDP' };
-  const KIND_HINT = { pdf: '.pdf', epub: '.epub', kdp: '' };  // KDP: any file (print PDF, cover, zip …)
+  const KIND_LABEL = { pdf: 'PDF', epub: 'EPUB', kdp: 'KDP', source: 'SOURCE' };
+  const KIND_EMPTY = { source: 'Manuscript, images … as a .zip' };
+  const KIND_HINT = { pdf: '.pdf', epub: '.epub', kdp: '', source: '.zip,application/zip' };  // KDP: any file (print PDF, cover, zip …)
   const COLORS = ['#7a3b2e', '#2f4858', '#2f6b41', '#8a5a00', '#5b3a7a', '#1f6b72'];
   let books = [];
   let editingId = null;
@@ -124,9 +126,9 @@
   function render() {
     $('empty').hidden = books.length > 0;
     $('grid').innerHTML = books.map(b => {
-      const files = KIND_LABEL && ['pdf', 'epub', 'kdp'].map(k => {
+      const files = KIND_LABEL && ['pdf', 'epub', 'kdp', 'source'].map(k => {
         const f = b.files && b.files[k];
-        if (!f) return `<div class="file empty"><span class="kind">${KIND_LABEL[k]}</span><div><div class="meta">Not added yet</div>
+        if (!f) return `<div class="file empty"><span class="kind">${KIND_LABEL[k]}</span><div><div class="meta">${KIND_EMPTY[k] || 'Not added yet'}</div>
           <div class="acts"><button class="btn" data-act="upload" data-kind="${k}" data-id="${b.id}">Upload</button></div></div></div>`;
         return `<div class="file"><span class="kind">${KIND_LABEL[k]}</span><div>
           <div class="meta">${esc(f.name)} · ${size(f.size)} · ${when(f.at)}</div>
@@ -135,7 +137,7 @@
           <button class="btn" data-act="upload" data-kind="${k}" data-id="${b.id}">New version</button>
           <button class="link" data-act="removefile" data-kind="${k}" data-id="${b.id}">Remove</button></div></div></div>`;
       }).join('');
-      return `<article class="card"><div class="head"><div class="cover" style="background:${colorOf(b.id)}" aria-hidden="true">📖</div>
+      return `<article class="card"><div class="head"><div class="cover" style="background:${colorOf(b.id)}" aria-hidden="true">${covers[b.id] ? `<img src="${covers[b.id]}" alt="">` : '📖'}</div>
         <div><div class="title">${esc(b.title)}</div>${b.author ? `<div class="author">${esc(b.author)}</div>` : ''}
         <div class="meta">Updated ${when(b.updatedAt || b.createdAt)}</div></div></div>
         ${b.notes ? `<p class="notes">${esc(b.notes)}</p>` : ''}
@@ -144,10 +146,57 @@
     }).join('');
   }
 
+  // ----- covers: first page of the PDF, stored as a small JPEG next to the book -----
+  const covers = {};       // book id -> object URL
+  const coverPaths = {};   // book id -> path that URL belongs to
+  const triedCover = new Set();
+  async function renderCover(arrayBuffer) {
+    const doc = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const page = await doc.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: 420 / base.width });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+    doc.destroy();
+    return blob;
+  }
+  function pruneCovers() {  // forget covers of books that no longer have one (PDF removed)
+    for (const b of books) {
+      if (!b.cover && covers[b.id]) { URL.revokeObjectURL(covers[b.id]); delete covers[b.id]; delete coverPaths[b.id]; }
+    }
+  }
+  async function refreshCovers() {
+    for (const b of books) {
+      if (!b.cover || coverPaths[b.id] === b.cover.path) continue;
+      try { covers[b.id] = URL.createObjectURL(await api.getBookFile(b.cover.path)); coverPaths[b.id] = b.cover.path; }
+      catch (e) { /* show the icon instead */ }
+    }
+    render();
+  }
+  async function backfillCovers() {  // books with a PDF but no cover yet (uploaded before covers existed)
+    let changed = false;
+    for (const b of books) {
+      if (b.cover || !b.files || !b.files.pdf || triedCover.has(b.id)) continue;
+      triedCover.add(b.id);
+      try {
+        const blob = await api.getBookFile(b.files.pdf.path);
+        await api.setBookCover(b.id, await renderCover(await blob.arrayBuffer()));
+        changed = true;
+      } catch (e) { /* no cover; try again next visit */ }
+    }
+    if (changed) { books = await api.listBooks(); await refreshCovers(); }
+  }
+
   async function load() {
     try { books = await api.listBooks(); status(''); }
     catch (e) { status(e.message || 'Could not load your books.', true); books = []; }
+    pruneCovers();
     render();
+    refreshCovers().then(backfillCovers);
   }
 
   // ----- add / edit book -----
@@ -174,7 +223,13 @@
     const file = $('fileIn').files[0], job = pendingUpload; $('fileIn').value = '';
     if (!file || !job) return;
     status('Uploading ' + file.name + ' (' + size(file.size) + ')… this can take a minute for large files.');
-    try { await api.uploadBookFile(job.id, job.kind, file); await load(); status('Uploaded ' + file.name + '.'); }
+    try {
+      await api.uploadBookFile(job.id, job.kind, file);
+      if (job.kind === 'pdf') {
+        try { await api.setBookCover(job.id, await renderCover(await file.arrayBuffer())); } catch (e) { /* the book works without a cover */ }
+      }
+      await load(); status('Uploaded ' + file.name + '.');
+    }
     catch (err) { status(err.message || 'Upload failed.', true); }
   });
   function saveBlob(blob, name) {
