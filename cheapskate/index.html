@@ -897,7 +897,6 @@
         <button type="button" class="tab" data-view="pricecheck">Price Checker</button>
       </div>
       <div class="toolbar-actions">
-        <a class="btn-ghost" href="../" style="text-decoration:none;display:inline-block">← Projects</a>
         <button type="button" class="btn-ghost" id="syncBtn"></button>
         <button type="button" class="btn-ghost on-board" id="shareBtn">Share</button>
         <button type="button" class="btn-ghost on-board" id="exportBtn">Export JSON</button>
@@ -1866,54 +1865,57 @@
       if (!file) return;
       try {
         const backup = JSON.parse(await file.text());
-        if (!backup || backup.format !== 'cheapskate-cheat-sheet-promotions' || backup.version !== 1 ||
-            !Array.isArray(backup.promotions) || backup.promotions.length > 1000 ||
-            !backup.promotions.every(validBackupPromotion)) {
+        if (!backup || backup.format !== 'cheapskate-cheat-sheet-promotions' || !Array.isArray(backup.promotions)) {
           throw new Error('This is not a valid promotion backup file.');
         }
-        if (backup.promotions.length === 0) { showToast('This backup contains no promotions.'); return; }
+        const today = formatISODate(new Date());
+        const text = v => (typeof v === 'string' && v.trim()) ? v.trim() : null;
+        const items = [];
+        let expired = 0, unreadable = 0;
+        for (const promo of backup.promotions) {
+          // Be forgiving: older exports can lack a rank, so default it instead of dropping the deal.
+          if (!promo || !text(promo.shop) || !text(promo.item) || !text(promo.discount) ||
+              typeof promo.endDate !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(promo.endDate)) { unreadable++; continue; }
+          const endDate = promo.endDate.slice(0, 10);
+          if (endDate < today) { expired++; continue; }  // the board deletes expired deals anyway
+          const rank = Number(promo.rank);
+          items.push({
+            data: {
+              shop: promo.shop, item: promo.item, discount: promo.discount,
+              category: promo.category || null,
+              startDate: typeof promo.startDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(promo.startDate) ? promo.startDate.slice(0, 10) : null,
+              endDate, notes: promo.notes || null, redeemed: !!promo.redeemed,
+              rank: Number.isInteger(rank) && rank >= 1 && rank <= 5 ? rank : 3,
+              createdAt: promo.createdAt,
+            },
+            dataUrl: promo.screenshot && typeof promo.screenshot.dataUrl === 'string' ? promo.screenshot.dataUrl : null,
+          });
+        }
+        if (items.length === 0) {
+          showToast('Nothing to import' + (expired ? ' (' + expired + ' expired deal' + (expired === 1 ? '' : 's') + ' skipped).' : '.'));
+          return;
+        }
         const ok = await askConfirm(
-          'Import ' + backup.promotions.length + ' promotions? They will be added alongside your current promotions.',
+          'Import ' + items.length + ' promotion' + (items.length === 1 ? '' : 's') + '? They will be added alongside your current promotions.' +
+          (expired ? ' ' + expired + ' expired deal' + (expired === 1 ? ' is' : 's are') + ' skipped.' : ''),
           'Import'
         );
         if (!ok) return;
 
         importBtn.disabled = true;
         importBtn.textContent = 'Importing…';
-        let imported = 0;
-        for (const promo of backup.promotions) {
-          let imageKey = null;
-          if (promo.screenshot && typeof promo.screenshot.dataUrl === 'string') {
-            if (!/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(promo.screenshot.dataUrl)) {
-              throw new Error('A screenshot in the backup is invalid.');
-            }
-            const imageBlob = await fetch(promo.screenshot.dataUrl).then(response => response.blob());
-            const uploaded = await api('/api/screenshots', {
-              method: 'POST', headers: { 'Content-Type': imageBlob.type }, body: imageBlob,
-            });
-            imageKey = uploaded.key;
+        for (const it of items) {
+          if (!it.dataUrl) continue;
+          if (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(it.dataUrl)) {
+            try { it.blob = await fetch(it.dataUrl).then(response => response.blob()); } catch (e) { /* import without screenshot */ }
           }
-          await api('/api/promotions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              shop: promo.shop,
-              item: promo.item,
-              discount: promo.discount,
-              category: promo.category || null,
-              startDate: promo.startDate || null,
-              endDate: promo.endDate,
-              notes: promo.notes || null,
-              redeemed: !!promo.redeemed,
-              rank: Number(promo.rank),
-              createdAt: promo.createdAt,
-              imageKey,
-            }),
-          });
-          imported++;
+          delete it.dataUrl;
         }
+        const result = await window.localApi.importPromotions(items);
         await loadPromotions();
-        showToast('Imported ' + imported + ' promotion' + (imported === 1 ? '' : 's') + '.');
+        const extra = result.notes.length + unreadable;
+        showToast('Imported ' + result.added + ' promotion' + (result.added === 1 ? '' : 's') +
+          (expired ? ', ' + expired + ' expired skipped' : '') + (extra ? ', ' + extra + ' with problems' : '') + '.');
       } catch (err) {
         await loadPromotions().catch(() => {});
         showToast(err && err.message ? err.message : 'Could not import this backup.');

@@ -173,6 +173,73 @@
   }
 
   // ---- promotions ----
+  function makePromo(body) {
+    const p = {
+      shop: text(body.shop, 160, true), item: text(body.item, 240, true), discount: text(body.discount, 160, true),
+      category: text(body.category, 120) ?? null, startDate: date(body.startDate), endDate: date(body.endDate),
+      notes: text(body.notes, 2000) ?? null, imageKey: text(body.imageKey, 500) ?? null,
+      redeemed: body.redeemed === true, rank: Number(body.rank),
+    };
+    const created = Number(body.createdAt);
+    if (!p.shop || !p.item || !p.discount || !p.endDate || p.startDate === undefined ||
+        !Number.isInteger(p.rank) || p.rank < 1 || p.rank > 5) throw fail('Invalid promotion.', 400);
+    p.id = uuid();
+    p.createdAt = Number.isFinite(created) && created > 0 ? created : Date.now();
+    return p;
+  }
+
+  // Commit many files to the data branch in ONE commit (Git Data API): far fewer requests than one
+  // commit per file, so a big import does not hit GitHub's rate limits.
+  async function ghPutMany(files, message) {
+    await ensureBranch();
+    const blobs = [];
+    let next = 0;
+    async function worker() {
+      while (next < files.length) {
+        const f = files[next++];
+        const res = await gh('/git/blobs', { method: 'POST', body: JSON.stringify({ content: b64(new Uint8Array(await f.blob.arrayBuffer())), encoding: 'base64' }) });
+        if (!res.ok) throw fail('GitHub error ' + res.status + ' while uploading a screenshot.', res.status);
+        blobs.push({ path: f.path, mode: '100644', type: 'blob', sha: (await res.json()).sha });
+      }
+    }
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const head = await (await gh('/git/ref/heads/' + DATA_BRANCH)).json();
+      const commit = await (await gh('/git/commits/' + head.object.sha)).json();
+      const tree = await gh('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: commit.tree.sha, tree: blobs }) });
+      if (!tree.ok) throw fail('GitHub error ' + tree.status + ' while saving screenshots.', tree.status);
+      const made = await gh('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: (await tree.json()).sha, parents: [head.object.sha] }) });
+      if (!made.ok) throw fail('GitHub error ' + made.status + ' while saving screenshots.', made.status);
+      const moved = await gh('/git/refs/heads/' + DATA_BRANCH, { method: 'PATCH', body: JSON.stringify({ sha: (await made.json()).sha }) });
+      if (moved.ok) return;
+      if (moved.status !== 422 && moved.status !== 409) throw fail('GitHub error ' + moved.status + ' while saving screenshots.', moved.status);
+    }
+    throw fail('Could not save screenshots: GitHub data changed too often. Try again.', 409);
+  }
+
+  // Bulk import: items = [{ data: {promotion fields}, blob?: Blob }]. Returns { added, notes: [..] }.
+  async function importPromotions(items) {
+    if (!syncing()) throw fail('Please sign in.', 401);
+    const files = [], promos = [], notes = [];
+    for (const it of items) {
+      let imageKey = null;
+      const blob = it.blob;
+      if (blob) {
+        const ext = EXTENSIONS[(blob.type || '').split(';')[0].toLowerCase()];
+        if (ext && blob.size && blob.size <= 5 * 1024 * 1024) imageKey = uuid() + '.' + ext;
+        else notes.push('a screenshot was left out (unsupported type or over 5 MB)');
+      }
+      try {
+        promos.push(makePromo(Object.assign({}, it.data, { imageKey })));
+        if (imageKey) files.push({ path: 'data/images/' + imageKey, blob, key: imageKey });
+      } catch (e) { notes.push('a deal without the required details was skipped'); }
+    }
+    for (let i = 0; i < files.length; i += 40) await ghPutMany(files.slice(i, i + 40), 'Import screenshots');
+    for (const f of files) { try { await idbRun('readwrite', s => s.put(f.blob, f.key)); } catch (e) { /* cache only */ } }
+    if (promos.length) await ghMutate('data/promotions.json', list => [list.concat(promos), 0], 'Import promotions');
+    return { added: promos.length, notes };
+  }
+
   async function promotions(method, id, body, query) {
     const removedImages = [];
     const result = await mutate('promos', list => {
@@ -184,17 +251,7 @@
         return [kept, kept.slice().sort((a, b) => b.createdAt - a.createdAt)];
       }
       if (method === 'POST') {
-        const p = {
-          shop: text(body.shop, 160, true), item: text(body.item, 240, true), discount: text(body.discount, 160, true),
-          category: text(body.category, 120) ?? null, startDate: date(body.startDate), endDate: date(body.endDate),
-          notes: text(body.notes, 2000) ?? null, imageKey: text(body.imageKey, 500) ?? null,
-          redeemed: body.redeemed === true, rank: Number(body.rank),
-        };
-        const created = Number(body.createdAt);
-        if (!p.shop || !p.item || !p.discount || !p.endDate || p.startDate === undefined ||
-            !Number.isInteger(p.rank) || p.rank < 1 || p.rank > 5) throw fail('Invalid promotion.', 400);
-        p.id = uuid();
-        p.createdAt = Number.isFinite(created) && created > 0 ? created : Date.now();
+        const p = makePromo(body);
         return [list.concat([p]), p];
       }
       if (method === 'PATCH') {
@@ -398,5 +455,5 @@
     await ghMutate('data/vault.json', list => [list.filter(e => e.id !== id), 0], 'Remove account');
   }
 
-  window.localApi = { login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
+  window.localApi = { importPromotions, login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
 })();

@@ -2,9 +2,25 @@
 // Signed in (via any page on this site) -> does nothing. Signed out -> full-screen login on top of the
 // page; after signing in the page reloads, so a direct link lands on the page that was requested.
 (function () {
-  var base = document.currentScript.src.replace(/[^/]*$/, '');
+  var me = document.currentScript;
+  var base = me.src.replace(/[^/]*$/, '');
+  // Signed-in subpages get a slim bar with the way back to the projects, always top left.
+  function addNav() {
+    var css = document.createElement('style');
+    css.textContent =
+      '#siteNav{position:fixed;top:0;left:0;right:0;height:40px;z-index:40;display:flex;align-items:center;padding:0 10px;' +
+      'background:#25231f;box-sizing:border-box}' +
+      '#siteNav a{color:#fbf8f1;text-decoration:none;font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif;padding:6px 10px;border-radius:8px}' +
+      '#siteNav a:hover,#siteNav a:focus-visible{background:rgba(255,255,255,.16);outline:none}' +
+      'body{padding-top:40px!important;box-sizing:border-box}';
+    document.head.appendChild(css);
+    var nav = document.createElement('nav');
+    nav.id = 'siteNav';
+    nav.innerHTML = '<a href="' + base + '">← Projects</a>';
+    document.body.insertBefore(nav, document.body.firstChild);
+  }
   function boot() {
-    if (window.localApi.syncing()) return;
+    if (window.localApi.syncing()) { if (!me.hasAttribute('data-hub')) addNav(); return; }
     var css = document.createElement('style');
     css.textContent =
       '#siteLogin{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:16px;overflow:auto;' +
