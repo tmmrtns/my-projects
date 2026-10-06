@@ -57,9 +57,16 @@
  },
  {
   "id": "370a5f11-9fcf-425f-8f65-c0e3221649ad",
-  "files": {},
+  "files": {
+   "pdf": {
+    "path": "data/books/370a5f11-9fcf-425f-8f65-c0e3221649ad/pdf/mux7w6aj-The_Origami_Leader (2).pdf",
+    "name": "The_Origami_Leader (2).pdf",
+    "size": 5113032,
+    "at": 1791323732345
+   }
+  },
   "createdAt": 1791323717352,
-  "updatedAt": 1791323717352,
+  "updatedAt": 1791323732673,
   "title": "The Origami Leader",
   "author": "Tom Mertens",
   "notes": null
