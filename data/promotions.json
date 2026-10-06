@@ -12,5 +12,19 @@
   "rank": 3,
   "id": "f7f33443-ae64-4d5c-8ba2-e1bfab48c875",
   "createdAt": 1791113831284
+ },
+ {
+  "shop": "Aldi NL",
+  "item": "Salsiccia",
+  "discount": "2,49 voor 300g",
+  "category": null,
+  "startDate": "2026-10-05",
+  "endDate": "2026-10-11",
+  "notes": null,
+  "imageKey": "cff272b2-7280-4ff9-82f7-07086041c80f.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "b44f612a-a4f5-48ba-b82d-d8a337f13324",
+  "createdAt": 1791113785957
  }
 ]
