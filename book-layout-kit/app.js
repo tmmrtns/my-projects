@@ -481,6 +481,14 @@ function toKitJson(files, cfgIn) {
   const cv = Object.assign({}, c.cover);
   cv.image_position = `${cv.image_x}% ${cv.image_y}%`;
   delete cv.image_x; delete cv.image_y;
+  if (cv.subtitle_source === 'auto') delete cv.subtitle_source;
+  if (cv.back_subtitle_source === 'none') delete cv.back_subtitle_source;
+  const DEF = { band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 };
+  for (const k of Object.keys(DEF)) if (cv[k] === DEF[k] || cv[k] == null) delete cv[k];
+  if (cv.back_shade !== false) delete cv.back_shade;
+  if (!cv.back_image) { delete cv.back_image_x; delete cv.back_image_y; }
+  cv.hide = Object.assign({}, cv.hide); if (!Object.keys(cv.hide).length) delete cv.hide;
+  if (cv.band_shade !== false) delete cv.band_shade;
   if (cv.style === 'auto') delete cv.style;
   for (const k of Object.keys(cv)) if (cv[k] === '' || (Array.isArray(cv[k]) && !cv[k].length)) delete cv[k];
   j.cover = cv;
@@ -690,10 +698,24 @@ function initForm() {
   })));
   $('#f-size').addEventListener('input', e => { S.cfg.font_size = +e.target.value; fillForm(); changed(); });
   $$('[data-photo]').forEach(el => el.addEventListener('input', () => { S.cfg.photos[el.dataset.photo] = +el.value; el.nextElementSibling.value = el.value + ' mm'; changed(); }));
-  $$('[data-col]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.col] = el.value; el.parentElement.querySelector('code').textContent = el.value; changed(); }));
+  const hexOf = v => { v = String(v || '').trim().replace(/^#/, ''); if (/^[0-9a-f]{3}$/i.test(v)) v = [...v].map(x => x + x).join(''); return /^[0-9a-f]{6}$/i.test(v) ? '#' + v.toLowerCase() : ''; };
+  $$('[data-col]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.col] = el.value; el.parentElement.querySelector('.hex').value = el.value; el.parentElement.querySelector('.hex').classList.remove('bad'); changed(); }));
+  // a colour code can be typed or pasted: #2f4858, 2f4858 or #fa0
+  $$('[data-hex]').forEach(el => {
+    const picker = () => el.parentElement.querySelector('[data-col]');
+    el.addEventListener('input', () => {
+      const h = hexOf(el.value); el.classList.toggle('bad', !h && el.value.trim() !== '');
+      if (h) { picker().value = h; S.cfg.cover[el.dataset.hex] = h; changed(); }
+    });
+    el.addEventListener('blur', () => { el.value = picker().value; el.classList.remove('bad'); });
+    el.addEventListener('paste', () => setTimeout(() => el.dispatchEvent(new Event('input')), 0));
+  });
   $$('[data-ck]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.ck] = el.value; changed(); }));
   $$('[data-clines]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.clines] = el.value.split('\n').map(s => s.trim()).filter(Boolean); changed(); }));
   $$('[data-cparas]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.cparas] = el.value.split(/\n\s*\n/).map(s => s.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean); changed(); }));
+  $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cs] = el.value; changed(); }));
+  $$('[data-hide]').forEach(el => el.addEventListener('change', () => { const h = S.cfg.cover.hide = Object.assign({}, S.cfg.cover.hide); if (el.checked) delete h[el.dataset.hide]; else h[el.dataset.hide] = true; changed(); }));
+  $$('[data-cb]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cb] = el.checked; changed(); }));
   $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.pos] = +el.value; el.nextElementSibling.value = el.value + '%'; changed(); }));
 }
 function fillForm() {
@@ -711,14 +733,19 @@ function fillForm() {
   $('#f-size').value = G.FS; $('#o-size').value = G.FS + ' pt' + (c.font_size ? '' : ' (auto)');
   $('#pageInfo').textContent = `${G.W} × ${G.H} mm · text block ${G.TW.toFixed(0)} × ${G.TH.toFixed(0)} mm · margins inner ${G.inner}, outer ${G.outer}, top ${G.top}, bottom ${G.bottom} mm`;
   $$('[data-photo]').forEach(el => { el.value = c.photos[el.dataset.photo] || el.min; el.nextElementSibling.value = el.value + ' mm'; });
-  $$('[data-col]').forEach(el => { el.value = c.cover[el.dataset.col] || '#000000'; el.parentElement.querySelector('code').textContent = el.value; });
+  $$('[data-col]').forEach(el => { el.value = c.cover[el.dataset.col] || '#000000'; const hx = el.parentElement.querySelector('.hex'); if (document.activeElement !== hx) hx.value = el.value; });
   $$('[data-ck]').forEach(el => { if (document.activeElement !== el) el.value = c.cover[el.dataset.ck] || ''; });
   $$('[data-clines]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.clines] || []).join('\n'); });
   $$('[data-cparas]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.cparas] || []).join('\n\n'); });
-  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? 50; el.nextElementSibling.value = el.value + '%'; });
+  $$('[data-cs]').forEach(el => { el.value = c.cover[el.dataset.cs] || (el.dataset.cs === 'back_subtitle_source' ? 'none' : 'auto'); });
+  $$('[data-hide]').forEach(el => { el.checked = !(c.cover.hide || {})[el.dataset.hide]; });
+  $$('[data-cb]').forEach(el => { el.checked = c.cover[el.dataset.cb] !== false; });
+  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + '%'; });
   $$('#bandSwatches .sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toLowerCase() === String(c.cover.band).toLowerCase())));
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
+  const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
+  $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   const st = BK.coverStyle(c);
   $('#coverStyleHint').textContent = c.cover.style === 'photo' && !a ? 'Photo style needs a cover photo; until you add one the classic bands are used.'
     : (c.cover.style === 'auto' ? `Automatic picks ${a ? 'the photo style because a photo is set' : 'classic bands because no photo is set'}.` : '');
@@ -1140,6 +1167,15 @@ $('#coverIn').addEventListener('change', async e => {
   if (S.cfg.cover.style === 'classic') S.cfg.cover.style = 'photo';
   fillForm(); renderAssets(); changed(); setView('cover');
 });
+$('#backIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const a = await addImage(f.name, f);
+  if (!a) return;
+  S.cfg.cover.back_image = f.name;
+  fillForm(); renderAssets(); changed(); setView('cover');
+});
+$('#backClear').addEventListener('click', () => { S.cfg.cover.back_image = ''; fillForm(); changed(); });
 $('#coverClear').addEventListener('click', () => { S.cfg.cover.image = ''; fillForm(); changed(); });
 
 // ---------------------------------------------------------------- start

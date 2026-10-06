@@ -162,6 +162,7 @@ BK.qrDataURL = function (text) {
 };
 
 // ---------------------------------------------------------------- cover
+const hexRgb = h => { h = String(h || '#000').replace('#', ''); if (h.length === 3) h = [...h].map(x => x + x).join(''); const n = parseInt(h, 16) || 0; return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 BK.coverStyle = cfg => {
   const cv = cfg.cover || {};
   const st = (cv.style && cv.style !== 'auto') ? cv.style : (cv.image ? 'photo' : 'classic');
@@ -182,50 +183,116 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const y0 = y <= 0 ? -bd.t : y, y1 = y + h >= H - 1 ? H + bd.b : y + h;
     c.fillStyle = col; c.fillRect(left, X(y0), fullW, X(y1 - y0) + 1);
   };
-  const subt = cfg.subtitle2 || cfg.subtitle || '';
+  const hide = cv.hide || {}, on = k => !hide[k];
+  // which subtitle lines of the book go on the cover
+  const src = cv.subtitle_source || 'auto', s1 = cfg.subtitle || '', s2 = cfg.subtitle2 || '';
+  const subs = (src === 'both' ? [s1, s2] : src === 'first' ? [s1] : src === 'second' ? [s2] : src === 'none' ? [] : [s2 || s1]).filter(Boolean);
+  const subt = on('subtitle') ? subs[0] || '' : '', subt2 = on('subtitle') ? subs[1] || '' : '';
   const titleLines = (cv.title_lines && cv.title_lines.length) ? cv.title_lines : [cfg.title || 'Untitled'];
   let style = BK.coverStyle(cfg);
   const asset = cv.image ? BK.findAsset(assets, cv.image) : null;
   if (style === 'photo' && !asset) style = 'classic';
   if (side === 'front') {
     if (style === 'photo') {
-      band(0, H * .27, cv.band); band(H * .73, H * .27, cv.band);
+      // the bands above and below the photo can be made thinner (band_size 100 = full, 0 = none: the photo fills the cover)
+      const bs = Math.max(0, Math.min(100, cv.band_size ?? 100)) / 100, bh = H * .27 * bs;
+      if (bh > 0) { band(0, bh, cv.band); band(H - bh, bh, cv.band); }
       const im = await BK.loadImg(asset.dataURL);
-      drawCoverFit(c, im, left, X(H * .27), fullW, X(H * .46), cv.image_x ?? 50, cv.image_y ?? 50);
-      c.fillStyle = cv.band_ink;
-      c.fillRect(left, X(H * .27 - .6), fullW, Math.max(1, .8 * pxpt));
-      c.fillRect(left, X(H * .73 + .3), fullW, Math.max(1, .8 * pxpt));
-      if (cv.label) T(cv.label, { top: X(H * .045), size: 8, spacing: .45, upper: true, color: cv.band_ink });
+      const y0 = bh > 0 ? X(bh) : -X(bd.t), y1 = bh > 0 ? X(H - bh) : X(H + bd.b);
+      drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.image_x ?? 50, cv.image_y ?? 50);
+      if (bh > 0) {
+        c.fillStyle = cv.band_ink;
+        c.fillRect(left, X(bh - .6), fullW, Math.max(1, .8 * pxpt));
+        c.fillRect(left, X(H - bh + .3), fullW, Math.max(1, .8 * pxpt));
+      }
+      // where the text now sits on the photo, a soft shade of the band colour keeps it readable
+      if (bs < 1 && cv.band_shade !== false) {
+        const rgb = hexRgb(cv.band), a = .8 * (1 - bs * .6), zone = H * .27;
+        const gt = c.createLinearGradient(0, -X(bd.t), 0, X(zone)), gb = c.createLinearGradient(0, X(H - zone), 0, X(H + bd.b));
+        gt.addColorStop(0, `rgba(${rgb},${a})`); gt.addColorStop(.55, `rgba(${rgb},${a * .55})`); gt.addColorStop(1, `rgba(${rgb},0)`);
+        gb.addColorStop(0, `rgba(${rgb},0)`); gb.addColorStop(.45, `rgba(${rgb},${a * .55})`); gb.addColorStop(1, `rgba(${rgb},${a})`);
+        c.fillStyle = gt; c.fillRect(left, -X(bd.t), fullW, X(zone + bd.t));
+        c.fillStyle = gb; c.fillRect(left, X(H - zone), fullW, X(zone + bd.b));
+      }
+      if (cv.label && on('label')) T(cv.label, { top: X(H * .045), size: 8, spacing: .45, upper: true, color: cv.band_ink });
       // title vertically centred in the box top .095H, height .15H
       const lh = 1.15, sz = 21;
       const probe = titleLines.flatMap(l => wrapCount(c, l, sz, pxpt, fam, X(W - 16), .08));
       const th = probe.length * sz * lh * pxpt;
-      T(titleLines, { top: X(H * .095) + (X(H * .15) - th) / 2, size: sz, lh, spacing: .08, upper: true, color: cv.band_ink });
-      if (subt) T(subt, { top: X(H * .755), size: 11, italic: true, color: cv.band_ink });
-      if (cfg.author) T(cfg.author, { top: X(H * .815), size: 11, spacing: .3, upper: true, color: cv.band_ink });
-      if (cv.footer) T(cv.footer, { top: X(H - H * .045) - 8 * 1.2 * pxpt, size: 8, spacing: .35, upper: true, color: cv.band_ink });
+      if (on('title')) T(titleLines, { top: X(H * .095) + (X(H * .15) - th) / 2, size: sz, lh, spacing: .08, upper: true, color: cv.band_ink });
+      if (subt) T(subt, { top: X(H * (subt2 ? .742 : .755)), size: 11, italic: true, color: cv.band_ink });
+      if (subt2) T(subt2, { top: X(H * .776), size: 9.5, color: cv.band_ink });
+      if (cfg.author && on('author')) T(cfg.author, { top: X(H * (subt2 ? .83 : .815)), size: 11, spacing: .3, upper: true, color: cv.band_ink });
+      if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .045) - 8 * 1.2 * pxpt, size: 8, spacing: .35, upper: true, color: cv.band_ink });
     } else {
       band(0, H * .295, cv.band); band(H * .295, H * .41, cv.mid); band(H * .705, H * .295 + 1, cv.band);
-      if (cv.label) T(cv.label, { top: X(H * .115), size: 9, spacing: .45, upper: true, color: cv.band_ink });
-      T(titleLines, { top: X(H * .37), size: 23, lh: 1.2, spacing: .08, upper: true, color: cv.ink });
-      c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525), X(24), Math.max(1, .7 * pxpt));
-      if (subt) T(subt, { top: X(H * .553), size: 11.5, italic: true, color: cv.ink });
-      if (cfg.author) T(cfg.author, { top: X(H * .63), size: 11, spacing: .3, upper: true, color: cv.ink });
-      if (cv.footer) T(cv.footer, { top: X(H - H * .105) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
+      if (cv.label && on('label')) T(cv.label, { top: X(H * .115), size: 9, spacing: .45, upper: true, color: cv.band_ink });
+      if (on('title')) T(titleLines, { top: X(H * .37), size: 23, lh: 1.2, spacing: .08, upper: true, color: cv.ink });
+      if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525), X(24), Math.max(1, .7 * pxpt)); }
+      if (subt) T(subt, { top: X(H * (subt2 ? .543 : .553)), size: 11.5, italic: true, color: cv.ink });
+      if (subt2) T(subt2, { top: X(H * .58), size: 9.5, color: cv.ink });
+      if (cfg.author && on('author')) T(cfg.author, { top: X(H * (subt2 ? .65 : .63)), size: 11, spacing: .3, upper: true, color: cv.ink });
+      if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .105) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
     }
   } else {
-    band(0, H * .295, cv.band); band(H * .295, H * .41, cv.mid); band(H * .705, H * .295 + 1, cv.band);
-    if (cv.quote) T(cv.quote, { top: X(H * .105), size: 13, lh: 1.3, italic: true, color: cv.band_ink, width: X(W - 32) });
+    // back: bands above and below (thinner or none), the middle in colour or a picture, text that can be moved
+    const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, bbh = H * .295 * bbs;
+    const bimg = cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
+    if (bimg) {
+      const im = await BK.loadImg(bimg.dataURL);
+      const y0 = bbh > 0 ? X(bbh) : -X(bd.t), y1 = bbh > 0 ? X(H - bbh) : X(H + bd.b);
+      drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.back_image_x ?? 50, cv.back_image_y ?? 50);
+    } else band(bbh, H - 2 * bbh + 1, cv.mid);
+    if (bbh > 0) { band(0, bbh, cv.band); band(H - bbh, bbh + 1, cv.band); }
+    const scratch = canvasOf(8, 8).getContext('2d'), panelOn = cv.back_shade !== false;
+    // a panel behind text that does not sit wholly on a plain area of the right colour
+    const panel = (x, y, w, h, col, alpha) => {
+      const pd = X(4), r = X(2); c.save(); c.globalAlpha = alpha; c.fillStyle = col; c.beginPath();
+      if (c.roundRect) c.roundRect(x - pd, y - pd, w + 2 * pd, h + 2 * pd, r); else c.rect(x - pd, y - pd, w + 2 * pd, h + 2 * pd);
+      c.fill(); c.restore();
+    };
+    const blockH = (txt, o) => { const sc = scratch; return textBlock(sc, txt, Object.assign({ pxpt, fam, align: 'center', x: 0, width: X(W - 16), top: 0, color: '#000' }, o)); };
+    const quote = cv.quote && on('quote') ? cv.quote : '';
+    if (quote) {
+      const o = { size: 13, lh: 1.3, italic: true, width: X(W - 32) }, top = X(H * (cv.back_quote_y ?? 10.5) / 100), h = blockH(quote, o);
+      const inBand = top + h <= X(bbh);
+      if (!inBand && panelOn) panel(X(16), top, X(W - 32), h, cv.band, .86);
+      T(quote, Object.assign({ top, color: cv.band_ink }, o, { x: X(W / 2) }));
+    }
+    // subtitles of the book, if the author wants them on the back as well
+    const bsrc = cv.back_subtitle_source || 'none';
+    const bsubs = (bsrc === 'both' ? [s1, s2] : bsrc === 'first' ? [s1] : bsrc === 'second' ? [s2] : bsrc === 'auto' ? [s2 || s1] : []).filter(Boolean);
+    if (bsubs.length && on('subtitle')) {
+      const top0 = X(H * (cv.back_subtitle_y ?? 22) / 100);
+      let top = top0;
+      bsubs.forEach((t, i) => {
+        const o = { size: i ? 9.5 : 11.5, lh: 1.3, italic: !i, width: X(W - 32) }, h = blockH(t, o);
+        const inBand = top + h <= X(bbh), inBandB = top >= X(H - bbh), plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
+        if (!inBand && !inBandB && !plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
+        T(t, Object.assign({ top, color: inBand || inBandB ? cv.band_ink : cv.ink }, o, { x: X(W / 2) }));
+        top += h + X(1.5);
+      });
+    }
     const blurb = (cv.blurb || []).filter(Boolean);
-    if (blurb.length) T(blurb, { top: X(H * .33), x: X(16), width: X(W - 32), align: 'justify', size: 10.2, lh: 1.42, color: cv.ink, paraGap: X(2.2) });
-    if (cv.qr) {
+    if (blurb.length && on('blurb')) {
+      const o = { x: X(16), width: X(W - 32), align: 'justify', size: 10.2, lh: 1.42, paraGap: X(2.2) }, top = X(H * (cv.back_blurb_y ?? 33) / 100), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
+      const plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
+      if (!plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
+      T(blurb, Object.assign({ top, color: cv.ink }, o));
+    }
+    if (cv.qr && on('qr')) {
       const qsrc = /^https?:\/\//i.test(cv.qr) ? BK.qrDataURL(cv.qr) : (BK.findAsset(assets, cv.qr) || {}).dataURL;
       if (qsrc) {
         const im = await BK.loadImg(qsrc);
         const qx = X(16), qs = X(30), qy = X(H) - X(12) - qs - X(4);
         c.fillStyle = '#fff'; c.fillRect(qx, qy, qs + X(4), qs + X(4));
         c.imageSmoothingEnabled = false; c.drawImage(im, qx + X(2), qy + X(2), qs, qs); c.imageSmoothingEnabled = true;
-        if (cv.qr_text) T(cv.qr_text, { top: qy + X(9), x: qx + qs + X(4) + X(5), width: X(W - 32) - qs - X(9) - (opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0), align: 'left', size: 7.5, lh: 1.35, color: cv.band_ink });
+        if (cv.qr_text) {
+          const tw = X(W - 32) - qs - X(9) - (opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0), o = { x: qx + qs + X(4) + X(5), width: tw, align: 'left', size: 7.5, lh: 1.35 }, ty = qy + X(9);
+          const inBand = qy >= X(H - bbh) && !bimg;
+          if (!inBand && panelOn) { const h = blockH(cv.qr_text, Object.assign({}, o, { x: 0 })); panel(o.x, ty, tw, h, '#ffffff', .88); }
+          T(cv.qr_text, Object.assign({ top: ty, color: inBand || !panelOn ? cv.band_ink : cv.ink }, o));
+        }
       }
     }
     // room for the ISBN barcode, lower right of the back cover (KDP puts a white box of 2 x 1.2 in there)

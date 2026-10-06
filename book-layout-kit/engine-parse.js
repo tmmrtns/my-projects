@@ -192,7 +192,7 @@ BK.defaults = () => ({
   bw_maps: false, hyphenate: true, include_covers: true, description: '',
   kdp: { on: false, paper: 'white', pages: 0, spine_text: true, barcode: true, barcode_image: '' },
   cover: { style: 'auto', band: '#2f4858', mid: '#f4efe6', ink: '#1a1a1a', band_ink: '#ffffff', label: '', footer: '',
-    title_lines: [], image: '', image_x: 50, image_y: 50, quote: '', blurb: [], qr: '', qr_text: '' },
+    title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '' },
   roles: {}
 });
 
@@ -580,6 +580,7 @@ BK.referencedImages = function (model, cfg) {
   for (const s of model.front.concat(model.back, BK.chaptersOf(model))) walk(s.blocks);
   model.parts.forEach(p => p.introParsed && walk(p.introParsed.blocks));
   if (cfg.cover && cfg.cover.image) add(cfg.cover.image, 'cover');
+  if (cfg.cover && cfg.cover.back_image) add(cfg.cover.back_image, 'cover');
   return out;
 };
 })(typeof window !== 'undefined' ? window : globalThis);
