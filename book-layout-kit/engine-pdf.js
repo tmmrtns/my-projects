@@ -837,6 +837,6 @@ BK.buildPdf = async function (model, cfg, assets, progress) {
   await tick();
   const blob = await flush(doc);
   const total = Object.values(R.finalIds).length ? Math.max(...Object.values(R.finalIds)) : 0;
-  return { blob, stable, missing: [...R.missing], indexTerms: Object.keys(R.ixPages).length, chapters: BK.chaptersOf(model).length, pageCountHint: total };
+  return { blob, stable, missing: [...R.missing], indexTerms: Object.keys(R.ixPages).length, chapters: BK.chaptersOf(model).length, pageCountHint: total, ids: Object.assign({}, R.finalIds), coverOff: R.coverOff || 0 };
 };
 })(typeof window !== 'undefined' ? window : globalThis);
