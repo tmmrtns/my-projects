@@ -117,7 +117,17 @@ function renderStructure() {
       d.innerHTML = `<div class="pl"></div><div class="pt"></div>`;
       d.querySelector('.pl').textContent = o.label || 'Part';
       d.querySelector('.pt').textContent = o.title;
-      if (o.part.hasIntro) {
+      d.classList.toggle('off', !!o.part.excludedPage);
+      { const lb = document.createElement('label'); lb.className = 'pintro';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !o.part.excludedPage;
+        lb.append(cb, document.createTextNode(' Part title page'));
+        cb.addEventListener('change', () => {
+          S.cfg.excluded = S.cfg.excluded || {};
+          if (cb.checked) delete S.cfg.excluded[o.key]; else S.cfg.excluded[o.key] = true;
+          changed(); parse();
+        });
+        d.append(lb); }
+      if (o.part.hasIntro && !o.part.skip) {
         const lb = document.createElement('label'); lb.className = 'pintro';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !o.part.introOff;
         lb.append(cb, document.createTextNode(' Introduction page'));
@@ -133,8 +143,15 @@ function renderStructure() {
     const s = o.sec;
     const row = document.createElement('div');
     row.className = 'ol-sec' + (S.cfg.roles[s.key] && S.cfg.roles[s.key] !== s.guessed ? ' changed' : '');
-    const no = s.role === 'chapter' || s.role === 'appendix' ? BK.chapNo(s.num, S.cfg) || '·' : (s.role === 'interlude' ? '*' : s.role === 'plain' ? '–' : (s.role === 'front' ? 'F' : 'B'));
-    row.innerHTML = `<span class="no"></span><div class="t"><div></div><div class="s"></div></div><select aria-label="Role"></select>`;
+    const no = s.excluded ? '–' : s.role === 'chapter' || s.role === 'appendix' ? BK.chapNo(s.num, S.cfg) || '·' : (s.role === 'interlude' ? '*' : s.role === 'plain' ? '–' : (s.role === 'front' ? 'F' : 'B'));
+    row.classList.toggle('off', !!s.excluded);
+    row.innerHTML = `<input type="checkbox" class="inc" title="Include in the book" aria-label="Include in the book"><span class="no"></span><div class="t"><div></div><div class="s"></div></div><select aria-label="Role"></select>`;
+    { const inc = row.querySelector('.inc'); inc.checked = !s.excluded;
+      inc.addEventListener('change', () => {
+        S.cfg.excluded = S.cfg.excluded || {};
+        if (inc.checked) delete S.cfg.excluded[s.key]; else S.cfg.excluded[s.key] = true;
+        changed(); parse();
+      }); }
     row.querySelector('.no').textContent = no;
     row.querySelector('.t div').textContent = s.title || '(untitled)';
     row.querySelector('.s').textContent = [s.sub, s.words.toLocaleString('en') + (s.words === 1 ? ' word' : ' words'), s.notes.length ? s.notes.length + ' notes' : ''].filter(Boolean).join(' · ');
@@ -459,7 +476,7 @@ function parsePos(p) {
 function fromKitJson(j) {
   const c = BK.defaults();
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang', 'output', 'page', 'font_size', 'opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'scene_break',
-    'toc', 'part_minitoc', 'dedication', 'epigraph', 'colophon', 'labels', 'index', 'index_sort', 'index_exclude', 'index_particles', 'bw_maps', 'description', 'extra_epub_css']) if (j[k] !== undefined) c[k] = j[k];
+    'toc', 'part_minitoc', 'parts_in_book', 'excluded', 'dedication', 'epigraph', 'colophon', 'labels', 'index', 'index_sort', 'index_exclude', 'index_particles', 'bw_maps', 'description', 'extra_epub_css']) if (j[k] !== undefined) c[k] = j[k];
   if (j.chapter_numbers === false && !j.chapter_number_style) c.chapter_number_style = 'none';
   if (j.running_heads) c.running_heads = Object.assign(c.running_heads, j.running_heads);
   if (j.photos) c.photos = Object.assign(c.photos, j.photos);
@@ -481,7 +498,7 @@ function toKitJson(files, cfgIn) {
   j.page = c.page;
   if (c.font_size) j.font_size = c.font_size;
   if (c.font !== 'ebgaramond') j.font = { family: BK.FONTS[c.font].name, prefix: BK.FONTS[c.font].prefix };
-  for (const k of ['opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break', 'toc', 'part_minitoc', 'index', 'bw_maps', 'photos']) j[k] = c[k];
+  for (const k of ['opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break', 'toc', 'part_minitoc', 'parts_in_book', 'index', 'bw_maps', 'photos']) j[k] = c[k];
   if (j.chapter_word !== 'hide') delete j.chapter_word;
   if (c.index_sort) j.index_sort = c.index_sort;
   if (c.index_exclude && c.index_exclude.length) j.index_exclude = c.index_exclude;
@@ -612,7 +629,7 @@ async function importEntries(entries) {
     S.md = md; S.isSample = false;
     if (roles) S.cfg.roles = roles;
     else if (!cfg) {
-      S.cfg.roles = {}; S.cfg.part_intro_off = {};
+      S.cfg.roles = {}; S.cfg.part_intro_off = {}; S.cfg.excluded = {};
       if (S.isSampleCfg) { const d = BK.defaults(); S.cfg = merge(d, { lang: S.cfg.lang }); S.isSampleCfg = false; }
       if (meta.title && !S.cfg.title) S.cfg.title = meta.title;
       if (meta.subtitle && !S.cfg.subtitle) S.cfg.subtitle = meta.subtitle;
@@ -1424,7 +1441,7 @@ $('#buildEpubBtn').addEventListener('click', () => build('epub'));
 // ---------------------------------------------------------------- exports
 function kitFiles(mdIn, cfgIn) {
   const md = mdIn == null ? S.md : mdIn, cfg = cfgIn || S.cfg;
-  const m = BK.parse(md, cfg);
+  const m = BK.parse(md, Object.assign({}, cfg, { excluded: {} }));
   const files = new Map(), j = { front: [], parts: [], chapters: [], back: [], appendix_parts: [] };
   const head = s => `## ${s.role === 'interlude' ? '* ' : s.role === 'plain' ? '~ ' : ''}${s.rawTitle}${s.sub ? ' | ' + s.sub : ''}\n`;
   if (m.front.length) { files.set('front.md', m.front.map(s => head(s) + s.body.replace(/^\n+/, '\n')).join('\n').trim() + '\n'); j.front.push('front.md'); }
@@ -1451,7 +1468,7 @@ async function projectZip(md, cfg, assets) {
   return z.generateAsync({ type: 'blob', compression: 'DEFLATE' });
 }
 async function imagesZip(md, cfg, assets) {
-  const m = BK.parse(md, cfg), z = new JSZip();
+  const m = BK.parse(md, Object.assign({}, cfg, { excluded: {} })), z = new JSZip();
   let n = 0;
   for (const src of BK.referencedImages(m, cfg).keys()) { const a = BK.findAsset(assets, src); if (a) { z.file(src, a.dataURL.split(',')[1], { base64: true }); n++; } }
   if (!n) for (const [name, a] of assets) { z.file(name, a.dataURL.split(',')[1], { base64: true }); n++; }
@@ -1540,7 +1557,7 @@ window.BKAPP = {
   async useExtract(r) {
     for (const im of r.images || []) await addImage(im.name, im.blob);
     if (S.isSampleCfg || S.isSample) { S.cfg = merge(BK.defaults(), { lang: S.cfg.lang }); S.isSampleCfg = false; }
-    S.md = r.md; S.isSample = false; S.cfg.roles = {}; S.cfg.part_intro_off = {};
+    S.md = r.md; S.isSample = false; S.cfg.roles = {}; S.cfg.part_intro_off = {}; S.cfg.excluded = {};
     const m = r.meta || {};
     for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (m[k]) S.cfg[k] = m[k];
     if (m.colophon && m.colophon.length) S.cfg.colophon = m.colophon;

@@ -123,7 +123,9 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .ol-part:first-child { margin-top: 0; }
 .ol-part .pl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .ol-part .pt { font: italic 500 18px/1.2 var(--f-display); }
-.ol-sec { display: grid; grid-template-columns: 2.4em 1fr auto; gap: 10px; align-items: center; padding: 6px 4px; border-radius: 5px; }
+.ol-sec { display: grid; grid-template-columns: auto 2.4em 1fr auto; gap: 10px; align-items: center; padding: 6px 4px; border-radius: 5px; }
+.ol-sec.off .no, .ol-sec.off .t, .ol-sec.off select, .ol-part.off .pl, .ol-part.off .pt { opacity: .4; text-decoration: line-through; }
+.ol-sec .inc { margin: 0; }
 .ol-sec:hover { background: var(--sunk); }
 .ol-sec .no { font: 500 12px var(--f-mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .ol-sec .t { min-width: 0; }
@@ -568,6 +570,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <h2>Contents, index and text</h2>
           <div class="checks">
             <label class="check"><input type="checkbox" data-b="toc"> Contents page</label>
+            <label class="check"><input type="checkbox" data-b="parts_in_book"> Part title pages and introductions</label>
             <label class="check"><input type="checkbox" data-b="part_minitoc"> Mini contents in parts</label>
             <label class="check"><input type="checkbox" data-b="index"> Index of bold names</label>
             <label class="check"><input type="checkbox" data-b="index_sort"> Sort by surname</label>

@@ -237,7 +237,7 @@ BK.buildEpub = async function (model, cfg, assets, progress) {
   model.front.forEach(s => nav.push(secPage(s, 'stitle')));
   for (const p of model.parts) {
     let holder = nav;
-    if (p.pid) {
+    if (p.pid && !p.skip) {
       const t = (p.label ? p.label + ' – ' : '') + p.title;
       E.ctx = { sid: p.pid };
       page(p.pid + '.xhtml', t, `<section class="partpage" id="${p.pid}">${p.label ? `<div class="partlabel">${esc(p.label)}</div>` : ''}<h1 class="parttitle">${esc(p.title)}</h1><div class="partsub">${runsHtml(p.subRuns, E.ctx)}</div></section>`, p.pid);
