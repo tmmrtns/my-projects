@@ -26,5 +26,19 @@
   "rank": 3,
   "id": "b44f612a-a4f5-48ba-b82d-d8a337f13324",
   "createdAt": 1791113785957
+ },
+ {
+  "shop": "Aronde",
+  "item": "Hazenfillet",
+  "discount": "24,70 per kg",
+  "category": null,
+  "startDate": "2026-10-01",
+  "endDate": "2026-11-30",
+  "notes": null,
+  "imageKey": "326299e4-9d0b-4b29-a27c-659f45830f1c.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "375a5379-88a0-431a-9bf5-d8467e4cdaa3",
+  "createdAt": 1791112239810
  }
 ]
