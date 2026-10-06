@@ -100,5 +100,14 @@
    "path": "data/books/7cdcec08-92c3-4601-b04d-5112cae1466c/cover/mux86hh6.jpg",
    "at": 1791324207680
   }
+ },
+ {
+  "id": "4faf761c-bd12-4575-aa51-58ad6fc7f8a0",
+  "files": {},
+  "createdAt": 1791324229199,
+  "updatedAt": 1791324229199,
+  "title": "origami",
+  "author": null,
+  "notes": null
  }
 ]
