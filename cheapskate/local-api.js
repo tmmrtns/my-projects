@@ -290,7 +290,7 @@
 
   // ---- My Books library: data/books.json + files under data/books/<id>/<kind>/ ----
   const BOOKS_FILE = 'data/books.json';
-  const KINDS = ['pdf', 'epub', 'kdp'];
+  const KINDS = ['pdf', 'epub', 'kdp', 'source'];  // source = zip with manuscript, images, ...
   const encPath = p => p.split('/').map(encodeURIComponent).join('/');
   const safeName = n => (n || 'file').replace(/[^\w.\- ()]+/g, '_').slice(0, 120);
   const bookFields = b => ({
@@ -331,7 +331,8 @@
     requireSync();
     if (!KINDS.includes(kind)) throw fail('Unknown file type.', 400);
     if (!file.size) throw fail('That file is empty.', 400);
-    if (file.size > 50 * 1024 * 1024) throw fail('Files can be at most 50 MB.', 413);
+    const maxMb = kind === 'source' ? 80 : 50;
+    if (file.size > maxMb * 1024 * 1024) throw fail('Files of this type can be at most ' + maxMb + ' MB.', 413);
     const name = safeName(file.name);
     const path = 'data/books/' + bookId + '/' + kind + '/' + Date.now().toString(36) + '-' + name;
     await ghPutMany([{ path, blob: file }], 'Upload ' + kind + ' for book');
@@ -349,15 +350,32 @@
   }
   async function deleteBookFile(bookId, kind) {
     requireSync();
-    let old = null;
+    const olds = [];
     await ghMutate(BOOKS_FILE, list => {
       const cur = list.find(b => b.id === bookId);
       if (!cur || !cur.files || !cur.files[kind]) return [list, 0];
-      old = cur.files[kind].path;
+      olds.push(cur.files[kind].path);
       const files = Object.assign({}, cur.files); delete files[kind];
-      return [list.map(b => b.id === bookId ? Object.assign({}, cur, { files, updatedAt: Date.now() }) : b), 0];
+      const next = Object.assign({}, cur, { files, updatedAt: Date.now() });
+      if (kind === 'pdf' && cur.cover) { olds.push(cur.cover.path); delete next.cover; }  // the cover came from the PDF
+      return [list.map(b => b.id === bookId ? next : b), 0];
     }, 'Remove ' + kind + ' file');
-    if (old) await deleteRepoFile(old);
+    for (const path of olds) await deleteRepoFile(path);
+  }
+  // Cover image (first page of the PDF, rendered in the browser as a small JPEG).
+  async function setBookCover(bookId, blob) {
+    requireSync();
+    if (!blob || !blob.size || blob.size > 2 * 1024 * 1024) throw fail('Invalid cover image.', 400);
+    const path = 'data/books/' + bookId + '/cover/' + Date.now().toString(36) + '.jpg';
+    await ghPutMany([{ path, blob }], 'Update book cover');
+    let old = null;
+    await ghMutate(BOOKS_FILE, list => {
+      const cur = list.find(b => b.id === bookId);
+      if (!cur) throw fail('Book not found.', 404);
+      old = cur.cover ? cur.cover.path : null;
+      return [list.map(b => b.id === bookId ? Object.assign({}, cur, { cover: { path, at: Date.now() } }) : b), 0];
+    }, 'Set cover');
+    if (old && old !== path) await deleteRepoFile(old);
   }
   async function deleteBook(bookId) {
     requireSync();
@@ -365,14 +383,14 @@
     await ghMutate(BOOKS_FILE, list => {
       const cur = list.find(b => b.id === bookId);
       if (!cur) return [list, 0];
-      paths = Object.values(cur.files || {}).map(f => f.path);
+      paths = Object.values(cur.files || {}).map(f => f.path).concat(cur.cover ? [cur.cover.path] : []);
       return [list.filter(b => b.id !== bookId), 0];
     }, 'Delete book');
     for (const path of paths) await deleteRepoFile(path);
   }
   async function getBookFile(path) { // -> Blob
     requireSync();
-    if (!/^data\/books\/[\w-]+\/(pdf|epub|kdp)\//.test(path)) throw fail('Not found', 404);
+    if (!/^data\/books\/[\w-]+\/(pdf|epub|kdp|source|cover)\//.test(path)) throw fail('Not found', 404);
     await ensureBranch();
     const res = await gh('/contents/' + encPath(path) + '?ref=' + DATA_BRANCH, { headers: { 'Accept': 'application/vnd.github.raw+json' } });
     if (!res.ok) throw fail('Could not download the file (' + res.status + ').', res.status);
@@ -546,5 +564,5 @@
     await ghMutate('data/vault.json', list => [list.filter(e => e.id !== id), 0], 'Remove account');
   }
 
-  window.localApi = { listBooks, saveBook, uploadBookFile, deleteBookFile, deleteBook, getBookFile, importPromotions, login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
+  window.localApi = { setBookCover, listBooks, saveBook, uploadBookFile, deleteBookFile, deleteBook, getBookFile, importPromotions, login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
 })();
