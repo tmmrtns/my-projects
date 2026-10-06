@@ -1,0 +1,785 @@
+<!doctype html><html><head>
+<script src="../login.js"></script>
+<meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Book Layout Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital@0;1&family=Cormorant+Garamond:ital@0;1&family=Libre+Baskerville:ital@0;1&family=Lora:ital@0;1&family=Source+Serif+4:ital@0;1&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a workbench (left: manuscript and settings, tabbed) beside a preview desk (right: cover and page spreads). */
+:root {
+  --bg: #e9ece7;          /* grey-green board */
+  --surface: #fafbf8;     /* sheet */
+  --sunk: #f1f3ef;
+  --ink: #1b2321;
+  --muted: #5d6965;
+  --line: #d3d9d3;
+  --accent: #2f4858;      /* book cloth, the kit's default band */
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe7ea;
+  --copper: #a8521c;      /* the kit's EPUB link colour, for attention */
+  --ok: #2f6b4b;
+  --desk: #d9ddd7;
+  --shadow: 0 1px 2px rgba(20,30,28,.08), 0 8px 24px rgba(20,30,28,.10);
+  --f-display: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --f-ui: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121716; --surface: #1a201f; --sunk: #151b1a; --ink: #e4eae6; --muted: #98a59f; --line: #2c3633;
+  --accent: #8db3c6; --accent-ink: #0f1a20; --accent-soft: #23323a; --copper: #e08a52; --ok: #77c39a; --desk: #0d1110;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121716; --surface: #1a201f; --sunk: #151b1a; --ink: #e4eae6; --muted: #98a59f; --line: #2c3633;
+  --accent: #8db3c6; --accent-ink: #0f1a20; --accent-soft: #23323a; --copper: #e08a52; --ok: #77c39a; --desk: #0d1110;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.45 var(--f-ui); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+header.bar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.brand h1 { margin: 0; font: italic 500 24px/1 var(--f-display); letter-spacing: .01em; white-space: nowrap; }
+.brand span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.bar .spacer { flex: 1; }
+.bar .status { font-size: 12.5px; color: var(--muted); text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.small { padding: 4px 9px; font-size: 12.5px; }
+.btn.ghost { background: transparent; }
+
+.main { display: grid; grid-template-columns: minmax(380px, 470px) 1fr; min-height: 0; }
+.bench { display: grid; grid-template-rows: auto 1fr; min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { border: 0; background: none; padding: 11px 7px 9px; font-size: 13.5px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-weight: 500; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs .count { font: 500 11px var(--f-mono); color: var(--muted); margin-left: 4px; }
+.panel { overflow: auto; padding: 16px 16px 40px; min-height: 0; }
+.panel[hidden] { display: none !important; }
+
+.sect { display: grid; gap: 12px; padding-block: 14px; border-top: 1px solid var(--line); }
+.sect:first-child { border-top: 0; padding-top: 2px; }
+.sect > h2 { margin: 0; font: 500 11px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > label, .field > .lab { font-size: 12px; color: var(--muted); }
+.field input[type=text], .field input[type=url], .field select, .field textarea {
+  width: 100%; border: 1px solid var(--line); background: var(--sunk); border-radius: 5px; padding: 6px 8px; min-width: 0; }
+.field textarea { resize: vertical; min-height: 56px; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.hint b { color: var(--ink); font-weight: 600; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunk); }
+.seg button { border: 0; background: none; padding: 5px 10px; cursor: pointer; font-size: 13px; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.range { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.range input { width: 100%; accent-color: var(--accent); }
+.range output { font: 500 12px var(--f-mono); min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); padding: 5px 10px; border-radius: 99px; cursor: pointer; font-size: 13px; }
+.chip:hover { border-color: var(--accent); }
+.chip small { color: var(--muted); font: 11px var(--f-mono); margin-left: 4px; }
+
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 18px 14px; text-align: center; background: var(--sunk); cursor: pointer; display: grid; gap: 6px; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font: italic 500 18px var(--f-display); }
+.pickers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.drop .types { font: 11.5px var(--f-mono); color: var(--muted); }
+.editor { width: 100%; min-height: 380px; height: 52vh; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: var(--sunk);
+  font: 12.5px/1.6 var(--f-mono); resize: vertical; tab-size: 2; }
+.editorbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.sample-tag { font-size: 12px; color: var(--copper); }
+details.cheat { border: 1px solid var(--line); border-radius: 6px; background: var(--sunk); }
+details.cheat summary { cursor: pointer; padding: 8px 10px; font-weight: 500; }
+details.cheat .tbl-wrap { overflow-x: auto; padding: 0 10px 10px; }
+table.ref { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.ref td { border-top: 1px solid var(--line); padding: 5px 6px; vertical-align: top; }
+table.ref td:first-child { color: var(--muted); white-space: nowrap; }
+table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; white-space: pre; }
+
+.assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.asset { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunk); font-size: 11px; min-width: 0; }
+.asset img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--desk); }
+.asset div { padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asset .px { color: var(--muted); font-family: var(--f-mono); }
+.asset.missing { border-style: dashed; border-color: var(--copper); }
+.asset.missing .ph { aspect-ratio: 4/3; display: grid; place-items: center; color: var(--copper); font-size: 11px; padding: 6px; text-align: center; }
+
+.outline { display: grid; gap: 2px; }
+.ol-part { margin-top: 12px; padding: 8px 0 6px; border-bottom: 1px solid var(--line); }
+.ol-part:first-child { margin-top: 0; }
+.ol-part .pl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.ol-part .pt { font: italic 500 18px/1.2 var(--f-display); }
+.ol-sec { display: grid; grid-template-columns: 2.4em 1fr auto; gap: 10px; align-items: center; padding: 6px 4px; border-radius: 5px; }
+.ol-sec:hover { background: var(--sunk); }
+.ol-sec .no { font: 500 12px var(--f-mono); color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.ol-sec .t { min-width: 0; }
+.ol-sec .t div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ol-sec .t .s { font-size: 12px; color: var(--muted); }
+.ol-sec select { border: 1px solid var(--line); background: var(--sunk); border-radius: 5px; padding: 3px 6px; font-size: 12.5px; }
+.ol-sec.changed select { border-color: var(--accent); }
+.warn { border-left: 3px solid var(--copper); background: var(--sunk); padding: 8px 10px; font-size: 13px; border-radius: 0 5px 5px 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.stats b { color: var(--ink); font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.colors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.color { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.color input[type=color] { width: 34px; height: 26px; border: 1px solid var(--line); border-radius: 5px; padding: 1px; background: var(--sunk); cursor: pointer; }
+.color code { font: 11.5px var(--f-mono); color: var(--ink); }
+.coverimg { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
+.coverimg .thumb { width: 96px; aspect-ratio: 3/4; border-radius: 5px; background: var(--desk) center/cover no-repeat; border: 1px solid var(--line); }
+
+/* preview desk */
+.desk { background: var(--desk); display: grid; grid-template-rows: auto 1fr auto; min-height: 0; min-width: 0; }
+.desk-top { display: flex; align-items: center; gap: 10px; padding: 10px 16px; flex-wrap: wrap; }
+.desk-top .grow { flex: 1; }
+.stage { overflow: auto; display: grid; place-items: center; padding: 16px; min-height: 0; }
+.covers { display: flex; gap: 22px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+.covers figure { margin: 0; display: grid; gap: 8px; justify-items: center; }
+.covers canvas { box-shadow: var(--shadow); border-radius: 1px 3px 3px 1px; max-width: 100%; height: auto; background: #fff; }
+.covers figcaption { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.spread { display: flex; justify-content: center; align-items: flex-start; filter: drop-shadow(0 6px 18px rgba(0,0,0,.18)); max-width: 100%; }
+.spread canvas { display: block; background: #fff; max-width: 50%; height: auto; }
+.spread .gutter { width: 1px; background: rgba(0,0,0,.12); }
+.spread .ghost { visibility: hidden; }
+.pager { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.pager input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+.pager .pg { font: 500 12.5px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9em; text-align: right; }
+.empty { max-width: 34em; text-align: center; color: var(--muted); display: grid; gap: 8px; }
+.empty strong { font: italic 500 22px var(--f-display); color: var(--ink); }
+
+.results { display: grid; gap: 8px; }
+.result { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+.result .ext { font: 600 11px var(--f-mono); letter-spacing: .06em; padding: 4px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--ink); }
+.result .meta { font-size: 12.5px; color: var(--muted); min-width: 0; }
+.result .meta b { color: var(--ink); font-weight: 600; }
+.check-ok { color: var(--ok); font-weight: 600; }
+.check-bad { color: var(--copper); font-weight: 600; }
+
+.progress { height: 3px; background: var(--line); overflow: hidden; border-radius: 2px; }
+.progress i { display: block; height: 100%; width: 30%; background: var(--accent); animation: slide 1.1s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .progress i { animation: none; width: 100%; opacity: .5; } }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 9px 14px; border-radius: 7px; font-size: 13px; box-shadow: var(--shadow); max-width: calc(100% - 32px); z-index: 10; }
+
+/* guide */
+.gsect { gap: 6px; }
+.gi { padding: 9px 10px; border-radius: 6px; display: grid; gap: 4px; cursor: default; outline-offset: -2px; }
+.gi.has-ex { cursor: help; }
+.gi:hover, .gi:focus-visible { background: var(--sunk); }
+.gk { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.gk .eye { font: 500 10px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 1px 6px; }
+.gd { font-size: 13px; color: var(--muted); }
+.gcode { margin: 2px 0 0; font: 11.5px/1.5 var(--f-mono); background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; white-space: pre-wrap; color: var(--ink); }
+.gi:hover .gcode { background: var(--surface); }
+.gpop { position: fixed; z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px 14px; max-width: min(560px, calc(100vw - 500px)); pointer-events: none; }
+.gpt { font: italic 500 17px var(--f-display); margin-bottom: 8px; }
+.gpop > :not(.gpt) { zoom: 1.2; }
+.gex { margin-top: 8px; padding: 10px; background: var(--desk); border-radius: 8px; overflow-x: auto; }
+/* mini book pages: always paper and ink, like the printed book */
+.mp { --pi: #1d1d1b; position: relative; width: 196px; aspect-ratio: 148/210; background: #fffefb; color: var(--pi); font: 6.6px/1.38 "EB Garamond", Georgia, serif; box-shadow: 0 1px 3px rgba(0,0,0,.18); flex: none; overflow: hidden; }
+.mpb { position: absolute; inset: 9% 9% 10% 11%; overflow: hidden; text-align: justify; hyphens: auto; }
+.mp p { margin: 0; } .mp p + p { text-indent: 1.1em; } .mp p.first { text-indent: 0; }
+.mp .sc { text-transform: uppercase; letter-spacing: .07em; font-size: .82em; }
+.mp .rh { position: absolute; top: 4%; left: 0; right: 0; text-align: center; font-size: 4.6px; letter-spacing: .12em; color: #444; }
+.mp .fo { position: absolute; bottom: 4%; left: 0; right: 0; text-align: center; font-size: 5.4px; color: #333; }
+.mtag { position: absolute; bottom: -1px; right: 0; background: var(--accent); color: var(--accent-ink); font: 600 8.5px var(--f-ui); letter-spacing: .06em; text-transform: uppercase; padding: 2px 5px; border-radius: 3px 0 0 0; }
+.mp .cn { margin-top: 18%; text-align: center; font-size: 5px; letter-spacing: .3em; }
+.mp .ct { text-align: center; font-style: italic; font-size: 10.5px; line-height: 1.2; margin: 3px 4px 1px; }
+.mp .cs { text-align: center; font-size: 5px; letter-spacing: .2em; color: #555; min-height: 4px; }
+.mp .cr { width: 9%; margin: 4px auto 9px; border-top: .5px solid #555; } .mp .cr.wide { width: 16%; border-color: #000; margin-top: 9px; }
+.mp .st { text-align: center; font-style: italic; font-size: 10.5px; margin: 18% 0 8%; }
+.mp .pp { text-align: center; padding-top: 42%; } .mp .pl { font-size: 6px; letter-spacing: .35em; } .mp .pt { font-size: 15px; margin: 6px 0 4px; } .mp .ps { font-style: italic; font-size: 7px; padding: 0 8%; }
+.mp .h3 { font-style: italic; font-size: 7.4px; margin: 5px 0 2px; text-align: left; } .mp .h4 { font-weight: 600; margin: 4px 0 1px; text-align: left; }
+.mp .dv { text-align: center; font-size: 5.6px; letter-spacing: .18em; margin: 8px 0 4px; } .mp .dv::after { content: ""; display: block; width: 12%; margin: 3px auto 0; border-top: .5px solid #555; }
+.mp .epi { margin: 0 0 7px 30%; font-size: .9em; text-align: left; } .mp .epi div { text-align: right; font-size: .9em; margin-top: 1px; }
+.mp .sb { text-align: center; margin: 5px 0; font-size: 6px; letter-spacing: .2em; }
+.mp sup { font-size: .6em; line-height: 0; }
+.mp .fn { margin-top: 6px; border-top: .4px solid #999; padding-top: 2px; font-size: 5px; text-align: left; }
+.mp .poem { margin: 5px 0 5px 12%; text-align: left; }
+.mp .let { margin: 4px 7%; font-style: italic; text-align: left; }
+.mp .box { border: .5px solid #999; padding: 4px 5px; margin: 5px 0; font-size: .92em; text-align: left; }
+.mp .ctr { text-align: center; margin: 8px 0; } .mp .rgt { text-align: right; margin-top: 6px; }
+.mp .tb { width: 100%; border-collapse: collapse; font-size: 4.8px; margin: 4px 0; } .mp .tb th { text-align: left; border-bottom: .6px solid #000; font-weight: 600; letter-spacing: .05em; } .mp .tb td { border-bottom: .3px solid #bbb; padding: .5px 1px; }
+.mp .ph, .two .ph { display: block; margin: 5px auto 0; border: .4px solid #bbb; background: linear-gradient(160deg, #c9b79c, #7d6a55 55%, #4a3f36); }
+.mp .ph.art { border: 0; background: linear-gradient(170deg, #a9c3d1 0%, #e8dcc0 45%, #6f7f5c 70%, #3f4b3a 100%); }
+.ph.mapimg { background: repeating-linear-gradient(35deg, transparent 0 9px, rgba(0,0,0,.55) 9px 10px), repeating-linear-gradient(-55deg, transparent 0 14px, rgba(0,0,0,.4) 14px 15px), #f6f5f1; border: .4px solid #999; }
+.ph.mapimg.old { background: repeating-linear-gradient(35deg, transparent 0 9px, rgba(70,40,10,.55) 9px 10px), repeating-linear-gradient(-55deg, transparent 0 14px, rgba(70,40,10,.4) 14px 15px), radial-gradient(circle at 70% 30%, rgba(150,90,20,.35), transparent 40%), linear-gradient(120deg, #e3c98f, #cfae6e 60%, #dcc28a); }
+.mp .fc { text-align: center; font-style: italic; font-size: 5.2px; margin: 2px 0 5px; }
+.mp .pair { display: flex; gap: 6%; justify-content: center; margin-top: 4px; } .mp .pair > div { width: 40%; }
+.mp .dg { display: flex; justify-content: space-around; align-items: flex-end; height: 34px; margin: 6px 0 0; border-bottom: .5px solid #333; } .mp .dg span { width: 12%; background: #8aa0aa; } .mp .dg span:nth-child(1){height:40%} .mp .dg span:nth-child(2){height:70%} .mp .dg span:nth-child(3){height:55%} .mp .dg span:nth-child(4){height:90%} .mp .dg span:nth-child(5){height:65%}
+.mp .sig { font: italic 12px "Cormorant Garamond", Georgia, serif; text-align: center; margin-top: 6px; }
+.mp .turn { position: absolute; width: 141.9%; height: 70.5%; left: 0; top: 100%; transform-origin: 0 0; transform: rotate(-90deg); padding: 2px; }
+.mp .turnt { font-style: italic; font-size: 7.5px; text-align: center; margin-bottom: 2px; }
+.mp .sph { font-style: italic; font-size: 7.5px; height: 12px; text-align: left; }
+.mp .qr { width: 30%; aspect-ratio: 1; margin: 8px auto 0; background: conic-gradient(#000 25%, #fff 0 50%, #000 0 75%, #fff 0) 0 0/16% 16%; border: 2px solid #fff; outline: .5px solid #ccc; }
+.mp .src { padding-left: 8px; margin: 0; font-size: 5.4px; text-align: left; }
+.mp .ixi { font-style: italic; font-size: 5px; margin-bottom: 5px; text-align: left; } .mp .ix { columns: 2; column-gap: 8px; font-size: 5px; text-align: left; } .mp .ix b { font-weight: 600; } .mp .ixl { display: block; font-size: 6.5px; margin-top: 3px; }
+.mp .toc { font-size: 5.6px; text-align: left; } .mp .toc.big { font-size: 5.2px; } .mp .toc > div { display: flex; align-items: baseline; gap: 2px; margin: 1px 0; } .mp .toc i { flex: 1; border-bottom: .6px dotted #555; transform: translateY(-1px); } .mp .toc b { font-weight: 400; } .mp .toc .tp { font-weight: 600; letter-spacing: .06em; margin-top: 4px; font-size: .92em; } .mp .toc .t1 { padding-left: 6px; }
+.mp .mtl { text-align: center; font-size: 5px; letter-spacing: .25em; margin: 8px 0 4px; } .mp .mtd { font-style: italic; font-size: 5px; padding-left: 8px; margin-bottom: 3px; }
+.mp .ht { text-align: center; margin-top: 45%; font-size: 7.5px; letter-spacing: .22em; }
+.mp .tp1 { text-align: center; margin-top: 32%; font-size: 13px; letter-spacing: .06em; } .mp .tp2 { text-align: center; font-style: italic; font-size: 7.5px; margin-top: 6px; } .mp .tp3 { text-align: center; font-size: 6px; margin-top: 2px; } .mp .tp4 { text-align: center; margin-top: 30%; font-size: 6.4px; letter-spacing: .25em; }
+.mp .ded { text-align: center; margin-top: 40%; font-size: 7px; } .mp .ded div { font-size: 5.6px; letter-spacing: .05em; margin-top: 5px; }
+.mp .colo { position: absolute; bottom: 4%; font-size: 4.8px; line-height: 1.6; text-align: left; }
+.mp .dc { float: left; font-size: 3.1em; line-height: .82; margin: .06em .07em 0 0; }
+.mp .nohy { hyphens: none; } .mp .hy { hyphens: auto; }
+.spr { display: flex; gap: 0; } .spr .mp + .mp { box-shadow: 0 1px 3px rgba(0,0,0,.18), inset 1px 0 0 rgba(0,0,0,.08); }
+.three, .two { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.three .mp { width: 150px; font-size: 5.1px; } .three .mp .ct { font-size: 8px; } .three .mp .cn, .three .mp .cs { font-size: 4px; }
+.two > div { display: grid; gap: 4px; justify-items: center; font-size: 11px; color: var(--muted); } .two .ph { width: 170px; aspect-ratio: 3/2; margin: 0; }
+.mc { position: relative; width: 150px; aspect-ratio: 148/210; overflow: hidden; font-family: "EB Garamond", Georgia, serif; box-shadow: 0 1px 3px rgba(0,0,0,.25); flex: none; }
+.mc .mcm { position: absolute; left: 0; right: 0; top: 29.5%; height: 41%; }
+.mc .mcp { position: absolute; left: 0; right: 0; background: linear-gradient(170deg, #a9c3d1 0%, #e8dcc0 40%, #6f7f5c 70%, #3f4b3a 100%); background-size: 100% 160%; border-top: 1px solid rgba(255,255,255,.85); border-bottom: 1px solid rgba(255,255,255,.85); }
+.mc .mcl, .mc .mct, .mc .mcs, .mc .mca, .mc .mcf { position: absolute; left: 6px; right: 6px; text-align: center; }
+.mc .mcl { font-size: 4.6px; letter-spacing: .45em; } .mc .mct { font-size: 10px; letter-spacing: .08em; line-height: 1.2; } .mc .mcr { position: absolute; left: 42%; width: 16%; height: .6px; }
+.mc .mcs { font-style: italic; font-size: 5.6px; } .mc .mca { font-size: 5.2px; letter-spacing: .3em; } .mc .mcf { font-size: 4.2px; letter-spacing: .35em; }
+.mc .mcq { position: absolute; top: 10%; left: 11%; right: 11%; text-align: center; font-style: italic; font-size: 6.4px; }
+.mc .mcb { position: absolute; top: 33%; left: 11%; right: 11%; height: 34%; overflow: hidden; color: #1a1a1a; font-size: 4.9px; line-height: 1.42; text-align: justify; }
+.mc .mcqr { position: absolute; bottom: 6%; left: 11%; width: 20%; aspect-ratio: 1; background: conic-gradient(#000 25%, #fff 0 50%, #000 0 75%, #fff 0) 0 0/18% 18%; border: 2px solid #fff; }
+.mc .mcqt { position: absolute; bottom: 12%; left: 36%; right: 8%; font-size: 4px; }
+.sizes { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; } .sizes > div { display: grid; justify-items: center; gap: 4px; font: 11px var(--f-mono); color: var(--muted); } .sizes span { background: #fffefb; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.faces { display: grid; gap: 6px; background: #fffefb; color: #1d1d1b; padding: 10px 12px; border-radius: 4px; font-size: 14px; } .faces b { font-weight: 400; display: inline-block; min-width: 10.5em; color: #6a6a66; font-size: 12px; font-family: var(--f-ui); }
+.gt { border-collapse: collapse; font-size: 12.5px; background: var(--surface); } .gt th, .gt td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; } .gt th { font-weight: 600; font-size: 11.5px; color: var(--muted); }
+
+/* extract: the monk and the page review */
+.monk { display: grid; gap: 8px; width: min(560px, 100%); }
+.monk svg { width: 100%; height: auto; border-radius: 10px; box-shadow: var(--shadow); display: block; }
+.monk .ribbon { height: 14px; border-radius: 3px; background: #efe3c4; border: 1px solid #c9b383; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.12); }
+.monk .ribbon i { display: block; height: 100%; width: 0; background: repeating-linear-gradient(-45deg, #b8892c 0 8px, #caa043 8px 16px); transition: width .4s ease; }
+.monk .mrow { display: flex; gap: 12px; align-items: baseline; font: 500 12.5px var(--f-mono); color: var(--muted); flex-wrap: wrap; }
+.monk .folio { font: italic 500 17px var(--f-display); color: var(--ink); }
+.monk .eta { margin-left: auto; }
+.monk .msg { font: italic 15px var(--f-display); color: var(--muted); min-height: 1.4em; }
+.mk-flame { transform-origin: 378px 160px; animation: flick .18s infinite alternate ease-in-out; }
+.mk-glow { animation: glow 1.6s infinite alternate ease-in-out; transform-origin: 378px 150px; }
+.mk-scribble { animation: scribble .5s infinite ease-in-out; }
+.mk-tail { transform-origin: -20px 2px; animation: tail 3.2s infinite ease-in-out; }
+.mk-z { animation: zz 3s infinite ease-in-out; }
+@keyframes flick { from { transform: scale(1, 1) skewX(-3deg); } to { transform: scale(.88, 1.12) skewX(4deg); } }
+@keyframes glow { from { opacity: .75; transform: scale(.96); } to { opacity: 1; transform: scale(1.04); } }
+@keyframes scribble { 0% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-1.2px, -1.5px) rotate(-4deg); } 50% { transform: translate(.6px, .4px) rotate(2deg); } 75% { transform: translate(-.8px, -1px) rotate(-2deg); } 100% { transform: translate(0, 0) rotate(0); } }
+@keyframes tail { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-14deg); } 90% { transform: rotate(6deg); } }
+@keyframes zz { 0% { opacity: 0; transform: translate(0, 4px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(6px, -10px); } }
+@media (prefers-reduced-motion: reduce) { .mk-flame, .mk-glow, .mk-scribble, .mk-tail, .mk-z { animation: none; } }
+.stage .monk { margin: auto; }
+.linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.kcost{margin:14px 0 6px;font-size:.95rem}.kcost small{font-weight:400;opacity:.7}.kdpup big{font-size:1.15rem;font-weight:700}
+.kdpmain { font-weight: 600; font-size: 14.5px; }
+.kstep { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 0 0 12px; background: var(--surface); display: grid; gap: 8px; }
+.kstep header { display: flex; align-items: center; gap: 10px; }
+.kstep h3 { margin: 0; font: 600 15px var(--f-ui); flex: 1; }
+.kstep h3 small { font-weight: 400; color: var(--muted); }
+.kstep .hint { margin: 0; }
+.kn { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font: 600 13px var(--f-ui); flex: none; }
+.kpill { font: 600 11.5px var(--f-ui); padding: 3px 9px; border-radius: 999px; background: var(--sunk); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.kpill.ok { background: #e1f1e7; color: #1f6b43; border-color: #b7d8c4; } .kpill.bad { background: #f8e1dd; color: #a02f20; border-color: #e5b9b1; } .kpill.warn { background: #fbefd5; color: #8a5a00; border-color: #ecd49b; }
+.kbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.kdpdiag svg { width: 100%; height: auto; display: block; }
+.kdpdiag text { font: 500 10px var(--f-ui); fill: var(--ink); }
+.kdpup { display: grid; gap: 6px; font-size: 13px; }
+.kdpup div { display: grid; grid-template-columns: 11em 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.kdpup div:first-child { border-top: 0; }
+.kdpup b { font-weight: 600; } .kdpup code { font: 12px var(--f-mono); word-break: break-all; }
+.kdpinfo { font-size: 13px; line-height: 1.5; padding: 8px 10px; background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; margin: 8px 0; }
+.kdpchecks { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.kdpchecks li { display: grid; grid-template-columns: 1.2em 1fr; gap: 4px; align-items: start; }
+.kdpchecks .ok > span:first-child { color: var(--ok); font-weight: 700; } .kdpchecks .bad > span:first-child { color: #b23a2a; font-weight: 700; } .kdpchecks .note > span:first-child { color: var(--muted); }
+.kdpchecks .btn { margin-left: 4px; }
+.kdpres { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 13px; }
+.wrapview { display: grid; justify-items: center; gap: 8px; }
+.wrapview canvas { display: block; box-shadow: var(--shadow); background: #fff; }
+.wrapview figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+.wrapview figcaption { font-size: 12px; color: var(--muted); }
+.scanrev { display: grid; gap: 10px; justify-items: center; width: 100%; }
+.scantools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: 100%; max-width: 760px; }
+.scantools .hint { margin: 0; font-size: 12px; }
+.scantools .check.small { font-size: 12px; gap: 5px; }
+.scantools .sp, .wfix .sp { flex: 1; }
+.sheet { position: relative; box-shadow: var(--shadow); background: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+.sheet img { display: block; width: 100%; height: 100%; pointer-events: none; }
+.zlayer { position: absolute; inset: 0; cursor: crosshair; }
+.zb { position: absolute; border: 1.5px solid var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); border-radius: 2px; cursor: pointer; box-sizing: border-box; }
+.zb:hover { background: color-mix(in srgb, var(--c) 28%, transparent); }
+.zb.k-fig { border: 2.5px dashed var(--c); background: transparent; }
+.zb.out::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px solid var(--c); }
+.zb.sel { outline: 2px solid var(--ink); outline-offset: 1px; cursor: move; z-index: 3; }
+.zb.draft { --c: #1b2321; border-style: dashed; background: rgba(27,35,33,.08); z-index: 3; }
+.zb .h { position: absolute; width: 11px; height: 11px; background: #fff; border: 1.5px solid var(--ink); border-radius: 2px; margin: -6px 0 0 -6px; z-index: 4; }
+.h-nw { left: 0; top: 0; cursor: nwse-resize; } .h-n { left: 50%; top: 0; cursor: ns-resize; } .h-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.h-e { left: 100%; top: 50%; cursor: ew-resize; } .h-se { left: 100%; top: 100%; cursor: nwse-resize; } .h-s { left: 50%; top: 100%; cursor: ns-resize; }
+.h-sw { left: 0; top: 100%; cursor: nesw-resize; } .h-w { left: 0; top: 50%; cursor: ew-resize; }
+.zw { position: absolute; border: 1.5px solid #d0302f; border-radius: 2px; cursor: pointer; z-index: 2; margin: -2px; padding: 2px; box-sizing: content-box; }
+.zw:hover { background: rgba(208,48,47,.15); }
+.zw.cur { background: rgba(208,48,47,.25); box-shadow: 0 0 0 3px rgba(208,48,47,.35); }
+.zmenu { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 4px; max-width: 440px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); font: 500 12px var(--f-ui); align-items: center; }
+.zmenu b { width: 100%; font-weight: 600; padding: 0 2px 2px; }
+.zmenu button { font: inherit; border: 1.5px solid var(--c, var(--line)); background: #fff; color: var(--ink); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.zmenu button:hover { background: color-mix(in srgb, var(--c, #888) 14%, #fff); }
+.zmenu button.on { background: var(--c); color: #fff; }
+.zmenu button.rm { --c: #b23a2a; color: #b23a2a; }
+.wfix { width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px; }
+.wf-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.wf-top .hint { margin: 0; }
+.wf-zoom { display: block; border: 1px solid var(--line); border-radius: 6px; background: #fff; justify-self: center; }
+.wf-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0; }
+.wf-row input { flex: 1; min-width: 140px; font: 500 18px var(--f-display); padding: 6px 10px; border: 1.5px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+.wf-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.wfix > .hint { margin: 0; font-size: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); justify-content: center; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; border-radius: 2px; border: 1.5px solid var(--c, currentColor); background: color-mix(in srgb, var(--c, transparent) 18%, transparent); }
+.legend .k-fig::before { border-style: dashed; background: none; } .legend .k-low::before { --c: #d0302f; background: none; }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { height: auto; }
+  .main { grid-template-columns: 1fr; }
+  .bench { border-right: 0; border-bottom: 1px solid var(--line); }
+  .panel { overflow: visible; }
+  .stage { min-height: 60vh; }
+  .brand span { display: none; }
+}
+@media (max-width: 460px) {
+  .row, .row.three, .checks, .colors { grid-template-columns: 1fr; }
+  .bar .status { display: none; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <a class="btn small" href="../" style="text-decoration:none">← Projects</a>
+    <div class="brand"><h1>Book Layout Kit</h1><span>print PDF &amp; EPUB · v3</span></div>
+    <div class="spacer"></div>
+    <div class="status" id="status">Sample manuscript loaded</div>
+    <button class="btn primary" id="buildBtn" type="button">Build PDF &amp; EPUB</button>
+  </header>
+  <div class="main">
+    <section class="bench" aria-label="Manuscript and settings">
+      <nav class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="manuscript" id="tab-manuscript">Manuscript</button>
+        <button role="tab" aria-selected="false" data-tab="extract" id="tab-extract" hidden>Extract</button>
+        <button role="tab" aria-selected="false" data-tab="structure" id="tab-structure">Structure</button>
+        <button role="tab" aria-selected="false" data-tab="book" id="tab-book">Book</button>
+        <button role="tab" aria-selected="false" data-tab="cover" id="tab-cover">Cover</button>
+        <button role="tab" aria-selected="false" data-tab="kdp" id="tab-kdp">KDP</button>
+        <button role="tab" aria-selected="false" data-tab="export" id="tab-export">Export</button>
+        <button role="tab" aria-selected="false" data-tab="guide" id="tab-guide">Guide</button>
+      </nav>
+
+      <!-- MANUSCRIPT -->
+      <div class="panel" id="panel-manuscript" role="tabpanel">
+        <div class="sect">
+          <label class="drop" id="drop" for="fileIn">
+            <strong>Drop your manuscript here</strong>
+            <span class="hint">or click to choose files: a whole project, or the text, the settings and the images separately, in any order.</span>
+            <span class="types">.md .txt .docx .pdf .odt .html · book.json · .zip · .jpg .png .webp</span>
+          </label>
+          <input type="file" id="fileIn" multiple hidden accept=".md,.markdown,.txt,.docx,.pdf,.odt,.html,.htm,.zip,.json,image/*">
+          <div class="pickers">
+            <label class="btn small" for="dirIn" title="A folder with book.json, the markdown files and the images">Project folder</label>
+            <label class="btn small" for="zipIn" title="A kit bundle or any .zip with book.json, text and images">Project .zip</label>
+            <label class="btn small" for="jsonIn" title="Only the settings">Settings (book.json)</label>
+            <label class="btn small" for="textIn" title="Only the text: one or more files">Text files</label>
+            <label class="btn small" for="imgIn2" title="Only the pictures">Images</label>
+          </div>
+          <input type="file" id="dirIn" hidden webkitdirectory multiple>
+          <input type="file" id="zipIn" hidden accept=".zip">
+          <input type="file" id="jsonIn" hidden accept=".json,application/json">
+          <input type="file" id="textIn" hidden multiple accept=".md,.markdown,.txt,.docx,.pdf,.odt,.html,.htm">
+          <input type="file" id="imgIn2" hidden multiple accept="image/*">
+          <p class="hint">Text files that book.json names (front.md, part1.md …) are put in the order book.json gives, also when you add them later. Plain text without headings is formatted automatically.</p>
+        </div>
+        <div class="sect">
+          <div class="editorbar">
+            <h2 style="margin:0;font:500 11px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Manuscript text</h2>
+            <span class="sample-tag" id="sampleTag">Sample text: replace it with your own</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn small" id="detectBtn" type="button" title="Find chapters, parts, sublines, scene breaks, quotes, poems, lists, footnotes and pictures in plain text">Auto-format</button>
+              <button class="btn small ghost" id="undoFmtBtn" type="button" hidden>Undo</button>
+              <button class="btn small ghost" id="clearBtn" type="button">Clear</button>
+            </div>
+          </div>
+          <textarea class="editor" id="editor" spellcheck="false" aria-label="Manuscript in markdown"></textarea>
+          <p class="hint" id="wordInfo"></p>
+          <details class="cheat">
+            <summary>Layout marks you can use in the text</summary>
+            <div class="tbl-wrap"><table class="ref"><tbody>
+              <tr><td>Part</td><td><code># Part One – The Coast</code>, next paragraph is the subtitle, more paragraphs make an introduction page</td></tr>
+              <tr><td>Chapter</td><td><code>## Title</code> or <code>## Title | Subline</code></td></tr>
+              <tr><td>Interlude</td><td><code>## * Title</code> unnumbered</td></tr>
+              <tr><td>Section</td><td><code>### Heading</code> · <code>#### Small heading</code> · <code>### § Divider</code></td></tr>
+              <tr><td>Epigraph</td><td>a <code>&gt; quotation</code> right after the chapter heading, last line <code>&gt; — Name</code></td></tr>
+              <tr><td>Scene break</td><td><code>***</code> on its own line</td></tr>
+              <tr><td>Footnote</td><td><code>text[^1]</code> and <code>[^1]: the note</code></td></tr>
+              <tr><td>Note numbers</td><td><code>¹ ² ³</code> become real superscripts</td></tr>
+              <tr><td>Index entry</td><td><code>**Name**</code> with Index switched on</td></tr>
+              <tr><td>Blocks</td><td><code>::: poem</code> · <code>::: letter</code> · <code>::: box</code> · <code>::: center</code> · <code>::: right</code> … <code>:::</code></td></tr>
+              <tr><td>Photo</td><td><code>![alt](photo.jpg)</code> then a line <code>*Caption.*</code></td></tr>
+              <tr><td>Other figures</td><td><code>![WIDE: …]</code> <code>![DIAGRAM: …]</code> <code>![SMALL: …]</code> <code>![ART: Title]</code> <code>![MAP: Title]</code> <code>![SPREAD: Title]</code> <code>![QR: caption](https://…)</code></td></tr>
+            </tbody></table></div>
+          </details>
+        </div>
+        <div class="sect">
+          <h2>Images</h2>
+          <p class="hint" id="assetHint">Images you add stay in this browser tab. Refer to them by file name in the text.</p>
+          <div class="assets" id="assets"></div>
+          <div><label class="btn small" for="imgIn">Add images</label><input type="file" id="imgIn" multiple hidden accept="image/*"></div>
+        </div>
+      </div>
+
+      <!-- EXTRACT (downloaded app only) -->
+      <div class="panel" id="panel-extract" role="tabpanel" hidden>
+        <div class="sect">
+          <label class="drop" id="ocrDrop" for="ocrIn">
+            <strong>Drop a scanned book</strong>
+            <span class="hint">A PDF, or photos or scans of the pages (one image per page, in file-name order), or a .zip with those.</span>
+            <span class="types">.pdf · .jpg .png .webp · .zip</span>
+          </label>
+          <input type="file" id="ocrIn" multiple hidden accept=".pdf,.zip,image/*">
+          <p class="hint" id="ocrFiles">No file chosen yet.</p>
+        </div>
+        <div class="sect">
+          <h2>Reading</h2>
+          <div class="field"><span class="lab">Languages in the book</span><div class="checks" id="ocrLangs"></div></div>
+          <div class="row">
+            <div class="field"><label for="ocrFrom">From page</label><input type="text" id="ocrFrom" inputmode="numeric" placeholder="1"></div>
+            <div class="field"><label for="ocrTo">To page</label><input type="text" id="ocrTo" inputmode="numeric" placeholder="last"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="ocrUseText" checked> Use the PDF’s own text where it has some (exact and much faster)</label>
+          <label class="check"><input type="checkbox" id="ocrPics" checked> Keep the pictures</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="ocrStart" type="button" disabled>Start reading</button>
+            <button class="btn" id="ocrStop" type="button" hidden>Stop</button>
+          </div>
+          <p class="hint">Text recognition runs in this browser (Tesseract). The reader and the dictionaries download from the internet the first time; your pages are not uploaded anywhere. Count on 3 to 10 seconds per scanned page.</p>
+          <p class="warn" id="ocrMsg" hidden></p>
+          <div class="monk" id="monk" hidden></div>
+        </div>
+        <div class="sect" id="ocrResult" hidden>
+          <h2>Result</h2>
+          <div class="stats" id="ocrStats"></div>
+          <p class="hint" id="ocrFound"></p>
+          <p class="hint">The right side shows each page with what was found: headings in blue, pictures and captions in green, quotes and poems in purple, tables in olive, index entries in pink, footnotes in orange, left-out running heads and page numbers grey, uncertain words in red. Click a box to change its kind (it can also be made a table or index entries), drag its handles to resize it, or remove it; drag on the page to add a box. Click a red word, or “Check uncertain words”, to correct words close up. The text below follows every change.</p>
+          <textarea class="editor" id="ocrText" spellcheck="false" aria-label="Extracted manuscript" style="height:38vh;min-height:240px"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="ocrUse" type="button">Use as manuscript</button>
+          </div>
+          <div class="field"><span class="lab">Or save the result</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn small" id="ocrSaveZip" type="button" title="book.json, the text split into front, part and back files, and the pictures">Whole project (.zip)</button>
+              <button class="btn small" id="ocrSaveMd" type="button">Manuscript (.md)</button>
+              <button class="btn small" id="ocrSaveJson" type="button">Settings (book.json)</button>
+              <button class="btn small" id="ocrSaveImgs" type="button">Pictures (.zip)</button>
+            </div></div>
+          <p class="hint">“Use as manuscript” replaces the text on the Manuscript tab and adds the pictures, title, author, colophon, dedication and index names that were found. The saved project opens again here, or in bookmaker.py.</p>
+        </div>
+      </div>
+
+      <!-- STRUCTURE -->
+      <div class="panel" id="panel-structure" role="tabpanel" hidden>
+        <div class="sect">
+          <div class="stats" id="structStats"></div>
+          <div id="structWarn" class="results"></div>
+          <p class="hint">Each heading becomes a chapter unless you give it another role. Front and back sections (preface, sources, acknowledgements) start on a right-hand page and are not numbered.</p>
+          <div class="outline" id="outline"></div>
+        </div>
+      </div>
+
+      <!-- BOOK -->
+      <div class="panel" id="panel-book" role="tabpanel" hidden>
+        <div class="sect">
+          <h2>Start from a recipe</h2>
+          <div class="chips" id="recipes"></div>
+          <p class="hint">A recipe sets page size, opener, numbering, running heads and index. Your texts and cover stay as they are.</p>
+        </div>
+        <div class="sect">
+          <h2>Title page</h2>
+          <div class="field"><label for="f-title">Title</label><input type="text" id="f-title" data-k="title"></div>
+          <div class="row">
+            <div class="field"><label for="f-subtitle">Subtitle</label><input type="text" id="f-subtitle" data-k="subtitle"></div>
+            <div class="field"><label for="f-subtitle2">Second subtitle</label><input type="text" id="f-subtitle2" data-k="subtitle2"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="f-author">Author</label><input type="text" id="f-author" data-k="author"></div>
+            <div class="field"><label for="f-lang">Language</label><select id="f-lang" data-k="lang"></select></div>
+          </div>
+        </div>
+        <div class="sect">
+          <h2>Page and type</h2>
+          <div class="row">
+            <div class="field"><label for="f-page">Page size</label><select id="f-page" data-k="page"></select></div>
+            <div class="field"><label for="f-font">Typeface</label><select id="f-font" data-k="font"></select></div>
+          </div>
+          <div class="field"><span class="lab">Body size</span>
+            <div class="range"><input type="range" id="f-size" min="8.5" max="14" step="0.25" aria-label="Body size"><output id="o-size"></output></div></div>
+          <p class="hint" id="pageInfo"></p>
+        </div>
+        <div class="sect">
+          <h2>Chapters</h2>
+          <div class="field"><span class="lab">Chapter opening</span><div class="seg" data-seg="opener">
+            <button type="button" data-v="smallcaps">Small caps</button><button type="button" data-v="dropcap">Drop cap</button><button type="button" data-v="none">Plain</button></div></div>
+          <div class="field"><span class="lab">Chapter numbers</span><div class="seg" data-seg="chapter_number_style">
+            <button type="button" data-v="arabic">1, 2, 3</button><button type="button" data-v="roman">I, II, III</button><button type="button" data-v="none">None</button></div></div>
+          <div class="field"><span class="lab">Chapters start on</span><div class="seg" data-seg="chapter_break">
+            <button type="button" data-v="page">Any page</button><button type="button" data-v="right">Right-hand page</button></div></div>
+          <div class="row">
+            <div class="field"><label for="f-rhl">Running head, left page</label><select id="f-rhl" data-rh="left"></select></div>
+            <div class="field"><label for="f-rhr">Running head, right page</label><select id="f-rhr" data-rh="right"></select></div>
+          </div>
+          <div class="field"><label for="f-scene">Scene break ornament</label><input type="text" id="f-scene" data-k="scene_break"></div>
+        </div>
+        <div class="sect">
+          <h2>Contents, index and text</h2>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-b="toc"> Contents page</label>
+            <label class="check"><input type="checkbox" data-b="part_minitoc"> Mini contents in parts</label>
+            <label class="check"><input type="checkbox" data-b="index"> Index of bold names</label>
+            <label class="check"><input type="checkbox" data-b="index_sort"> Sort by surname</label>
+            <label class="check"><input type="checkbox" data-b="hyphenate"> Hyphenation</label>
+            <label class="check"><input type="checkbox" data-b="bw_maps"> Clean up old maps</label>
+          </div>
+          <div class="field"><label for="f-excl">Leave out of the index (one per line)</label><textarea id="f-excl" data-lines="index_exclude" rows="2"></textarea></div>
+        </div>
+        <div class="sect">
+          <h2>Photos</h2>
+          <div class="field"><span class="lab">Portrait photo width</span><div class="range"><input type="range" id="f-port" min="35" max="110" step="1" data-photo="portrait_mm" aria-label="Portrait photo width"><output></output></div></div>
+          <div class="field"><span class="lab">Height of two photos side by side</span><div class="range"><input type="range" id="f-pair" min="40" max="110" step="1" data-photo="pair_height_mm" aria-label="Pair height"><output></output></div></div>
+          <div class="field"><span class="lab">Small image width</span><div class="range"><input type="range" id="f-small" min="30" max="100" step="1" data-photo="small_mm" aria-label="Small image width"><output></output></div></div>
+        </div>
+        <div class="sect">
+          <h2>Front matter</h2>
+          <div class="field"><label for="f-ded">Dedication (one line each)</label><textarea id="f-ded" data-lines="dedication" rows="2"></textarea></div>
+          <div class="field"><label for="f-epi">Epigraph under the dedication</label><input type="text" id="f-epi" data-k="epigraph"></div>
+          <div class="field"><label for="f-colo">Colophon (one line each)</label><textarea id="f-colo" data-lines="colophon" rows="3"></textarea></div>
+          <div class="field"><label for="f-desc">EPUB description</label><textarea id="f-desc" data-k="description" rows="2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- COVER -->
+      <div class="panel" id="panel-cover" role="tabpanel" hidden>
+        <div class="sect" id="kdpPointer">
+          <p class="hint" style="margin:0">Printing a paperback on Amazon KDP? Trim size, paper, spine, bleed and barcode are set on the <button class="linkbtn" type="button" data-goto="kdp">KDP tab</button>. The design here is used for the front, back and spine.</p>
+        </div>
+        <div class="sect">
+          <h2>Style</h2>
+          <div class="seg" data-seg="cover.style">
+            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="photo">Photo</button><button type="button" data-v="auto">Automatic</button></div>
+          <p class="hint" id="coverStyleHint"></p>
+        </div>
+        <div class="sect">
+          <h2>Colours</h2>
+          <div class="swatches" id="bandSwatches"></div>
+          <div class="colors">
+            <label class="color"><input type="color" data-col="band"> Band <code></code></label>
+            <label class="color"><input type="color" data-col="band_ink"> Text on band <code></code></label>
+            <label class="color"><input type="color" data-col="mid"> Middle band <code></code></label>
+            <label class="color"><input type="color" data-col="ink"> Text on middle <code></code></label>
+          </div>
+        </div>
+        <div class="sect" id="coverPhotoSect">
+          <h2>Cover photo</h2>
+          <div class="coverimg">
+            <div class="thumb" id="coverThumb"></div>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="coverIn">Choose photo</label><button class="btn small ghost" id="coverClear" type="button">Remove</button></div>
+              <input type="file" id="coverIn" hidden accept="image/*">
+              <p class="hint">Landscape works best: the photo fills the middle band. At least 1800 px wide.</p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="image_x" aria-label="Crop left to right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="image_y" aria-label="Crop top to bottom"><output></output></div></div>
+        </div>
+        <div class="sect">
+          <h2>Front</h2>
+          <div class="row">
+            <div class="field"><label for="c-label">Label above the title</label><input type="text" id="c-label" data-ck="label"></div>
+            <div class="field"><label for="c-footer">Footer line</label><input type="text" id="c-footer" data-ck="footer"></div>
+          </div>
+          <div class="field"><label for="c-lines">Title broken over lines (optional, one per line)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
+        </div>
+        <div class="sect">
+          <h2>Back</h2>
+          <div class="field"><label for="c-quote">Quote in the top band</label><textarea id="c-quote" data-ck="quote" rows="2"></textarea></div>
+          <div class="field"><label for="c-blurb">Blurb (blank line between paragraphs)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
+          <div class="row">
+            <div class="field"><label for="c-qr">QR code link</label><input type="url" id="c-qr" data-ck="qr" placeholder="https://"></div>
+            <div class="field"><label for="c-qrt">Text beside the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
+          </div>
+          <label class="check"><input type="checkbox" data-b="include_covers"> Put the covers in the PDF (front first, back last)</label>
+          <p class="hint" id="icNote" hidden>With KDP on, the covers stay out of the interior PDF.</p>
+        </div>
+      </div>
+
+      <!-- KDP -->
+      <div class="panel" id="panel-kdp" role="tabpanel" hidden>
+        <div class="sect">
+          <h2>Publish on Amazon KDP</h2>
+          <label class="check kdpmain"><input type="checkbox" data-kdp="on"> Prepare this book for KDP</label>
+          <p class="hint">A KDP paperback or hardcover is made from <b>two files</b>: the <b>inside pages</b> (a PDF without cover) and the <b>cover</b> (one PDF holding back cover, spine and front cover). The steps below make both. A Kindle e-book needs an EPUB and a cover image.</p>
+        </div>
+        <div id="kdpBody" hidden>
+          <section class="kstep" id="ks1">
+            <header><span class="kn">1</span><h3>Size and paper</h3><span class="kpill" id="kp1"></span></header>
+            <p class="hint">The paper sets how thick each page is, so how wide the spine will be. Both also decide how many pages KDP can print.</p>
+            <div class="field"><label for="kdp-format">Book type</label><select id="kdp-format" data-kdp="format"><option value="paperback">Paperback</option><option value="hardcover">Hardcover (case laminate)</option></select><span class="hint" id="kdpFmtHint"></span></div>
+            <div class="field"><label for="kdp-trim">Trim size (the size of the finished book)</label><select id="kdp-trim"></select></div>
+            <div class="field"><label for="kdp-paper">Paper</label><select id="kdp-paper" data-kdp="paper"></select></div>
+            <div class="field"><label for="kdp-pages">Number of pages</label><input type="text" inputmode="numeric" id="kdp-pages" data-kdp="pages"><span class="hint" id="kdpPagesHint"></span></div>
+            <ul class="kdpchecks" id="kdpChecks"></ul>
+            <h4 class="kcost">Estimated printing cost <small>Amazon.com.be (euro)</small></h4>
+            <div id="kdpCost" class="kdpinfo"></div>
+            <div class="field"><label for="kdp-copies">Author copies you want to order</label><input type="text" inputmode="numeric" id="kdp-copies" data-kdp="copies"></div>
+            <div class="field"><label for="kdp-price">List price you plan, with VAT (optional)</label><input type="text" inputmode="decimal" id="kdp-price" data-kdp="price" placeholder="for example 14,99"></div>
+            <p class="hint">Printing cost only: KDP's table for Amazon.de, .es, .fr, .it, .nl, .ie and .com.be, which Amazon.com.be uses. Shipping of author copies, VAT and other marketplaces are not included. KDP can change these figures; the final cost shows on KDP.</p>
+          </section>
+          <section class="kstep" id="ks2">
+            <header><span class="kn">2</span><h3>Inside pages</h3><span class="kpill" id="kp2"></span></header>
+            <p class="hint">A PDF with only the book pages: no cover, text margins checked against what KDP needs for this page count.</p>
+            <div id="kdpIntStatus" class="kdpinfo"></div>
+            <div class="progress" id="kdpProg" hidden><i></i></div>
+            <div class="kbtns">
+              <button class="btn primary" type="button" id="kdpBuildInt">Build inside pages</button>
+              <button class="btn" type="button" id="kdpDlInt" disabled>Download inside pages (.pdf)</button>
+              <button class="btn ghost" type="button" id="kdpShowInt" disabled>Look at the pages</button>
+            </div>
+          </section>
+          <section class="kstep" id="ks3">
+            <header><span class="kn">3</span><h3>Cover</h3><span class="kpill" id="kp3"></span></header>
+            <p class="hint" id="kdpCoverHint"></p>
+            <div id="kdpDiagram" class="kdpdiag"></div>
+            <div id="kdpInfo" class="kdpinfo"></div>
+            <div class="checks">
+              <label class="check"><input type="checkbox" data-kdp="spine_text"> Title and author on the spine</label>
+              <label class="check"><input type="checkbox" data-kdp="barcode"> Keep the barcode corner free</label>
+            </div>
+            <div class="field"><label for="kdp-bar">Your barcode image (optional)</label><select id="kdp-bar" data-kdp="barcode_image"></select></div>
+            <div class="kbtns">
+              <button class="btn" type="button" data-goto="cover">Design the cover</button>
+              <button class="btn" type="button" id="kdpShowCover">Preview with guides</button>
+              <button class="btn primary" type="button" data-cover="wrap-pdf">Download print cover (.pdf)</button>
+              <button class="btn ghost" type="button" data-cover="wrap-jpg">.jpg</button>
+            </div>
+          </section>
+          <section class="kstep" id="ks4">
+            <header><span class="kn">4</span><h3>Kindle e-book <small>(optional)</small></h3><span class="kpill" id="kp4"></span></header>
+            <p class="hint">The same book as EPUB, with its own cover image (1600 × 2560 px).</p>
+            <div class="kbtns">
+              <button class="btn" type="button" id="kdpBuildEpub">Build EPUB</button>
+              <button class="btn" type="button" id="kdpDlEpub" disabled>Download EPUB</button>
+              <button class="btn" type="button" data-cover="ebook">Kindle cover (.jpg)</button>
+            </div>
+          </section>
+          <section class="kstep" id="ks5">
+            <header><span class="kn">5</span><h3>Upload on KDP</h3></header>
+            <div id="kdpUpload"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- GUIDE -->
+      <div class="panel" id="panel-guide" role="tabpanel" hidden>
+        <div class="sect">
+          <p class="hint">Every option in the kit, with what it does. Point at an item to see an example page; on a phone, tap it.</p>
+          <div class="field"><label for="guideSearch">Find an option</label><input type="text" id="guideSearch" placeholder="for example: drop cap, footnote, QR"></div>
+        </div>
+        <div id="guideList"></div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="panel" id="panel-export" role="tabpanel" hidden>
+        <div class="sect">
+          <h2>Build</h2>
+          <div class="field"><label for="f-out">File name</label><input type="text" id="f-out" data-k="output" placeholder="from the title"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="buildBtn2" type="button">Build PDF &amp; EPUB</button>
+            <button class="btn" id="buildPdfBtn" type="button">PDF only</button>
+            <button class="btn" id="buildEpubBtn" type="button">EPUB only</button>
+          </div>
+          <div class="progress" id="prog" hidden><i></i></div>
+          <div class="results" id="results"><p class="hint">Nothing built yet. The PDF has the covers, the body padded to an even page count, index page numbers from a second layout pass, and pages for the turned maps and plates.</p></div>
+        </div>
+        <div class="sect">
+          <h2>Cover files</h2>
+          <p class="hint">The covers on their own, at 300 dpi.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" type="button" data-cover="front">Front cover (.jpg)</button>
+            <button class="btn" type="button" data-cover="back">Back cover (.jpg)</button>
+            <button class="btn" type="button" data-cover="ebook" title="1600 x 2560 px, the ratio Kindle asks for">Kindle e-book cover (.jpg)</button>
+          </div>
+          <div id="coverKdpExports" hidden>
+            <p class="hint" style="margin-top:12px">For the KDP paperback: back, spine and front in one sheet, with bleed. Upload the PDF.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn primary" type="button" data-cover="wrap-pdf">Print cover (.pdf)</button>
+              <button class="btn" type="button" data-cover="wrap-jpg">Print cover (.jpg)</button>
+            </div>
+          </div>
+        </div>
+        <div class="sect">
+          <h2>Settings and sources</h2>
+          <p class="hint">The kit bundle holds <b>book.json</b>, the manuscript split into front, part and back files, and your images, so <b>bookmaker.py</b> can build the same book. Drop the bundle back here to carry on.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="kitBtn" type="button">Kit bundle (.zip)</button>
+            <button class="btn" id="jsonBtn" type="button">book.json</button>
+            <button class="btn" id="mdBtn" type="button">Manuscript (.md)</button>
+            <button class="btn" id="imgZipBtn" type="button">Images (.zip)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="desk" aria-label="Preview">
+      <div class="desk-top">
+        <div class="seg" id="viewSeg"><button type="button" data-v="cover" aria-pressed="true">Cover</button><button type="button" data-v="pages" aria-pressed="false">Pages</button><button type="button" data-v="wrap" aria-pressed="false" hidden>Print cover</button><button type="button" data-v="scan" aria-pressed="false" hidden>Scan</button></div>
+        <label class="check" id="guidesLbl" hidden style="font-size:12.5px"><input type="checkbox" id="kdpGuides" checked> Show guides</label>
+        <div class="grow"></div>
+        <div class="stats" id="deskInfo"></div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="pager" id="pager" hidden>
+        <button class="btn small" id="prevBtn" type="button" aria-label="Previous spread">‹ Prev</button>
+        <input type="range" id="pageSlider" min="1" max="1" value="1" aria-label="Page">
+        <button class="btn small" id="nextBtn" type="button" aria-label="Next spread">Next ›</button>
+        <span class="pg" id="pageLabel"></span>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="gpop" id="gpop" hidden role="tooltip"></div>
+
+<script src="lib/marked.min.js"></script>
+<script src="lib/jszip.min.js"></script>
+<script src="lib/qrcode.js"></script>
+<script src="lib/pdf.min.js"></script>
+<script src="lib/mammoth.browser.min.js"></script>
+<script src="lib/turndown.browser.umd.js"></script>
+<script src="lib/hyphen.js"></script>
+<script src="lib/pdfmake.js"></script>
+<script src="engine-parse.js"></script>
+<script src="engine-canvas.js"></script>
+<script src="engine-pdf.js"></script>
+<script src="engine-epub.js"></script>
+<script src="format.js"></script>
+<script src="sample.js"></script>
+<script src="app.js"></script>
+<script src="guide.js"></script>
+<script src="ocr-layout.js"></script>
+<script src="ocr.js"></script>
+
+</body></html>
