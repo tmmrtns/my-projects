@@ -423,7 +423,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <div class="tbl-wrap"><table class="ref"><tbody>
               <tr><td>Part</td><td><code># Part One – The Coast</code>, next paragraph is the subtitle, more paragraphs make an introduction page</td></tr>
               <tr><td>Chapter</td><td><code>## Title</code> or <code>## Title | Subline</code></td></tr>
-              <tr><td>Interlude</td><td><code>## * Title</code> unnumbered</td></tr>
+              <tr><td>Interlude</td><td><code>## * Title</code> unnumbered, labelled “Interlude”</td></tr>
+              <tr><td>Chapter without number</td><td><code>## ~ Title</code> no number, no label</td></tr>
               <tr><td>Section</td><td><code>### Heading</code> · <code>#### Small heading</code> · <code>### § Divider</code></td></tr>
               <tr><td>Epigraph</td><td>a <code>&gt; quotation</code> right after the chapter heading, last line <code>&gt; — Name</code></td></tr>
               <tr><td>Scene break</td><td><code>***</code> on its own line</td></tr>
@@ -537,6 +538,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <button type="button" data-v="smallcaps">Small caps</button><button type="button" data-v="dropcap">Drop cap</button><button type="button" data-v="none">Plain</button></div></div>
           <div class="field"><span class="lab">Chapter numbers</span><div class="seg" data-seg="chapter_number_style">
             <button type="button" data-v="arabic">1, 2, 3</button><button type="button" data-v="roman">I, II, III</button><button type="button" data-v="none">None</button></div></div>
+          <div class="field"><span class="lab">Word “Chapter” in the headings</span><div class="seg" data-seg="chapter_word">
+            <button type="button" data-v="show">Chapter 1</button><button type="button" data-v="hide">Number only</button></div></div>
           <div class="field"><span class="lab">Chapters start on</span><div class="seg" data-seg="chapter_break">
             <button type="button" data-v="page">Any page</button><button type="button" data-v="right">Right-hand page</button></div></div>
           <div class="row">

@@ -224,13 +224,13 @@ BK.buildEpub = async function (model, cfg, assets, progress) {
     let head;
     if (kind === 'chapter') {
       const no = sec.num == null ? null : BK.chapNo(sec.num, cfg);
-      const lab = sec.num == null ? L.interlude : (no ? `${L.chapter} ${no}` : '');
+      const lab = sec.num == null ? (sec.plain ? '' : L.interlude) : (no ? (cfg.chapter_word === 'hide' ? no : `${L.chapter} ${no}`) : '');
       head = (lab ? `<div class="chnum">${esc(lab)}</div>` : '') + `<h2 class="chtitle">${esc(sec.title)}</h2>` + (sec.sub ? `<div class="chsub">${esc(sec.sub)}</div>` : '<hr class="chrule"/>');
     } else head = `<h2 class="stitle">${esc(sec.title)}</h2>`;
     const cls = sec.role === 'back' ? ' class="backsec"' : '';
     const etype = kind === 'chapter' ? 'chapter' : (sec.role === 'back' ? 'backmatter' : 'frontmatter');
     const body = `<section epub:type="${etype}" id="${sec.id}"${cls}>${head}${blocksHtml(sec.blocks, E, 'h2')}${notesHtml(sec.notes, E)}${extraHtml || ''}</section>`;
-    const title = kind === 'chapter' && sec.num != null ? `${sec.num}. ${sec.title}` : (sec.num == null && kind === 'chapter' ? `${L.interlude}: ${sec.title}` : sec.title);
+    const title = kind === 'chapter' && sec.num != null ? `${sec.num}. ${sec.title}` : (sec.num == null && kind === 'chapter' ? (sec.plain ? sec.title : `${L.interlude}: ${sec.title}`) : sec.title);
     page(sec.id + '.xhtml', title, body, sec.id);
     return { title, href: sec.id + '.xhtml' };
   };
@@ -248,7 +248,7 @@ BK.buildEpub = async function (model, cfg, assets, progress) {
         if (cfg.part_minitoc !== false) {
           mini = `<div class="mtlab">${esc(L.in_this_part)}</div><ul class="minitoc">` + p.chapters.map(c => {
             const no = c.num != null ? BK.chapNo(c.num, cfg) : '';
-            const lab = c.num == null ? L.interlude + ':' : (no ? no + '.' : '');
+            const lab = c.num == null ? (c.plain ? '' : L.interlude + ':') : (no ? no + '.' : '');
             return `<li><a href="${c.id}.xhtml"><span class="mtn">${esc(lab)}</span> ${esc(c.title)}</a>${c.sub ? `<div class="mtd">${esc(c.sub)}</div>` : ''}</li>`;
           }).join('') + '</ul>';
         }
@@ -268,7 +268,7 @@ BK.buildEpub = async function (model, cfg, assets, progress) {
       if (letter !== cur) { cur = letter; items += `<div class="ixl">${esc(letter)}</div>`; }
       const seen = new Map();
       for (const o of model.occ[e.i]) if (!seen.has(o.sec)) seen.set(o.sec, o.oid);
-      const refs = [...seen].map(([sec, oid]) => `<a class="lnk" href="${sec.id}.xhtml#${oid}">${sec.num != null ? sec.num : esc(L.interlude[0])}</a>`).join(', ');
+      const refs = [...seen].map(([sec, oid]) => `<a class="lnk" href="${sec.id}.xhtml#${oid}">${sec.num != null ? sec.num : esc(sec.plain ? sec.title.slice(0, 14) : L.interlude[0])}</a>`).join(', ');
       items += `<div class="ix"><span class="ixn">${esc(e.disp)}</span> <span class="ixp">${esc(L.chapter_abbr)} ${refs}</span></div>`;
     }
     E.ctx = { sid: 'register' };
