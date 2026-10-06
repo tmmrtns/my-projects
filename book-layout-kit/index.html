@@ -142,6 +142,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .color { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .color input[type=color] { width: 34px; height: 26px; border: 1px solid var(--line); border-radius: 5px; padding: 1px; background: var(--sunk); cursor: pointer; }
 .color code { font: 11.5px var(--f-mono); color: var(--ink); }
+.color input.hex { width: 82px; font: 11.5px var(--f-mono); padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--sunk); color: var(--ink); }
+.color input.hex.bad { border-color: #b32020; }
 .coverimg { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
 .coverimg .thumb { width: 96px; aspect-ratio: 3/4; border-radius: 5px; background: var(--desk) center/cover no-repeat; border: 1px solid var(--line); }
 
@@ -585,10 +587,10 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <h2>Colours</h2>
           <div class="swatches" id="bandSwatches"></div>
           <div class="colors">
-            <label class="color"><input type="color" data-col="band"> Band <code></code></label>
-            <label class="color"><input type="color" data-col="band_ink"> Text on band <code></code></label>
-            <label class="color"><input type="color" data-col="mid"> Middle band <code></code></label>
-            <label class="color"><input type="color" data-col="ink"> Text on middle <code></code></label>
+            <label class="color"><input type="color" data-col="band" aria-label="Band"> Band <input type="text" class="hex" data-hex="band" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Band colour code"></label>
+            <label class="color"><input type="color" data-col="band_ink" aria-label="Text on band"> Text on band <input type="text" class="hex" data-hex="band_ink" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Text on band colour code"></label>
+            <label class="color"><input type="color" data-col="mid" aria-label="Middle band"> Middle band <input type="text" class="hex" data-hex="mid" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Middle band colour code"></label>
+            <label class="color"><input type="color" data-col="ink" aria-label="Text on middle"> Text on middle <input type="text" class="hex" data-hex="ink" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Text on middle colour code"></label>
           </div>
         </div>
         <div class="sect" id="coverPhotoSect">
@@ -603,17 +605,70 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           </div>
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="image_x" aria-label="Crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="image_y" aria-label="Crop top to bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_size" aria-label="Band height"><output></output></div></div>
+          <label class="check"><input type="checkbox" data-cb="band_shade"> Soft shade behind text when the bands are thinner</label>
+        </div>
+        <div class="sect">
+          <h2>Show on the front cover</h2>
+          <p class="hint">Untick what your cover picture already contains.</p>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-hide="label"> Label</label>
+            <label class="check"><input type="checkbox" data-hide="title"> Title</label>
+            <label class="check"><input type="checkbox" data-hide="subtitle"> Subtitle</label>
+            <label class="check"><input type="checkbox" data-hide="author"> Author</label>
+            <label class="check"><input type="checkbox" data-hide="footer"> Footer line</label>
+          </div>
         </div>
         <div class="sect">
           <h2>Front</h2>
+          <div class="field"><label for="c-subsrc">Subtitles from the book on the cover</label>
+            <select id="c-subsrc" data-cs="subtitle_source">
+              <option value="auto">Second subtitle if there is one, else the subtitle</option>
+              <option value="both">Both: subtitle and second subtitle</option>
+              <option value="first">Subtitle only</option>
+              <option value="second">Second subtitle only</option>
+              <option value="none">None</option>
+            </select>
+            <span class="hint">They are the Subtitle and Second subtitle fields of the Book tab. Change them there and the cover follows.</span></div>
           <div class="row">
             <div class="field"><label for="c-label">Label above the title</label><input type="text" id="c-label" data-ck="label"></div>
             <div class="field"><label for="c-footer">Footer line</label><input type="text" id="c-footer" data-ck="footer"></div>
           </div>
           <div class="field"><label for="c-lines">Title broken over lines (optional, one per line)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
         </div>
+        <div class="sect" id="backPhotoSect">
+          <h2>Back cover picture and bands</h2>
+          <div class="coverimg">
+            <div class="thumb" id="backThumb"></div>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="backIn">Choose picture</label><button class="btn small ghost" id="backClear" type="button">Remove</button></div>
+              <input type="file" id="backIn" hidden accept="image/*">
+              <p class="hint">Optional. It fills the middle of the back cover, between the bands.</p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Picture crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_x" aria-label="Back picture crop left to right"><output></output></div></div>
+          <div class="field"><span class="lab">Picture crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_y" aria-label="Back picture crop top to bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="back_band_size" aria-label="Back cover band height"><output></output></div></div>
+          <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_quote_y" aria-label="Quote position"><output></output></div></div>
+          <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_blurb_y" aria-label="Blurb position"><output></output></div></div>
+          <label class="check"><input type="checkbox" data-cb="back_shade"> Soft panel behind text that sits on a picture or outside its band</label>
+        </div>
         <div class="sect">
           <h2>Back</h2>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-hide="quote"> Show the quote</label>
+            <label class="check"><input type="checkbox" data-hide="blurb"> Show the blurb</label>
+            <label class="check"><input type="checkbox" data-hide="qr"> Show the QR code</label>
+          </div>
+          <div class="field"><label for="c-bsubsrc">Subtitles from the book on the back</label>
+            <select id="c-bsubsrc" data-cs="back_subtitle_source">
+              <option value="none">None</option>
+              <option value="auto">Second subtitle if there is one, else the subtitle</option>
+              <option value="both">Both: subtitle and second subtitle</option>
+              <option value="first">Subtitle only</option>
+              <option value="second">Second subtitle only</option>
+            </select></div>
+          <div class="field"><span class="lab">Subtitles: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_subtitle_y" aria-label="Back cover subtitle position"><output></output></div></div>
           <div class="field"><label for="c-quote">Quote in the top band</label><textarea id="c-quote" data-ck="quote" rows="2"></textarea></div>
           <div class="field"><label for="c-blurb">Blurb (blank line between paragraphs)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
           <div class="row">
