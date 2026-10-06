@@ -288,6 +288,97 @@
     return result;
   }
 
+  // ---- My Books library: data/books.json + files under data/books/<id>/<kind>/ ----
+  const BOOKS_FILE = 'data/books.json';
+  const KINDS = ['pdf', 'epub', 'kdp'];
+  const encPath = p => p.split('/').map(encodeURIComponent).join('/');
+  const safeName = n => (n || 'file').replace(/[^\w.\- ()]+/g, '_').slice(0, 120);
+  const bookFields = b => ({
+    title: text(b.title, 200, true), author: text(b.author, 160) ?? null, notes: text(b.notes, 2000) ?? null,
+  });
+  function requireSync() { if (!syncing()) throw fail('Please sign in.', 401); }
+
+  async function listBooks() {
+    requireSync();
+    const { data } = await ghRead(BOOKS_FILE);
+    return data.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  }
+  async function saveBook(book) { // create (no id) or edit title/author/notes
+    requireSync();
+    const f = bookFields(book);
+    if (!f.title) throw fail('A book needs a title.', 400);
+    return ghMutate(BOOKS_FILE, list => {
+      if (book.id) {
+        const cur = list.find(b => b.id === book.id);
+        if (!cur) throw fail('Book not found.', 404);
+        const next = Object.assign({}, cur, f, { updatedAt: Date.now() });
+        return [list.map(b => b.id === book.id ? next : b), next];
+      }
+      const created = Object.assign({ id: uuid(), files: {}, createdAt: Date.now(), updatedAt: Date.now() }, f);
+      return [list.concat([created]), created];
+    }, 'Save book');
+  }
+  async function deleteRepoFile(path) {
+    try {
+      const res = await gh('/contents/' + encPath(path) + '?ref=' + DATA_BRANCH);
+      if (!res.ok) return;
+      const { sha } = await res.json();
+      await gh('/contents/' + encPath(path), { method: 'DELETE', body: JSON.stringify({ message: 'Remove old version', sha, branch: DATA_BRANCH }) });
+    } catch (e) { /* an orphaned file is harmless */ }
+  }
+  // Newest upload of a kind replaces the previous one (older versions stay in the repo's git history).
+  async function uploadBookFile(bookId, kind, file) {
+    requireSync();
+    if (!KINDS.includes(kind)) throw fail('Unknown file type.', 400);
+    if (!file.size) throw fail('That file is empty.', 400);
+    if (file.size > 50 * 1024 * 1024) throw fail('Files can be at most 50 MB.', 413);
+    const name = safeName(file.name);
+    const path = 'data/books/' + bookId + '/' + kind + '/' + Date.now().toString(36) + '-' + name;
+    await ghPutMany([{ path, blob: file }], 'Upload ' + kind + ' for book');
+    const meta = { path, name: file.name, size: file.size, at: Date.now() };
+    let old = null;
+    await ghMutate(BOOKS_FILE, list => {
+      const cur = list.find(b => b.id === bookId);
+      if (!cur) throw fail('Book not found.', 404);
+      old = cur.files && cur.files[kind] ? cur.files[kind].path : null;
+      const next = Object.assign({}, cur, { files: Object.assign({}, cur.files, { [kind]: meta }), updatedAt: Date.now() });
+      return [list.map(b => b.id === bookId ? next : b), 0];
+    }, 'Update ' + kind + ' file');
+    if (old && old !== path) await deleteRepoFile(old);
+    return meta;
+  }
+  async function deleteBookFile(bookId, kind) {
+    requireSync();
+    let old = null;
+    await ghMutate(BOOKS_FILE, list => {
+      const cur = list.find(b => b.id === bookId);
+      if (!cur || !cur.files || !cur.files[kind]) return [list, 0];
+      old = cur.files[kind].path;
+      const files = Object.assign({}, cur.files); delete files[kind];
+      return [list.map(b => b.id === bookId ? Object.assign({}, cur, { files, updatedAt: Date.now() }) : b), 0];
+    }, 'Remove ' + kind + ' file');
+    if (old) await deleteRepoFile(old);
+  }
+  async function deleteBook(bookId) {
+    requireSync();
+    let paths = [];
+    await ghMutate(BOOKS_FILE, list => {
+      const cur = list.find(b => b.id === bookId);
+      if (!cur) return [list, 0];
+      paths = Object.values(cur.files || {}).map(f => f.path);
+      return [list.filter(b => b.id !== bookId), 0];
+    }, 'Delete book');
+    for (const path of paths) await deleteRepoFile(path);
+  }
+  async function getBookFile(path) { // -> Blob
+    requireSync();
+    if (!/^data\/books\/[\w-]+\/(pdf|epub|kdp)\//.test(path)) throw fail('Not found', 404);
+    await ensureBranch();
+    const res = await gh('/contents/' + encPath(path) + '?ref=' + DATA_BRANCH, { headers: { 'Accept': 'application/vnd.github.raw+json' } });
+    if (!res.ok) throw fail('Could not download the file (' + res.status + ').', res.status);
+    return new Blob([await res.arrayBuffer()]);
+  }
+
   // ---- price checks ----
   function priceChecks(method, id, body) {
     return mutate('checks', list => {
@@ -455,5 +546,5 @@
     await ghMutate('data/vault.json', list => [list.filter(e => e.id !== id), 0], 'Remove account');
   }
 
-  window.localApi = { importPromotions, login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
+  window.localApi = { listBooks, saveBook, uploadBookFile, deleteBookFile, deleteBook, getBookFile, importPromotions, login, register, addUser, listUsers, deleteUser, isAdmin, signIn, api, getImage, imageUrl, syncing, repo, setToken, uploadLocalData };
 })();
