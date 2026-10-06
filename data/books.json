@@ -1,0 +1,30 @@
+[
+ {
+  "id": "b3b8e671-f611-42ca-826c-45728cdaf32a",
+  "title": "Somehow, I Manage",
+  "author": "Tom Mertens",
+  "notes": "Two-Part Edition v15 (A5 PDF, EPUB, KDP 5x8 interior + cover zip)",
+  "files": {
+   "pdf": {
+    "path": "data/books/b3b8e671-f611-42ca-826c-45728cdaf32a/pdf/muwm9dnu-Somehow_I_Manage_A5_full.pdf",
+    "name": "Somehow_I_Manage_A5_full.pdf",
+    "size": 429984,
+    "at": 1791287386986
+   },
+   "epub": {
+    "path": "data/books/b3b8e671-f611-42ca-826c-45728cdaf32a/epub/muwm9do0-Somehow_I_Manage.epub",
+    "name": "Somehow_I_Manage.epub",
+    "size": 767387,
+    "at": 1791287386992
+   },
+   "kdp": {
+    "path": "data/books/b3b8e671-f611-42ca-826c-45728cdaf32a/kdp/muwm9do7-Somehow_I_Manage_KDP_5x8.zip",
+    "name": "Somehow_I_Manage_KDP_5x8.zip",
+    "size": 417382,
+    "at": 1791287386999
+   }
+  },
+  "createdAt": 1791287386986,
+  "updatedAt": 1791287387001
+ }
+]
