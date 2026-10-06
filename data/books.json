@@ -103,10 +103,16 @@
     "name": "The_Shadow_of_the_King.pdf",
     "size": 3198812,
     "at": 1791323822736
+   },
+   "source": {
+    "path": "data/books/7cdcec08-92c3-4601-b04d-5112cae1466c/source/mux89hb2-exports_20261006201655.zip",
+    "name": "exports_20261006201655.zip",
+    "size": 24646946,
+    "at": 1791324365425
    }
   },
   "createdAt": 1791323811642,
-  "updatedAt": 1791323823087,
+  "updatedAt": 1791324365780,
   "title": "The Shadow of the King",
   "author": "Tom Mertens",
   "notes": null,
