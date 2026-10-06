@@ -184,7 +184,7 @@ BK.labels = cfg => Object.assign({}, LABELS.en, LABELS[cfg.lang] || {}, cfg.labe
 
 BK.defaults = () => ({
   title: '', subtitle: '', subtitle2: '', author: '', lang: 'en', output: '',
-  page: 'A5', font_size: null, font: 'ebgaramond', opener: 'smallcaps', chapter_number_style: 'arabic',
+  page: 'A5', font_size: null, font: 'ebgaramond', opener: 'smallcaps', chapter_number_style: 'arabic', chapter_word: 'show',
   chapter_break: 'page', running_heads: { left: 'title', right: 'chapter' }, scene_break: '*   *   *',
   toc: true, part_minitoc: true, dedication: [], epigraph: '', colophon: [], labels: {},
   index: false, index_sort: '', index_exclude: [],
@@ -196,7 +196,7 @@ BK.defaults = () => ({
   roles: {}
 });
 
-const LAYOUT_KEYS = ['page', 'font_size', 'opener', 'chapter_number_style', 'chapter_break', 'running_heads', 'scene_break',
+const LAYOUT_KEYS = ['page', 'font_size', 'opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break',
   'toc', 'index', 'index_sort', 'photos', 'bw_maps'];
 BK.RECIPES = {
   novel: { label: 'Novel', set: { page: '5x8', opener: 'dropcap', chapter_number_style: 'arabic', running_heads: { left: 'author', right: 'title' }, index: false, toc: true, chapter_break: 'right', scene_break: '*' } },
@@ -403,9 +403,10 @@ function parseSectionBody(body) {
 const FRONT_RE = /^(preface|foreword|prologue|introduction|a note on .*|note to the reader|author'?s note|about this book|voorwoord|woord vooraf|inleiding|proloog|ten geleide|verantwoording|préface|avant-propos|introduction|vorwort|einleitung|prolog|prefacio|prólogo|introducción|prefazione|introduzione|prologo)$/i;
 const BACK_RE = /^(epilogue|afterword|acknowledg(e)?ments?|notes|endnotes|sources|bibliography|references|further reading|about the author|glossary|credits|permissions|nawoord|epiloog|dankwoord|noten|bronnen|bronvermelding|literatuur|literatuurlijst|bibliografie|over de auteur|over de schrijver|verklarende woordenlijst|woordenlijst|épilogue|postface|remerciements|bibliographie|à propos de l'auteur|nachwort|epilog|danksagung|anmerkungen|quellen|literaturverzeichnis|über den autor|epílogo|agradecimientos|bibliografía|epilogo|ringraziamenti)$/i;
 const APPX_RE = /^(appendix|bijlage|annexe?|anhang|apéndice|appendice)(\s+[A-Z0-9IVX]+)?\s*[:.–—-]?\s*/i;
-BK.ROLES = { chapter: 'Chapter', interlude: 'Interlude', appendix: 'Appendix', front: 'Front section', back: 'Back section' };
+BK.ROLES = { chapter: 'Chapter', plain: 'Chapter without number', interlude: 'Interlude', appendix: 'Appendix', front: 'Front section', back: 'Back section' };
 
-function guessRole(title, interlude, seenChapter) {
+function guessRole(title, interlude, seenChapter, plain) {
+  if (plain) return 'plain';
   if (interlude) return 'interlude';
   if (APPX_RE.test(title) && title.replace(APPX_RE, '').trim()) return 'appendix';
   if (!seenChapter && FRONT_RE.test(title)) return 'front';
@@ -437,7 +438,7 @@ BK.parse = function (mdIn, cfg) {
   let part = { pid: null, chapters: [] };
   model.parts.push(part);
   const keyCount = {}, used = {};
-  let seenChapter = false, num = 0, inum = 0, anum = 0, pnum = 0;
+  let seenChapter = false, num = 0, inum = 0, pnum2 = 0, anum = 0, pnum = 0;
   if (lead.trim() && wordCount(lead) > 0) items.unshift({ level: 2, head: '', body: lead, implicit: true });
   const uid = base => { let id = base, k = 2; while (used[id]) id = base + '-' + (k++); used[id] = 1; return id; };
 
@@ -460,14 +461,16 @@ BK.parse = function (mdIn, cfg) {
     let t = head, sub = '';
     const bar = head.indexOf(' | ');
     if (bar >= 0) { t = head.slice(0, bar).trim(); sub = head.slice(bar + 3).trim(); }
-    let interlude = false;
+    let interlude = false, plain = false;
     if (t.startsWith('* ')) { interlude = true; t = t.slice(2).trim(); }
+    else if (t.startsWith('~ ')) { plain = true; t = t.slice(2).trim(); }
     const base = BK.slug(t || 'untitled');
     keyCount[base] = (keyCount[base] || 0) + 1;
     const key = keyCount[base] > 1 ? base + '#' + keyCount[base] : base;
-    const guessed = guessRole(t, interlude, seenChapter);
+    const guessed = guessRole(t, interlude, seenChapter, plain);
     let role = cfg.roles && cfg.roles[key] || guessed;
     if (interlude && role === 'chapter') role = 'interlude';
+    if (plain && role === 'chapter') role = 'plain';
     const parsed = parseSectionBody(it.body);
     const sec = { key, role, guessed, rawTitle: t, title: t, sub, blocks: parsed.blocks, notes: parsed.notes,
       words: wordCount(it.body), implicit: !!it.implicit, body: it.body };
@@ -478,6 +481,7 @@ BK.parse = function (mdIn, cfg) {
     } else {
       seenChapter = true;
       if (role === 'interlude') { sec.num = null; sec.id = 'int' + (++inum); }
+      else if (role === 'plain') { sec.num = null; sec.plain = true; sec.id = 'pl' + (++pnum2); }
       else {
         sec.num = ++num; sec.id = 'ch' + num;
         if (role === 'appendix') {

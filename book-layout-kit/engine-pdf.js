@@ -390,7 +390,7 @@ function sectionNodes(sec, R, kind, extra) {
   if (kind === 'chapter') {
     if (R.cfg.chapter_break === 'right') out.push(...req(R, sec.id, 'right'));
     const no = sec.num == null ? null : BK.chapNo(sec.num, R.cfg);
-    const lab = sec.num == null ? R.L.interlude : (no ? R.L.chapter + ' ' + no : '');
+    const lab = sec.num == null ? (sec.plain ? '' : R.L.interlude) : (no ? (R.cfg.chapter_word === 'hide' ? no : R.L.chapter + ' ' + no) : '');
     const head = { id: sec.id, pageBreak: 'before' };
     if (lab) out.push(Object.assign({ text: lab.toUpperCase(), fontSize: 8.5, characterSpacing: .3 * 8.5, alignment: 'center', margin: [0, mm(20 * G.VS), 0, 0] }, head));
     out.push(Object.assign({ text: sec.title, italics: true, fontSize: 17, lineHeight: R.lh(1.2), alignment: 'center', margin: [mm(6), mm(4), mm(6), mm(2)] }, lab ? {} : head));
@@ -428,7 +428,7 @@ function tocRows(model, R) {
     }
     p.chapters.forEach(c => {
       const no = c.num != null ? BK.chapNo(c.num, R.cfg) : '';
-      rows.push([c.num == null ? `${L.interlude}: ${c.title}` : (no ? `${no}. ${c.title}` : c.title), c.id, 1]);
+      rows.push([c.num == null ? (c.plain ? c.title : `${L.interlude}: ${c.title}`) : (no ? `${no}. ${c.title}` : c.title), c.id, 1]);
     });
   });
   model.back.forEach(s => rows.push([s.title, s.id, 0]));
@@ -487,7 +487,7 @@ function partNodes(p, R) {
       extra.push({ text: R.L.in_this_part.toUpperCase(), fontSize: 8.5, characterSpacing: .25 * 8.5, alignment: 'center', margin: [0, mm(8), 0, mm(3)] });
       p.chapters.forEach(c => {
         const no = c.num != null ? BK.chapNo(c.num, R.cfg) : '';
-        const lab = c.num == null ? R.L.interlude + ':' : (no ? no + '.' : '');
+        const lab = c.num == null ? (c.plain ? '' : R.L.interlude + ':') : (no ? no + '.' : '');
         const row = tocRow(c.title, c.id, 1, R, lab);
         row.margin = [0, 0, 0, c.sub ? 0 : mm(3.5)];
         extra.push(row);

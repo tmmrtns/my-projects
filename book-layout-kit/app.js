@@ -122,7 +122,7 @@ function renderStructure() {
     const s = o.sec;
     const row = document.createElement('div');
     row.className = 'ol-sec' + (S.cfg.roles[s.key] && S.cfg.roles[s.key] !== s.guessed ? ' changed' : '');
-    const no = s.role === 'chapter' || s.role === 'appendix' ? BK.chapNo(s.num, S.cfg) || '·' : (s.role === 'interlude' ? '*' : (s.role === 'front' ? 'F' : 'B'));
+    const no = s.role === 'chapter' || s.role === 'appendix' ? BK.chapNo(s.num, S.cfg) || '·' : (s.role === 'interlude' ? '*' : s.role === 'plain' ? '–' : (s.role === 'front' ? 'F' : 'B'));
     row.innerHTML = `<span class="no"></span><div class="t"><div></div><div class="s"></div></div><select aria-label="Role"></select>`;
     row.querySelector('.no').textContent = no;
     row.querySelector('.t div').textContent = s.title || '(untitled)';
@@ -447,7 +447,7 @@ function parsePos(p) {
 }
 function fromKitJson(j) {
   const c = BK.defaults();
-  for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang', 'output', 'page', 'font_size', 'opener', 'chapter_number_style', 'chapter_break', 'scene_break',
+  for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang', 'output', 'page', 'font_size', 'opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'scene_break',
     'toc', 'part_minitoc', 'dedication', 'epigraph', 'colophon', 'labels', 'index', 'index_sort', 'index_exclude', 'index_particles', 'bw_maps', 'description', 'extra_epub_css']) if (j[k] !== undefined) c[k] = j[k];
   if (j.chapter_numbers === false && !j.chapter_number_style) c.chapter_number_style = 'none';
   if (j.running_heads) c.running_heads = Object.assign(c.running_heads, j.running_heads);
@@ -470,7 +470,8 @@ function toKitJson(files, cfgIn) {
   j.page = c.page;
   if (c.font_size) j.font_size = c.font_size;
   if (c.font !== 'ebgaramond') j.font = { family: BK.FONTS[c.font].name, prefix: BK.FONTS[c.font].prefix };
-  for (const k of ['opener', 'chapter_number_style', 'chapter_break', 'running_heads', 'scene_break', 'toc', 'part_minitoc', 'index', 'bw_maps', 'photos']) j[k] = c[k];
+  for (const k of ['opener', 'chapter_number_style', 'chapter_word', 'chapter_break', 'running_heads', 'scene_break', 'toc', 'part_minitoc', 'index', 'bw_maps', 'photos']) j[k] = c[k];
+  if (j.chapter_word !== 'hide') delete j.chapter_word;
   if (c.index_sort) j.index_sort = c.index_sort;
   if (c.index_exclude && c.index_exclude.length) j.index_exclude = c.index_exclude;
   for (const k of ['dedication', 'colophon']) if (c[k] && c[k].length) j[k] = c[k];
@@ -1072,7 +1073,7 @@ function kitFiles(mdIn, cfgIn) {
   const md = mdIn == null ? S.md : mdIn, cfg = cfgIn || S.cfg;
   const m = BK.parse(md, cfg);
   const files = new Map(), j = { front: [], parts: [], chapters: [], back: [], appendix_parts: [] };
-  const head = s => `## ${s.role === 'interlude' ? '* ' : ''}${s.rawTitle}${s.sub ? ' | ' + s.sub : ''}\n`;
+  const head = s => `## ${s.role === 'interlude' ? '* ' : s.role === 'plain' ? '~ ' : ''}${s.rawTitle}${s.sub ? ' | ' + s.sub : ''}\n`;
   if (m.front.length) { files.set('front.md', m.front.map(s => head(s) + s.body.replace(/^\n+/, '\n')).join('\n').trim() + '\n'); j.front.push('front.md'); }
   let pk = 0;
   for (const p of m.parts) {
