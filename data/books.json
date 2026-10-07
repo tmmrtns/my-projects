@@ -141,10 +141,16 @@
     "name": "Weg_met_de_Wallen.epub",
     "size": 594423,
     "at": 1791402255095
+   },
+   "kdp": {
+    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/kdp/muyio0oo-Weg met de Wallen KDP.zip",
+    "name": "Weg met de Wallen KDP.zip",
+    "size": 2637585,
+    "at": 1791402289677
    }
   },
   "createdAt": 1791401646104,
-  "updatedAt": 1791402278065,
+  "updatedAt": 1791402290048,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
   "notes": null,
