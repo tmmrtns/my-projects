@@ -135,6 +135,10 @@
   "updatedAt": 1791401951121,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
-  "notes": null
+  "notes": null,
+  "cover": {
+   "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/cover/muyih24c.jpg",
+   "at": 1791401963900
+  }
  }
 ]
