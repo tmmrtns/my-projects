@@ -123,9 +123,16 @@
  },
  {
   "id": "6478af33-e810-4812-ab12-ba60c157ac64",
-  "files": {},
+  "files": {
+   "pdf": {
+    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/pdf/muyigo2g-Weg_met_de_Wallen_compleet (2).pdf",
+    "name": "Weg_met_de_Wallen_compleet (2).pdf",
+    "size": 6754128,
+    "at": 1791401950775
+   }
+  },
   "createdAt": 1791401646104,
-  "updatedAt": 1791401646104,
+  "updatedAt": 1791401951121,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
   "notes": null
