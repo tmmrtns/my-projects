@@ -129,10 +129,16 @@
     "name": "Weg_met_de_Wallen_compleet (2).pdf",
     "size": 6754128,
     "at": 1791401950775
+   },
+   "kdp": {
+    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/kdp/muyih9bd-Weg_met_de_Wallen_KDP_binnenwerk.pdf",
+    "name": "Weg_met_de_Wallen_KDP_binnenwerk.pdf",
+    "size": 253407,
+    "at": 1791401972386
    }
   },
   "createdAt": 1791401646104,
-  "updatedAt": 1791401951121,
+  "updatedAt": 1791401972772,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
   "notes": null,
