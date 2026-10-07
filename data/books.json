@@ -130,12 +130,6 @@
     "size": 6754128,
     "at": 1791401950775
    },
-   "kdp": {
-    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/kdp/muyih9bd-Weg_met_de_Wallen_KDP_binnenwerk.pdf",
-    "name": "Weg_met_de_Wallen_KDP_binnenwerk.pdf",
-    "size": 253407,
-    "at": 1791401972386
-   },
    "source": {
     "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/source/muyihzyc-Weg_met_de_Wallen_backup.zip",
     "name": "Weg_met_de_Wallen_backup.zip",
@@ -150,7 +144,7 @@
    }
   },
   "createdAt": 1791401646104,
-  "updatedAt": 1791402255482,
+  "updatedAt": 1791402278065,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
   "notes": null,
