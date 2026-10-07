@@ -141,10 +141,16 @@
     "name": "Weg_met_de_Wallen_backup.zip",
     "size": 22560683,
     "at": 1791402022354
+   },
+   "epub": {
+    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/epub/muyinbbc-Weg_met_de_Wallen.epub",
+    "name": "Weg_met_de_Wallen.epub",
+    "size": 594423,
+    "at": 1791402255095
    }
   },
   "createdAt": 1791401646104,
-  "updatedAt": 1791402022736,
+  "updatedAt": 1791402255482,
   "title": "Weg met de wallen",
   "author": "Tom Mertens",
   "notes": null,
