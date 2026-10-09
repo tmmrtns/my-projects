@@ -38,10 +38,10 @@
   "notes": "Eerste druk, september 2026 (A5 PDF + EPUB + KDP-bestanden)",
   "files": {
    "epub": {
-    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/epub/muzlkb7b-Waar_Jullie_Vandaan_Komen.epub",
+    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/epub/mv1jthus-Waar_Jullie_Vandaan_Komen.epub",
     "name": "Waar_Jullie_Vandaan_Komen.epub",
-    "size": 20396169,
-    "at": 1791467717074
+    "size": 21890533,
+    "at": 1791585637187
    },
    "kdp": {
     "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/kdp/muzlqaau-Waar_Jullie_Vandaan_Komen_KDP_bestanden.zip",
@@ -63,7 +63,7 @@
    }
   },
   "createdAt": 1791288473009,
-  "updatedAt": 1791585501189,
+  "updatedAt": 1791585637616,
   "cover": {
    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/cover/mv1jt7p0.jpg",
    "at": 1791585608427
