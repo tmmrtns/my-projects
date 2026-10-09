@@ -44,10 +44,10 @@
     "at": 1791585637187
    },
    "kdp": {
-    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/kdp/muzlqaau-Waar_Jullie_Vandaan_Komen_KDP_bestanden.zip",
+    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/kdp/mv1jus6g-Waar_Jullie_Vandaan_Komen_KDP_bestanden.zip",
     "name": "Waar_Jullie_Vandaan_Komen_KDP_bestanden.zip",
-    "size": 21382563,
-    "at": 1791467912813
+    "size": 22835645,
+    "at": 1791585697556
    },
    "pdf": {
     "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/pdf/mv1jqkfx-Waar_Jullie_Vandaan_Komen.pdf",
@@ -63,7 +63,7 @@
    }
   },
   "createdAt": 1791288473009,
-  "updatedAt": 1791585637616,
+  "updatedAt": 1791585697905,
   "cover": {
    "path": "data/books/b840f721-e476-49b1-a656-53245b48e9ae/cover/mv1jt7p0.jpg",
    "at": 1791585608427
