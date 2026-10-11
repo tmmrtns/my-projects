@@ -491,7 +491,7 @@ function fromKitJson(j) {
   return c;
 }
 // the adjustable cover values and their defaults (a value left at its default is not written to book.json)
-const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_)/.test(k)) o[k] = d[k]; return o; };
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|bands_images_back)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -514,7 +514,7 @@ function toKitJson(files, cfgIn) {
   delete cv.image_x; delete cv.image_y;
   if (cv.subtitle_source === 'auto') delete cv.subtitle_source;
   if (cv.back_subtitle_source === 'none') delete cv.back_subtitle_source;
-  const DEF = Object.assign({ band_opacity: 100, band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 }, BK.defaults().cover.top_band != null ? ARCH_DEF() : {});
+  const DEF = Object.assign({ image_zoom: 100, back_image_zoom: 100, band_opacity: 100, band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 }, BK.defaults().cover.top_band != null ? ARCH_DEF() : {});
   for (const k of Object.keys(DEF)) if (cv[k] === DEF[k] || cv[k] == null) delete cv[k];
   if (cv.back_shade !== false) delete cv.back_shade;
   if (!cv.back_image) { delete cv.back_image_x; delete cv.back_image_y; }
@@ -778,7 +778,7 @@ function fillForm() {
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
   const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
-  for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image']]) { const pa = c.cover[key] ? BK.findAsset(S.assets, c.cover[key]) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
+  for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image']]) { const pa = c.cover[key] ? BK.findAsset(S.assets, c.cover[key]) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
   qrStatus();
@@ -1624,7 +1624,7 @@ $('#logoTree').addEventListener('click', async () => {
   } catch (err) { console.error(err); toast('The tree logo could not be loaded (' + (err && err.message || err) + '). Use Choose logo instead.'); }
 });
 // pictures for the arch cover: inside the arch (arch_image) and outside it (arch_bg_image)
-for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image']]) {
+for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image']]) {
   $('#' + id + 'In').addEventListener('change', async e => {
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
