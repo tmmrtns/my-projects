@@ -600,6 +600,7 @@ async function importEntries0(entries) {
       z.forEach((path, f) => { if (!f.dir && !/(^|\/)(__MACOSX|\.)/.test(path)) flat.push({ name: path, buf: () => f.async('arraybuffer'), text: () => f.async('string'), blob: async () => new Blob([await f.async('arraybuffer')], { type: /\.png$/i.test(path) ? 'image/png' : (/\.jpe?g$/i.test(path) ? 'image/jpeg' : '') }) }); });
     } else flat.push(e);
   }
+  { const by = findBookyai(flat); if (by) { await importBookyai(flat, by); return; } }
   if (S.cfg.doc_type === 'photobook') { await pbImport(flat); return; }
   const base = n => n.split('/').pop();
   const imgs = flat.filter(e => IMG_EXT.includes(ext(e.name)) && !/(^|\/)(qr_|.*_bw\.jpg$|.*_[LR]\.(jpe?g|png)$|cover_front|cover_back)/.test(e.name));
@@ -793,6 +794,93 @@ function initPhoto() {
   $('#pbAdd').addEventListener('change', async e => { const f = [...e.target.files].map(fileEntry); e.target.value = ''; if (f.length) await importEntries(f); });
 }
 
+
+
+// ---------------------------------------------------------------- Bookyai import
+// A Bookyai project folder (or its .zip) holds the sources, a history and one exports_<timestamp> folder per export.
+// The newest export has the whole book as one markdown file; cover.png and back-cover.png sit next to it.
+function findBookyai(flat) {
+  let best = null;
+  for (const e of flat) {
+    const m = /^(.*\/)?exports_(\d+)\/([^/]+\.md)$/i.exec(e.name);
+    if (!m || /book_metadata_stats\.md$/i.test(e.name)) continue;
+    const ts = m[2], prefix = m[1] || '';
+    if (!best || ts > best.ts || (ts === best.ts && prefix === best.prefix && e.size > best.e.size)) best = { e, ts, prefix };
+  }
+  if (!best) return null;
+  const bj = flat.find(e => e.name === best.prefix + 'book.json');
+  return Object.assign(best, { bj });
+}
+const BY_LANG = { dutch: 'nl', nederlands: 'nl', english: 'en', french: 'fr', german: 'de', spanish: 'es', italian: 'it' };
+const BY_CH = /^(hoofdstuk|chapter|kapitel|chapitre|cap[ií]tulo|capitolo)\s+(\d+|[ivxlc]+)\s*[:.\-–—]?\s*(.*)$/i;
+const BY_BACK = /^(epiloog|epilogue|[ée]pilogue|nawoord|afterword|verder lezen|further reading|lectures|weiterf[üu]hrende|bronnen|sources|literatuur|dankwoord|acknowledg|bedankt|over de auteur|about the author|colofon|appendix|bijlage|woord van dank|remerciements|danksagung|agradecimientos)/i;
+const BY_DEDIC = /^(opdracht|toewijding|dedication|widmung|d[ée]dicace|dedicatoria|dedica)\b/i;
+function bookyaiToKit(raw) {
+  const lines = raw.replace(/\r\n?/g, '\n').split('\n');
+  const head = { title: '', subtitle: '', colophon: [] };
+  const out = [], roles = []; let mode = null, dedic = [], inDedic = false, seenH2 = false;
+  for (const ln of lines) {
+    const h2 = /^##\s+(.*?)\s*#*\s*$/.exec(ln);
+    if (!seenH2 && !h2) {
+      let m;
+      if ((m = /^#\s+(.*)$/.exec(ln))) head.title = head.title || m[1].trim();
+      else if ((m = /^#{2,}\s+(.*)$/.exec(ln))) head.subtitle = head.subtitle || m[1].trim();
+      else if (/^\*?\s*(copyright|©)/i.test(ln.trim())) head.colophon.push(ln.trim().replace(/^\*+|\*+$/g, '').trim());
+      continue;
+    }
+    if (h2) {
+      seenH2 = true; inDedic = false;
+      const t = h2[1];
+      let m;
+      if ((m = BY_CH.exec(t))) { out.push('## ' + (m[3] || t).trim()); roles.push(null); mode = 'chapter'; }
+      else if (mode === null || mode === 'front') {
+        if (BY_DEDIC.test(t)) { inDedic = true; mode = 'front'; }
+        else { out.push('## ' + t); roles.push('front'); mode = 'front'; }
+      } else if (BY_BACK.test(t)) { out.push('## ' + t); roles.push('back'); mode = 'back'; }
+      else out.push('### ' + t);
+      continue;
+    }
+    if (/^\s*---+\s*$/.test(ln)) continue;
+    if (inDedic) { dedic.push(ln); continue; }
+    const hn = /^(#{3,})\s+(.*)$/.exec(ln);
+    out.push(hn ? '#'.repeat(Math.min(5, hn[1].length + 1)) + ' ' + hn[2] : ln);
+  }
+  head.dedication = dedic.join('\n').split(/\n\s*\n/).map(x => x.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+  return { head, md: out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n', roles };
+}
+async function importBookyai(flat, by) {
+  const base = n => n.split('/').pop();
+  let info = {};
+  if (by.bj) { try { info = JSON.parse(await by.bj.text()); } catch (e) { info = {}; } }
+  upPlan(5, 'Reading the Bookyai export');
+  const k = bookyaiToKit(await by.e.text()); upStep('Reading the text');
+  const find = nm => flat.find(e => e.name === by.prefix + nm);
+  const pic = async nm => { const e = find(nm); if (!e) return null; const a = await addImage(nm, await e.blob()); upStep('Reading ' + nm); return a; };
+  const front = await pic('cover.png'), back = await pic('back-cover.png') || await pic('back-cover-art.png');
+  let ill = 0;
+  for (const e of flat.filter(e => e.name.startsWith(by.prefix + 'images/') && IMG_EXT.includes(ext(e.name)))) { if (await addImage(base(e.name), await e.blob())) ill++; }
+  upStep('Reading the pictures');
+  const c = BK.defaults();
+  c.title = info.title || k.head.title; c.subtitle = info.subtitle || k.head.subtitle; c.author = info.author || '';
+  c.lang = BY_LANG[String(info.language || '').toLowerCase()] || S.cfg.lang || 'en';
+  c.output = (c.title || 'book').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'book';
+  const trim = info.printPages && info.printPages.trimId; if (trim && BK.PAGE_SIZES[trim]) c.page = trim;
+  if (info.design && info.design.dropCap) c.opener = 'dropcap';
+  if (k.head.colophon.length) c.colophon = k.head.colophon;
+  if (k.head.dedication.length) c.dedication = k.head.dedication;
+  c.doc_type = 'book';
+  if (front) Object.assign(c.cover, { style: 'photo', image: 'cover.png', band_size: 0, band_shade: false, hide: { label: true, title: true, subtitle: true, author: true, footer: true } });
+  if (back) Object.assign(c.cover, { back_image: base(back.name), back_shade: false, back_band_size: 0 });
+  // roles of the sections: front matter before the first chapter, back matter after the last one
+  const keys = sectionKeys(k.md); c.roles = {};
+  keys.forEach((key, i) => { if (k.roles[i]) c.roles[key] = k.roles[i]; });
+  S.cfg = c; S.md = k.md; S.isSample = false; S.isSampleCfg = false;
+  S.pdf = null; S.epub = null;
+  fillForm(); $('#editor').value = S.md; sampleTag(); renderAssets(); changed(true); parse();
+  const n = S.model ? BK.chaptersOf(S.model).length : 0;
+  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${ill} illustrations loaded` : '');
+  status(msg); toast(msg);
+}
 
 // start over: remove the pictures, or everything, so nothing old ends up in a new book
 function clearImages() {
