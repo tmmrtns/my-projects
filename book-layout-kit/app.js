@@ -494,7 +494,7 @@ function fromKitJson(j) {
 // layout settings: the back cover has its own copy (prefix bk_) when "same layout" is off and the back is being edited
 const CK = k => (S.cfg.cover.back_same_layout === false && S.coverEdit === 'back' && BK.layoutKey(k)) ? 'bk_' + k : k;
 const CV = k => { const c = S.cfg.cover, kk = CK(k); return c[kk] !== undefined ? c[kk] : c[k]; };
-const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|mid_opacity|back_same_layout|divider|qr_size)/.test(k)) o[k] = d[k]; return o; };
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|mid_opacity|back_same_layout|divider|qr_size|classic_|back_quote_size|back_blurb_size|back_sub_size)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -787,6 +787,7 @@ function fillForm() {
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
   const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
   for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image']]) { const pa = CV(key) ? BK.findAsset(S.assets, CV(key)) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
+  { const da = c.cover.divider_image ? BK.findAsset(S.assets, c.cover.divider_image) : null; $('#divThumb').style.backgroundImage = da ? `url("${da.dataURL}")` : 'none'; }
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
   qrStatus();
@@ -1661,6 +1662,18 @@ $('#logoIn').addEventListener('change', async e => {
   if (!a) return;
   useLogo(f.name);
 });
+// picture or icon as the divider between title and subtitle
+function useDivider(name) { S.cfg.cover.divider_image = name; S.cfg.cover.divider = 'image'; fillForm(); renderAssets(); changed(); setView('cover'); }
+$('#divIn').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const a = await addImage(f.name, f); if (a) useDivider(f.name); });
+$('#divClear').addEventListener('click', () => { S.cfg.cover.divider_image = ''; if (S.cfg.cover.divider === 'image') S.cfg.cover.divider = 'auto'; fillForm(); changed(); });
+$('#divTree').addEventListener('click', async () => {
+  try {
+    let blob;
+    try { const r = await fetch('logos/tree-of-life.png'); if (!r.ok) throw new Error(r.status); blob = await r.blob(); }
+    catch (e) { await BK.loadScript('logos/tree-of-life.js'); const u = window.BK_LOGO_TREE, bin = atob(u.split(',')[1]), arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); blob = new Blob([arr], { type: 'image/png' }); }
+    const a = await addImage('tree-of-life.png', blob); if (a) useDivider('tree-of-life.png');
+  } catch (err) { console.error(err); toast('The tree could not be loaded (' + (err && err.message || err) + '). Use Choose picture instead.'); }
+});
 $('#logoTree').addEventListener('click', async () => {
   try {
     let blob;
@@ -1723,7 +1736,29 @@ window.BKAPP = {
 
 load();
 S.isSampleCfg = S.isSample;
-initForm(); fillForm(); ed.value = S.md; sampleTag();
+// every settings block can be folded away by clicking its heading; the choice is remembered. On the Cover tab only the first blocks start open.
+function initCollapse() {
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem('bk-open:' + k); localStorage.setItem('bk-open:' + k, v); } catch (e) { return null; } };
+  $$('.panel').forEach(p => {
+    const secs = [...p.querySelectorAll(':scope > .sect')].filter(sec => sec.querySelector(':scope > h2'));
+    secs.forEach((sec, i) => {
+      const h = sec.querySelector(':scope > h2'), key = p.id + ':' + (sec.id || i);
+      h.classList.add('collapser'); h.setAttribute('role', 'button'); h.tabIndex = 0;
+      const saved = store(key), open = saved !== null && saved !== undefined ? saved === '1' : (p.id === 'panel-cover' ? i < 3 : true);
+      const set = (o, save) => { sec.classList.toggle('collapsed', !o); h.setAttribute('aria-expanded', String(o)); if (save) store(key, o ? '1' : '0'); };
+      set(open, false);
+      h.addEventListener('click', () => set(sec.classList.contains('collapsed'), true));
+      h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); set(sec.classList.contains('collapsed'), true); } });
+    });
+    if (secs.length > 3) {
+      const bar = document.createElement('div'); bar.className = 'collbar';
+      bar.innerHTML = '<button class="linkbtn" type="button" data-a="open">Open all</button><button class="linkbtn" type="button" data-a="close">Close all</button>';
+      bar.addEventListener('click', e => { const a = e.target.dataset.a; if (!a) return; secs.forEach(sec => { const h = sec.querySelector(':scope > h2'); if (sec.classList.contains('collapsed') === (a === 'open')) h.click(); }); });
+      p.insertBefore(bar, p.firstChild);
+    }
+  });
+}
+initForm(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
 try { const t = sessionStorage.getItem('blk-tab'); if (t && $('#panel-' + t)) showTab(t); } catch (e) { /* ignore */ }
 parse();
 status(S.isSample ? 'Sample manuscript loaded · drop your own on the left' : 'Your manuscript is restored from this browser');

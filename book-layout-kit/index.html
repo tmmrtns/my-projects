@@ -73,6 +73,13 @@ header.bar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; 
 
 .sect { display: grid; gap: 12px; padding-block: 14px; border-top: 1px solid var(--line); }
 .sect:first-child { border-top: 0; padding-top: 2px; }
+.sect > h2.collapser { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; user-select: none; }
+.sect > h2.collapser::after { content: "▾"; font-size: 13px; letter-spacing: 0; transition: transform .15s; }
+.sect.collapsed > h2.collapser::after { transform: rotate(-90deg); }
+.sect > h2.collapser:hover, .sect > h2.collapser:focus-visible { color: var(--ink, #141413); outline: none; }
+.sect.collapsed { gap: 0; }
+.sect.collapsed > :not(h2) { display: none !important; }
+.collbar { display: flex; gap: 8px; justify-content: flex-end; padding: 2px 0 0; }
 .sect > h2 { margin: 0; font: 500 11px var(--f-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
 .row.three { grid-template-columns: 1fr 1fr 1fr; }
@@ -664,7 +671,10 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         </div>
                 <div class="sect" id="coverDividerSect">
           <h2>Divider between title and subtitle</h2>
-          <div class="field"><label for="c-div">Divider or ornament</label><select id="c-div" data-cs="divider"><option value="auto">Automatic (short line on the bands, none on the arch)</option><option value="none">None</option><option value="line">Short line</option><option value="long">Long line</option><option value="double">Double line</option><option value="dotline">Line with a dot</option><option value="dots">Three dots</option><option value="diamond">Lines with a diamond</option><option value="star">Lines with a star</option><option value="fleuron">Fleuron ❦</option></select></div>
+          <div class="field"><label for="c-div">Divider or ornament</label><select id="c-div" data-cs="divider"><option value="auto">Automatic (short line on the bands, none on the arch)</option><option value="none">None</option><option value="line">Short line</option><option value="long">Long line</option><option value="double">Double line</option><option value="dotline">Line with a dot</option><option value="dots">Three dots</option><option value="diamond">Lines with a diamond</option><option value="star">Lines with a star</option><option value="fleuron">Fleuron ❦</option><option value="image">Picture or icon (choose below)</option></select></div>
+          <div class="coverimg" style="margin-top:10px"><div class="thumb" id="divThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#7a7a7a"></div><div style="display:grid;gap:8px"><strong style="font-size:13px">Picture or icon as divider</strong><div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="divIn">Choose picture</label><button class="btn small" id="divTree" type="button">Use the tree</button><button class="btn small ghost" id="divClear" type="button">Remove</button></div><input type="file" id="divIn" hidden accept="image/*"><p class="hint">A light drawing on a plain dark ground takes the text colour (like the logo). Tick "original colours" for a coloured picture.</p></div></div>
+          <label class="check"><input type="checkbox" data-cb="divider_original" data-off="1"> Keep the original colours of the picture</label>
+          <label class="check"><input type="checkbox" data-cb="divider_invert" data-off="1"> Dark drawing on a light ground (invert)</label>
           <div class="field"><span class="lab">Size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="divider_size" aria-label="Divider size"><output></output></div></div>
           <div class="field"><span class="lab">Nudge up or down (mm)</span><div class="range"><input type="range" min="-15" max="15" step="1" data-pos="divider_y" data-unit=" mm" aria-label="Divider nudge"><output></output></div></div>
           <p class="hint">It is centred between the title and the subtitle and takes the text colour. On the front cover only.</p>
@@ -702,6 +712,19 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_mid_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, less leaves room for the colour)</span><div class="range"><input type="range" min="20" max="300" step="5" data-pos="band_mid_image_zoom" aria-label="Picture size"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="band_mid_image_run" data-off="1"> Let the picture run through the whole cover (off: only in the middle band)</label>
+          <details class="grp"><summary>Front: text position and size</summary>
+            <div class="field"><span class="lab">Top label: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_label_dy" data-unit=" mm" aria-label="Top label: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Top label: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_label_size" aria-label="Top label: size"><output></output></div></div>
+            <div class="field"><span class="lab">Title: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_title_dy" data-unit=" mm" aria-label="Title: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Title: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_title_size" aria-label="Title: size"><output></output></div></div>
+            <div class="field"><span class="lab">Subtitles: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_sub_dy" data-unit=" mm" aria-label="Subtitles: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Subtitles: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_sub_size" aria-label="Subtitles: size"><output></output></div></div>
+            <div class="field"><span class="lab">Author: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_author_dy" data-unit=" mm" aria-label="Author: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Author: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_author_size" aria-label="Author: size"><output></output></div></div>
+            <div class="field"><span class="lab">Footer line: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_footer_dy" data-unit=" mm" aria-label="Footer line: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Footer line: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_footer_size" aria-label="Footer line: size"><output></output></div></div>
+            <p class="hint">Positions are in millimetres from the standard place (negative = up). Sizes are a percentage of the standard size; long text still shrinks to fit its band.</p>
+          </details>
         </div>
         <div class="sect" id="coverArchSect">
           <h2>Arch and shapes</h2>
@@ -827,6 +850,9 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           </div>
           <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_quote_y" aria-label="Quote position"><output></output></div></div>
           <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_blurb_y" aria-label="Blurb position"><output></output></div></div>
+          <div class="field"><span class="lab">Quote size</span><div class="range"><input type="range" min="40" max="250" step="1" data-pos="back_quote_size" aria-label="Quote size"><output></output></div></div>
+          <div class="field"><span class="lab">Blurb size</span><div class="range"><input type="range" min="40" max="250" step="1" data-pos="back_blurb_size" aria-label="Blurb size"><output></output></div></div>
+          <div class="field"><span class="lab">Subtitle size</span><div class="range"><input type="range" min="40" max="250" step="1" data-pos="back_sub_size" aria-label="Subtitle size"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="back_shade"> Soft panel behind text that sits on a picture or outside its band</label>
         </div>
         <div class="sect">
