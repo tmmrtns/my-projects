@@ -792,7 +792,9 @@ function fillForm() {
   $('#segPhoto').hidden = c.cover.style !== 'photo'; $('#segAuto').hidden = c.cover.style !== 'auto';
   $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
   $('#coverPhotoSect').hidden = !(st === 'photo' || c.cover.style === 'photo');
-  $('#backPhotoSect').hidden = eff === 'arch' || !(st === 'photo' || c.cover.style === 'photo' || c.cover.back_image);
+  $('#backPhotoSect').hidden = eff === 'arch';
+  const backPic = st === 'photo' || c.cover.style === 'photo' || !!c.cover.back_image;   // the back picture is the older photo style's; the bands take pictures themselves
+  $('#backPicBlock').hidden = !backPic; $$('.backPicOnly').forEach(el => { el.hidden = !backPic; });
   renderKdp();
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }

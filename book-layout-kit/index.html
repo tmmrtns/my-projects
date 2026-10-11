@@ -793,6 +793,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         </div>
         <div class="sect" id="backPhotoSect">
           <h2>Back cover picture and bands</h2>
+          <div id="backPicBlock">
           <div class="coverimg">
             <div class="thumb" id="backThumb"></div>
             <div style="display:grid;gap:8px">
@@ -804,8 +805,11 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Picture crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_x" aria-label="Back picture crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Picture crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_y" aria-label="Back picture crop top to bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="back_image_zoom" aria-label="Picture size"><output></output></div></div>
+          </div>
           <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="back_band_size" aria-label="Back cover band height"><output></output></div></div>
+          <div class="backPicOnly">
           <div class="field"><span class="lab">Band opacity (lower lets the photo show through the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_opacity" aria-label="Band opacity (lower lets the photo show through the bands)"><output></output></div></div>
+          </div>
           <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_quote_y" aria-label="Quote position"><output></output></div></div>
           <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_blurb_y" aria-label="Blurb position"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="back_shade"> Soft panel behind text that sits on a picture or outside its band</label>
