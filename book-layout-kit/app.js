@@ -1365,7 +1365,7 @@ let wrapToken = 0;
 async function drawWrapView() {
   const tok = ++wrapToken, stage = $('#stage');
   $('#pager').hidden = true;
-  if (!kdpOn(S.cfg)) { stage.innerHTML = '<div class="empty"><strong>No print cover</strong><span>Turn on “Prepare this book for KDP” on the KDP tab.</span></div>'; return; }
+  if (!kdpOn(S.cfg)) { stage.innerHTML = '<div class="empty"><strong>No print cover</strong><span>Turn on “Prepare this book for KDP” on the Export tab.</span></div>'; return; }
   const pages = kdpPages(), g = BK.kdpGeom(S.cfg, pages);
   const availH = Math.max(240, stage.clientHeight - 100), availW = Math.max(240, stage.clientWidth - 32);
   const sc = Math.min(availH / g.h, availW / g.w);
