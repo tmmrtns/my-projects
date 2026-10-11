@@ -291,6 +291,7 @@ function imgBlock(tok) {
   let alt = BK.unesc(tok.text || ''), kind = 'photo';
   const m = PREFIX.exec(alt);
   if (m) { kind = m[1] === 'KAART' ? 'map' : m[1].toLowerCase(); alt = alt.slice(m[0].length); }
+  else if (tok.title && /^(wide|small|art|map|spread|diagram)$/i.test(tok.title.trim())) kind = tok.title.trim().toLowerCase();   // ![](pic.jpg "wide")
   return { type: 'fig', kind, alt, src: BK.unesc(tok.href || ''), cap: null };
 }
 

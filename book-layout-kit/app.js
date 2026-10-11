@@ -844,9 +844,11 @@ function findBookyai(flat) {
 const BY_LANG = { dutch: 'nl', nederlands: 'nl', english: 'en', french: 'fr', german: 'de', spanish: 'es', italian: 'it' };
 const BY_CH = /^(hoofdstuk|chapter|kapitel|chapitre|cap[ií]tulo|capitolo)\s+(\d+|[ivxlc]+)\s*[:.\-–—]?\s*(.*)$/i;
 const BY_BACK = /^(epiloog|epilogue|[ée]pilogue|nawoord|afterword|verder lezen|further reading|lectures|weiterf[üu]hrende|bronnen|sources|literatuur|dankwoord|acknowledg|bedankt|over de auteur|about the author|colofon|appendix|bijlage|woord van dank|remerciements|danksagung|agradecimientos)/i;
+const BY_FRONT = /^(introduction|prologue|proloog|foreword|voorwoord|preface|inleiding|introducci[oó]n|avant-propos|vorwort|einleitung|prefacio|prefazione|pr[eé]face|prolog|prologo|pr[oó]logo)\b/i;
 const BY_DEDIC = /^(opdracht|toewijding|dedication|widmung|d[ée]dicace|dedicatoria|dedica)\b/i;
-function bookyaiToKit(raw, ills) {
-  ills = ills || {}; let chN = 0;
+function bookyaiToKit(raw, ills, chTitles) {
+  ills = ills || {}; let chN = 0; chTitles = chTitles || new Set();
+  const norm = t => String(t).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
   const lines = raw.replace(/\r\n?/g, '\n').split('\n');
   const head = { title: '', subtitle: '', colophon: [] };
   const out = [], roles = []; let mode = null, dedic = [], inDedic = false, seenH2 = false;
@@ -863,14 +865,15 @@ function bookyaiToKit(raw, ills) {
       seenH2 = true; inDedic = false;
       const t = h2[1];
       let m;
-      if ((m = BY_CH.exec(t))) {
-        out.push('## ' + (m[3] || t).trim()); roles.push(null); mode = 'chapter'; chN++;
-        const f = ills[/^\d+$/.test(m[2]) ? +m[2] : chN];
+      if ((m = BY_CH.exec(t)) || chTitles.has(norm(t))) {
+        out.push('## ' + ((m && m[3]) || t).trim()); roles.push(null); mode = 'chapter'; chN++;
+        const f = ills[m && /^\d+$/.test(m[2]) ? +m[2] : chN];
         if (f) out.push('', `![WIDE: ](${f})`, '');   // the chapter's illustration opens the chapter
       }
       else if (mode === null || mode === 'front') {
         if (BY_DEDIC.test(t)) { inDedic = true; mode = 'front'; }
-        else { out.push('## ' + t); roles.push('front'); mode = 'front'; }
+        else if (mode === null || BY_FRONT.test(t)) { out.push('## ' + t); roles.push('front'); mode = 'front'; }
+        else out.push('### ' + t);                       // a heading inside the introduction
       } else if (BY_BACK.test(t)) { out.push('## ' + t); roles.push('back'); mode = 'back'; }
       else out.push('### ' + t);
       continue;
@@ -883,26 +886,44 @@ function bookyaiToKit(raw, ills) {
   head.dedication = dedic.join('\n').split(/\n\s*\n/).map(x => x.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
   return { head, md: out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n', roles };
 }
+function guessLang(text) {
+  const t = ' ' + text.slice(0, 20000).toLowerCase() + ' ';
+  const cnt = ws => ws.reduce((n, w) => n + (t.split(' ' + w + ' ').length - 1), 0);
+  const sc = { en: cnt(['the', 'and', 'of', 'you', 'to']), nl: cnt(['de', 'het', 'een', 'en', 'je', 'jij']), fr: cnt(['le', 'la', 'les', 'et', 'des']), de: cnt(['der', 'die', 'und', 'das', 'nicht']), es: cnt(['el', 'los', 'las', 'y', 'que']), it: cnt(['il', 'che', 'di', 'per', 'una']) };
+  return Object.entries(sc).sort((a, b) => b[1] - a[1])[0][0];
+}
 async function importBookyai(flat, by) {
   const base = n => n.split('/').pop();
   let info = {};
   if (by.bj) { try { info = JSON.parse(await by.bj.text()); } catch (e) { info = {}; } }
   upPlan(5, 'Reading the Bookyai export');
-  // illustrations: the images folder, as named per chapter in book.json (otherwise in file-name order, which is the order they were made in)
-  const imgFiles = flat.filter(e => e.name.startsWith(by.prefix + 'images/') && IMG_EXT.includes(ext(e.name)));
-  const ills = {}, have = new Set(imgFiles.map(e => base(e.name)));
-  (info.chapters || []).forEach(ch => { const f = ch.illustration && ch.illustration.file && base(ch.illustration.file); if (f && have.has(f)) ills[ch.num] = f; });
-  if (!Object.keys(ills).length) imgFiles.map(e => base(e.name)).sort().forEach((f, i) => { ills[i + 1] = f; });
-  const k = bookyaiToKit(await by.e.text(), ills); upStep('Reading the text');
+  const raw = await by.e.text();
+  // pictures: the export often has its own images folder that the text refers to; otherwise the project's illustrations open the chapters (as book.json says)
+  const isImg = e => IMG_EXT.includes(ext(e.name));
+  const exImgs = flat.filter(e => e.name.startsWith(by.dir + 'images/') && isImg(e));
+  const rootImgs = flat.filter(e => e.name.startsWith(by.prefix + 'images/') && isImg(e));
+  const refs = (raw.match(/!\[[^\]]*\]\([^)\s]+\.(?:jpe?g|png|webp|gif|bmp|avif)/gi) || []).length;
+  const imgFiles = exImgs.length ? exImgs : rootImgs;
+  const ills = {};
+  if (!refs) {
+    const have = new Set(rootImgs.map(e => base(e.name)));
+    (info.chapters || []).forEach(ch => { const f = ch.illustration && ch.illustration.file && base(ch.illustration.file); if (f && have.has(f)) ills[ch.num] = f; });
+    if (!Object.keys(ills).length) rootImgs.map(e => base(e.name)).sort().forEach((f, i) => { ills[i + 1] = f; });
+  }
+  const norm = t => String(t).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
+  const chTitles = new Set();
+  (info.chapters || []).forEach(ch => { if (ch.title) { chTitles.add(norm(ch.title)); const m = BY_CH.exec(ch.title); if (m && m[3]) chTitles.add(norm(m[3])); } });
+  const k = bookyaiToKit(raw, ills, chTitles); upStep('Reading the text');
   const find = nm => flat.find(e => e.name === by.prefix + nm);
   const pic = async nm => { const e = find(nm); if (!e) return null; const a = await addImage(nm, await e.blob()); upStep('Reading ' + nm); return a; };
   const front = await pic('cover.png'), back = await pic('back-cover.png') || await pic('back-cover-art.png');
   let ill = 0;
-  for (const e of imgFiles) { if (await addImage(base(e.name), await e.blob(), { max: 2200 })) ill++; }
+  const need = refs ? new Set((raw.match(/!\[[^\]]*\]\(([^)\s]+)/g) || []).map(x => base(x.replace(/^.*\(/, '')))) : null;
+  for (const e of imgFiles) { if (need && !need.has(base(e.name))) continue; if (await addImage(base(e.name), await e.blob(), { max: 2200 })) ill++; }
   upStep('Reading the pictures');
   const c = BK.defaults();
   c.title = info.title || k.head.title; c.subtitle = info.subtitle || k.head.subtitle; c.author = info.author || '';
-  c.lang = BY_LANG[String(info.language || '').toLowerCase()] || S.cfg.lang || 'en';
+  c.lang = BY_LANG[String(info.language || '').toLowerCase()] || guessLang(k.md);
   c.output = (c.title || 'book').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'book';
   const trim = info.printPages && info.printPages.trimId; if (trim && BK.PAGE_SIZES[trim]) c.page = trim;
   if (info.design && info.design.dropCap) c.opener = 'dropcap';
@@ -918,7 +939,7 @@ async function importBookyai(flat, by) {
   S.pdf = null; S.epub = null;
   fillForm(); $('#editor').value = S.md; sampleTag(); renderAssets(); changed(true); parse();
   const n = S.model ? BK.chaptersOf(S.model).length : 0;
-  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${Object.keys(ills).length} chapter illustrations placed` : '');
+  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${refs || Object.keys(ills).length} illustrations placed` : '');
   status(msg); toast(msg);
 }
 
