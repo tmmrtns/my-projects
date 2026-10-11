@@ -74,7 +74,7 @@ function showTab(name) {
   $$('.panel').forEach(p => { p.hidden = p.id !== 'panel-' + name; });
   try { sessionStorage.setItem('blk-tab', name); } catch (e) { /* ignore */ }
 }
-$$('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+$$('.tabs button').forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); if (b.dataset.tab === 'cover' && S.view !== 'cover' && S.view !== 'wrap' && typeof setView === 'function') setView('cover'); }));
 
 function setView(v) {
   S.view = v;
@@ -491,7 +491,7 @@ function fromKitJson(j) {
   return c;
 }
 // the adjustable cover values and their defaults (a value left at its default is not written to book.json)
-const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band)/.test(k)) o[k] = d[k]; return o; };
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -749,7 +749,7 @@ function initForm() {
   $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cs] = el.value; changed(); }));
   $$('[data-hide]').forEach(el => el.addEventListener('change', () => { const h = S.cfg.cover.hide = Object.assign({}, S.cfg.cover.hide); if (el.checked) delete h[el.dataset.hide]; else h[el.dataset.hide] = true; changed(); }));
   $$('[data-cb]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cb] = el.checked; changed(); }));
-  $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.pos] = +el.value; el.nextElementSibling.value = el.value + '%'; changed(); }));
+  $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.pos] = +el.value; el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); changed(); }));
 }
 function fillForm() {
   const c = S.cfg;
@@ -770,13 +770,15 @@ function fillForm() {
   $$('[data-ck]').forEach(el => { if (document.activeElement !== el) el.value = c.cover[el.dataset.ck] || ''; });
   $$('[data-clines]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.clines] || []).join('\n'); });
   $$('[data-cparas]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.cparas] || []).join('\n\n'); });
-  $$('[data-cs]').forEach(el => { el.value = c.cover[el.dataset.cs] || (el.dataset.cs === 'back_subtitle_source' ? 'none' : 'auto'); });
+  $$('[data-cs]').forEach(el => { el.value = c.cover[el.dataset.cs] || (el.dataset.cs === 'back_subtitle_source' ? 'none' : el.dataset.cs === 'logo_color' ? 'text' : 'auto'); });
   $$('[data-hide]').forEach(el => { el.checked = !(c.cover.hide || {})[el.dataset.hide]; });
   $$('[data-cb]').forEach(el => { el.checked = c.cover[el.dataset.cb] !== false; });
-  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + '%'; });
+  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); });
   $$('#bandSwatches .sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toLowerCase() === String(c.cover.band).toLowerCase())));
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
+  const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
+  $('#logoThumb').style.backgroundImage = la ? `url("${la.dataURL}")` : 'none';
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   const st = BK.coverStyle(c);
@@ -802,7 +804,12 @@ function changed(needParse) {
 }
 
 // ---------------------------------------------------------------- cover preview
-const coverSoon = debounce(() => { if (S.view === 'cover') drawCovers(); else if (S.view === 'wrap') drawWrapView(); }, 220);
+// settings show up in the preview as you change them: from the Cover tab the preview switches to the cover by itself
+const coverSoon = debounce(() => {
+  const onCover = !$('#panel-cover').hidden;
+  if (onCover && S.view !== 'cover' && S.view !== 'wrap') setView('cover');
+  else if (S.view === 'cover') drawCovers(); else if (S.view === 'wrap') drawWrapView();
+}, 70);
 let coverToken = 0;
 async function drawCovers() {
   const tok = ++coverToken;
@@ -1553,6 +1560,26 @@ $('#backIn').addEventListener('change', async e => {
   S.cfg.cover.back_image = f.name;
   fillForm(); renderAssets(); changed(); setView('cover');
 });
+$('#logoIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  const a = await addImage(f.name, f);
+  if (!a) return;
+  useLogo(f.name);
+});
+$('#logoTree').addEventListener('click', async () => {
+  try {
+    const r = await fetch('logos/tree-of-life.png'); if (!r.ok) throw new Error(r.status);
+    const a = await addImage('tree-of-life.png', await r.blob()); if (a) useLogo('tree-of-life.png');
+  } catch (err) { toast('The tree logo could not be loaded here. Use Choose logo instead.'); }
+});
+$('#logoClear').addEventListener('click', () => { S.cfg.cover.logo = ''; fillForm(); changed(); });
+// a logo that is chosen but not placed anywhere shows nothing, so the first time it goes at the bottom of the front
+function useLogo(name) {
+  const cv = S.cfg.cover; cv.logo = name;
+  if (!cv.logo_front_top && !cv.logo_front_bottom && !cv.logo_back_top && !cv.logo_back_bottom) cv.logo_front_bottom = true;
+  fillForm(); renderAssets(); changed(); setView('cover');
+}
 $('#backClear').addEventListener('click', () => { S.cfg.cover.back_image = ''; fillForm(); changed(); });
 $('#coverClear').addEventListener('click', () => { S.cfg.cover.image = ''; fillForm(); changed(); });
 
