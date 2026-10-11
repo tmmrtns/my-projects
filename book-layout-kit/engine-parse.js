@@ -191,6 +191,8 @@ BK.defaults = () => ({
   photos: { portrait_mm: 58, pair_height_mm: 66, wide_pair_height_mm: 66, small_mm: 62, qr_mm: 30 },
   bw_maps: false, hyphenate: true, include_covers: true, description: '',
   kdp: { on: false, paper: 'white', pages: 0, spine_text: true, barcode: true, barcode_image: '' },
+  doc_type: 'book',
+  photobook: { items: [], layout: 'auto', pageLayouts: {}, margin: 10, gap: 4, bg: '#ffffff', fit: 'fill', captions: false, caption_size: 8, numbers: false, focus: {} },
   cover: { style: 'classic', band: '#2f4858', mid: '#f4efe6', ink: '#1a1a1a', band_ink: '#ffffff', label: '', footer: '',
     title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '', qr_pos: 'right', divider: 'auto', divider_image: '', divider_original: false, divider_invert: false, classic_label_dy: 0, classic_label_size: 100, classic_title_dy: 0, classic_title_size: 100, classic_sub_dy: 0, classic_sub_size: 100, classic_author_dy: 0, classic_author_size: 100, classic_footer_dy: 0, classic_footer_size: 100, back_quote_size: 100, back_blurb_size: 100, back_sub_size: 100, divider_size: 100, divider_y: 0, qr_size: 100, qr_text_rotate: false, band_opacity: 100, mid_opacity: 100, back_same_layout: true, band_image_run: false, band_mid_image_run: false, arch_image_run: false, arch_bg_image_run: false,  image_zoom: 100, back_image_zoom: 100, band_image: '', band_image_x: 50, band_image_y: 50, band_image_zoom: 100, band_image_tint: 25, band_mid_image: '', band_mid_image_x: 50, band_mid_image_y: 50, band_mid_image_zoom: 100, band_mid_image_tint: 25, bands_images_back: true, qr_scheme: 'classic', qr_fg: '#000000', qr_bg: '#ffffff',
     top_band: 100, bottom_band: 100,
@@ -597,6 +599,7 @@ BK.referencedImages = function (model, cfg) {
   });
   for (const s of model.front.concat(model.back, BK.chaptersOf(model))) walk(s.blocks);
   model.parts.forEach(p => p.introParsed && walk(p.introParsed.blocks));
+  ((cfg.photobook && cfg.photobook.items) || []).forEach(n => add(n, 'photo'));
   if (cfg.cover && cfg.cover.image) add(cfg.cover.image, 'cover');
   if (cfg.cover && cfg.cover.back_image) add(cfg.cover.back_image, 'cover');
   if (cfg.cover && cfg.cover.logo) add(cfg.cover.logo, 'cover');

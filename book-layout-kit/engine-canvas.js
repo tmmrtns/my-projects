@@ -107,6 +107,8 @@ function drawCoverFit(c, im, x, y, w, h, px, py, zoom) {
   c.restore();
 }
 
+BK.drawCoverFit = drawCoverFit;
+
 // ---------------------------------------------------------------- canvas text
 function textBlock(c, s, o) {
   const size = o.size * o.pxpt;

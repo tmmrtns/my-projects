@@ -90,7 +90,7 @@ const reparse = debounce(() => { parse(); }, 350);
 function parse() {
   try { S.model = BK.parse(S.md, S.cfg); }
   catch (e) { console.error(e); S.model = null; status('The text could not be read: ' + e.message); return; }
-  renderStructure(); renderAssets(); renderWordInfo();
+  renderStructure(); renderAssets(); renderWordInfo(); renderPhoto();
 }
 function renderWordInfo() {
   const m = S.model;
@@ -197,14 +197,16 @@ function renderAssets() {
   if (typeof renderKdp === 'function') renderKdp();
 }
 async function fileToDataURL(blob) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); }); }
-async function addImage(name, blob) {
+async function addImage(name, blob, opts) {
+  opts = opts || {};
+  const MAXPX = opts.max || 3200;
   let url = await fileToDataURL(blob);
   let im;
   try { im = await BK.loadImg(url); } catch (e) { toast(name + ' is not an image this browser can read.'); return null; }
   let w = im.naturalWidth, h = im.naturalHeight, mime = blob.type || (/\.png$/i.test(name) ? 'image/png' : 'image/jpeg');
   const isPng = /png/.test(mime);
-  if (!/^image\/(jpeg|png)$/.test(mime) || Math.max(w, h) > 3200) {
-    const s = Math.min(1, 3200 / Math.max(w, h));
+  if (!/^image\/(jpeg|png)$/.test(mime) || Math.max(w, h) > MAXPX) {
+    const s = Math.min(1, MAXPX / Math.max(w, h));
     const cv = BK.canvasOf(w * s, h * s), c = cv.getContext('2d');
     if (!isPng) { c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height); }
     c.drawImage(im, 0, 0, cv.width, cv.height);
@@ -212,6 +214,11 @@ async function addImage(name, blob) {
     w = cv.width; h = cv.height; mime = isPng ? 'image/png' : 'image/jpeg';
   }
   const a = { name, dataURL: url, w, h, mime };
+  if (opts.thumb) {
+    const s = Math.min(1, 420 / Math.max(w, h)), cv = BK.canvasOf(Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))), c = cv.getContext('2d');
+    c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height); c.drawImage(im, 0, 0, cv.width, cv.height);
+    a.thumb = cv.toDataURL('image/jpeg', .8);
+  }
   S.assets.set(name, a);
   return a;
 }
@@ -480,6 +487,8 @@ function fromKitJson(j) {
   if (j.chapter_numbers === false && !j.chapter_number_style) c.chapter_number_style = 'none';
   if (j.running_heads) c.running_heads = Object.assign(c.running_heads, j.running_heads);
   if (j.photos) c.photos = Object.assign(c.photos, j.photos);
+  if (j.doc_type) c.doc_type = j.doc_type;
+  if (j.photobook && typeof j.photobook === 'object') c.photobook = Object.assign(c.photobook, j.photobook);
   if (j.kdp && typeof j.kdp === 'object') c.kdp = Object.assign(c.kdp, j.kdp, { on: j.kdp.on !== false });
   if (j.font && j.font.prefix && FONT_BY_PREFIX[j.font.prefix]) c.font = FONT_BY_PREFIX[j.font.prefix];
   if (j.cover) {
@@ -511,6 +520,7 @@ function toKitJson(files, cfgIn) {
   if (c.epigraph) j.epigraph = c.epigraph;
   if (c.labels && Object.keys(c.labels).length) j.labels = c.labels;
   if (c.description) j.description = c.description;
+  if (c.doc_type === 'photobook') { j.doc_type = 'photobook'; j.photobook = JSON.parse(JSON.stringify(c.photobook)); }
   if (c.kdp && c.kdp.on) j.kdp = Object.assign({}, c.kdp);
   const cv = Object.assign({}, c.cover);
   cv.image_position = `${cv.image_x}% ${cv.image_y}%`;
@@ -578,6 +588,7 @@ async function importEntries(entries) {
       z.forEach((path, f) => { if (!f.dir && !/(^|\/)(__MACOSX|\.)/.test(path)) flat.push({ name: path, buf: () => f.async('arraybuffer'), text: () => f.async('string'), blob: async () => new Blob([await f.async('arraybuffer')], { type: /\.png$/i.test(path) ? 'image/png' : (/\.jpe?g$/i.test(path) ? 'image/jpeg' : '') }) }); });
     } else flat.push(e);
   }
+  if (S.cfg.doc_type === 'photobook') { await pbImport(flat); return; }
   const base = n => n.split('/').pop();
   const imgs = flat.filter(e => IMG_EXT.includes(ext(e.name)) && !/(^|\/)(qr_|.*_bw\.jpg$|.*_[LR]\.(jpe?g|png)$|cover_front|cover_back)/.test(e.name));
   const json = flat.find(e => base(e.name) === 'book.json') || flat.find(e => ext(e.name) === 'json');
@@ -655,6 +666,112 @@ async function importEntries(entries) {
   if (md != null && S.model && !n) toast('No chapter headings found. Try Auto-format, or add “## Title” lines.');
 }
 const fileEntry = f => ({ name: f.name, buf: () => f.arrayBuffer(), text: () => f.text(), blob: async () => f });
+
+// ---------------------------------------------------------------- photobook
+const pbOn = () => S.cfg.doc_type === 'photobook';
+const PB = () => { S.cfg.photobook = BK.pbCfg(S.cfg); return S.cfg.photobook; };
+function pbMode(render) {
+  document.body.classList.toggle('pbmode', pbOn());
+  $$('#docSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (pbOn() ? 'photobook' : 'book'))));
+  if (render && pbOn()) renderPhoto();
+}
+async function pbImport(flat) {
+  const base = n => n.split('/').pop();
+  const imgs = flat.filter(e => IMG_EXT.includes(ext(e.name)) && !/(^|\/)(__MACOSX|\.)/.test(e.name));
+  if (!imgs.length) { status('No pictures found'); toast('No pictures found. A photobook is made from .jpg, .png or .webp files, or a .zip with them.'); return; }
+  imgs.sort((a, b) => BK.pbCompare(base(a.name), base(b.name)));
+  const pb = PB(), sortedNow = pb.items.slice().sort(BK.pbCompare);
+  const wasSorted = pb.items.every((n, i) => n === sortedNow[i]);
+  const fresh = []; let k = 0, bad = 0;
+  for (const im of imgs) {
+    status(`Reading picture ${++k} of ${imgs.length}…`);
+    const nm = base(im.name), a = await addImage(nm, await im.blob(), { max: 2600, thumb: true });
+    if (!a) { bad++; continue; }
+    if (!pb.items.includes(nm) && !fresh.includes(nm)) fresh.push(nm);
+    if (k % 8 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+  // by default the order follows the file names; once the order was changed by hand, new pictures go at the end
+  pb.items = pb.items.concat(fresh);
+  if (wasSorted) pb.items.sort(BK.pbCompare); else fresh.sort(BK.pbCompare), pb.items = pb.items.filter(n => !fresh.includes(n)).concat(fresh);
+  changed(); parse();
+  status(`${fresh.length} new picture${fresh.length === 1 ? '' : 's'} added · ${pb.items.length} in the book${bad ? ` · ${bad} could not be read` : ''}`);
+  if ($('#tab-structure')) $('#tab-structure').click();
+}
+let pbToken = 0, pbDrag = null;
+function pbMove(from, to) {
+  const it = PB().items; if (from === to || from < 0 || to < 0 || from >= it.length || to >= it.length) return;
+  it.splice(to, 0, it.splice(from, 1)[0]); changed(); renderPhoto();
+}
+function renderPhoto() {
+  const box = $('#pbPanel'); if (!box || !pbOn()) return;
+  const pb = PB(), tok = ++pbToken;
+  const pages = BK.pbPages(S.cfg, S.assets), have = pb.items.filter(n => BK.findAsset(S.assets, n)), missing = pb.items.filter(n => !BK.findAsset(S.assets, n));
+  $('#pbStats').innerHTML = `<span><b>${have.length}</b> pictures</span><span><b>${pages.length}</b> pages</span>`;
+  const warn = $('#pbWarn'); warn.innerHTML = '';
+  if (missing.length) {
+    const d = document.createElement('div'); d.className = 'warn';
+    d.innerHTML = `${missing.length} picture${missing.length > 1 ? 's are' : ' is'} in the list but not loaded (pictures are not kept when the page is closed): add them again and they return to their place. `;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = 'Remove them from the list';
+    b.addEventListener('click', () => { pb.items = have; changed(); renderPhoto(); });
+    d.append(b); warn.append(d);
+  }
+  // settings
+  const sel = $('#pbLayout'); if (!sel.options.length) fillSelect(sel, [['auto', 'Automatic (fits the shape of the pictures)']].concat(BK.PB_LAYOUTS.filter(l => l[0] !== 'auto').map(l => [l[0], l[1]])));
+  sel.value = pb.layout;
+  $$('[data-pb]').forEach(el => { if (document.activeElement === el) return; if (el.type === 'checkbox') el.checked = !!pb[el.dataset.pb]; else el.value = pb[el.dataset.pb]; });
+  $$('#pbFit button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === pb.fit)));
+  // pages
+  const grid = $('#pbPages'); grid.innerHTML = '';
+  if (!pages.length) { grid.innerHTML = '<p class="hint">No pictures yet. Drop pictures or a .zip with pictures on the Manuscript tab, or use “Add pictures” above.</p>'; return; }
+  const G = BK.geom(S.cfg), todo = [];
+  for (const pg of pages) {
+    const card = document.createElement('div'); card.className = 'pbcard';
+    const cv = document.createElement('canvas'); cv.className = 'pbprev'; cv.style.aspectRatio = `${G.W} / ${G.H}`;
+    const top = document.createElement('div'); top.className = 'pbtop';
+    const lay = document.createElement('select'); lay.title = 'Layout of this page';
+    fillSelect(lay, [['', 'Page ' + (pg.index + 1) + ' · default']].concat(BK.PB_LAYOUTS.filter(l => l[0] !== 'auto').map(l => [l[0], l[1]])));
+    lay.value = pb.pageLayouts && pb.pageLayouts[pg.index] || '';
+    lay.addEventListener('change', () => { pb.pageLayouts = pb.pageLayouts || {}; if (lay.value) pb.pageLayouts[pg.index] = lay.value; else delete pb.pageLayouts[pg.index]; changed(); renderPhoto(); });
+    top.append(lay);
+    const list = document.createElement('div'); list.className = 'pblist';
+    for (const nm of pg.photos) {
+      const gi = pb.items.indexOf(nm), row = document.createElement('div'); row.className = 'pbitem'; row.draggable = true;
+      row.innerHTML = `<span class="pbn"></span><span class="pbno">${gi + 1}</span><button type="button" title="Earlier">◀</button><button type="button" title="Later">▶</button><button type="button" title="Remove from the book">✕</button>`;
+      row.querySelector('.pbn').textContent = nm; row.querySelector('.pbn').title = nm;
+      const [bl, br, bx] = row.querySelectorAll('button');
+      bl.addEventListener('click', () => pbMove(gi, gi - 1)); br.addEventListener('click', () => pbMove(gi, gi + 1));
+      bx.addEventListener('click', () => { pb.items.splice(gi, 1); changed(); renderPhoto(); });
+      row.addEventListener('dragstart', e => { pbDrag = gi; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', nm); } catch (x) { /* ignore */ } row.classList.add('drag'); });
+      row.addEventListener('dragend', () => { row.classList.remove('drag'); pbDrag = null; });
+      row.addEventListener('dragover', e => { if (pbDrag != null) { e.preventDefault(); row.classList.add('over'); } });
+      row.addEventListener('dragleave', () => row.classList.remove('over'));
+      row.addEventListener('drop', e => { if (pbDrag == null) return; e.preventDefault(); e.stopPropagation(); const from = pbDrag; pbDrag = null; pbMove(from, gi); });
+      list.append(row);
+    }
+    card.append(cv, top, list); grid.append(card);
+    todo.push([pg, cv]);
+  }
+  (async () => {
+    const ppm = Math.min(1.3, 190 / G.W);
+    for (const [pg, cv] of todo) {
+      if (tok !== pbToken) return;
+      try { const src = await BK.drawPhotoPage(pg, S.cfg, S.assets, ppm, { thumb: true }); cv.width = src.width; cv.height = src.height; cv.getContext('2d').drawImage(src, 0, 0); } catch (e) { console.error(e); }
+      await new Promise(r => setTimeout(r, 0));
+    }
+  })();
+}
+function initPhoto() {
+  $$('#docSeg button').forEach(b => b.addEventListener('click', () => { S.cfg.doc_type = b.dataset.v; if (pbOn()) PB(); fillForm(); changed(); parse(); }));
+  $('#pbLayout').addEventListener('change', e => { PB().layout = e.target.value; changed(); renderPhoto(); });
+  $$('[data-pb]').forEach(el => el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+    const k = el.dataset.pb; PB()[k] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? (parseFloat(el.value) || 0) : el.value);
+    changed(); clearTimeout(initPhoto.t); initPhoto.t = setTimeout(renderPhoto, 300);
+  }));
+  $$('#pbFit button').forEach(b => b.addEventListener('click', () => { PB().fit = b.dataset.v; changed(); renderPhoto(); }));
+  $('#pbSort').addEventListener('click', () => { PB().items.sort(BK.pbCompare); changed(); renderPhoto(); toast('Sorted by file name'); });
+  $('#pbClear').addEventListener('click', () => { if (!confirm('Remove all pictures from the photobook?')) return; const pb = PB(); pb.items = []; pb.pageLayouts = {}; changed(); renderPhoto(); });
+  $('#pbAdd').addEventListener('change', async e => { const f = [...e.target.files].map(fileEntry); e.target.value = ''; if (f.length) await importEntries(f); });
+}
 
 // ---------------------------------------------------------------- form binding
 function fillSelect(sel, opts) { sel.innerHTML = ''; for (const [v, t] of opts) sel.append(new Option(t, v)); }
@@ -760,6 +877,7 @@ function initForm() {
   $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[CK(el.dataset.pos)] = +el.value; el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); changed(); }));
 }
 function fillForm() {
+  pbMode();
   const c = S.cfg;
   $$('[data-k]').forEach(el => { if (document.activeElement !== el) el.value = c[el.dataset.k] == null ? '' : (typeof c[el.dataset.k] === 'object' ? (c[el.dataset.k].size || 'A5') : c[el.dataset.k]); });
   $$('[data-rh]').forEach(el => { el.value = (c.running_heads || {})[el.dataset.rh] || 'none'; });
@@ -898,6 +1016,7 @@ function changed(needParse) {
   coverSoon();
   renderWordInfo();
   renderKdp();
+  pbMode();
   if (needParse) reparse();
   if (S.pdf || S.epub) $('#deskInfo').innerHTML = '<span>Settings changed since the last build</span>';
 }
@@ -1491,13 +1610,13 @@ async function build(which) {
   if (S.busy) return;
   setBusy(true);
   parse();
-  const model = S.model;
-  if (!model) { setBusy(false); return; }
+  const model = S.model, pbk = S.cfg.doc_type === 'photobook';
+  if (!model && !pbk) { setBusy(false); return; }
   const cfg = effCfg();
   const t0 = performance.now();
   try {
     if (which !== 'epub') {
-      const r = await BK.buildPdf(model, cfg, S.assets, status);
+      const r = pbk ? await BK.buildPhotoPdf(cfg, S.assets, status) : await BK.buildPdf(model, cfg, S.assets, status);
       S.pdf = Object.assign(r, { covers: cfg.include_covers !== false, name: outName() + '.pdf' });
       if (S.pdfDoc) { try { S.pdfDoc.destroy(); } catch (e) { /* ignore */ } }
       await pdfjs();
@@ -1507,7 +1626,7 @@ async function build(which) {
       S.page = Math.min(Math.max(1, S.page), S.pdfDoc.numPages);
     }
     if (which !== 'pdf') {
-      const r = await BK.buildEpub(BK.parse(S.md, cfg), cfg, S.assets, status);
+      const r = pbk ? await BK.buildPhotoEpub(cfg, S.assets, status) : await BK.buildEpub(BK.parse(S.md, cfg), cfg, S.assets, status);
       S.epub = Object.assign(r, { name: outName() + '.epub' });
     }
     S.stale = false;
@@ -1534,8 +1653,13 @@ function renderResults() {
   if (S.pdf) {
     const p = S.pdf;
     const body = p.pages - (p.covers ? 2 : 0);
+    if (p.photobook) {
+      add('PDF', `<b>${BK.esc(p.name)}</b><br>${p.photos} pictures on ${p.photoPages} pages${p.covers ? ', ' + p.pages + ' with covers' : ''} · ${fmtBytes(p.blob.size)}`, p.name, p.blob);
+      $('#deskInfo').innerHTML = `<span><b>${p.photos}</b> pictures</span><span><b>${p.photoPages}</b> pages</span>`;
+    } else {
     add('PDF', `<b>${BK.esc(p.name)}</b><br>${body} body pages${p.covers ? ', ' + p.pages + ' with covers' : ''} · ${fmtBytes(p.blob.size)} · ${p.indexTerms} index terms<br>Page numbers stable: <span class="${p.stable ? 'check-ok' : 'check-bad'}">${p.stable ? 'yes' : 'no'}</span>${p.missing.length ? `<br><span class="check-bad">Missing images:</span> ${p.missing.map(BK.esc).join(', ')}` : ''}`, p.name, p.blob);
     $('#deskInfo').innerHTML = `<span><b>${body}</b> pages</span><span><b>${p.indexTerms}</b> index terms</span><span>numbers stable <b class="${p.stable ? 'check-ok' : 'check-bad'}">${p.stable ? 'yes' : 'no'}</b></span>`;
+    }
   }
   if (S.pdf && kdpOn(S.cfg)) {
     const d = document.createElement('div'); d.className = 'kdpres';
@@ -1762,7 +1886,7 @@ function initCollapse() {
     }
   });
 }
-initForm(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
+initForm(); initPhoto(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
 try { const t = sessionStorage.getItem('blk-tab'); if (t && $('#panel-' + t)) showTab(t); } catch (e) { /* ignore */ }
 parse();
 status(S.isSample ? 'Sample manuscript loaded · drop your own on the left' : 'Your manuscript is restored from this browser');

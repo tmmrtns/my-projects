@@ -147,6 +147,25 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .ol-sec select { border: 1px solid var(--line); background: var(--sunk); border-radius: 5px; padding: 3px 6px; font-size: 12.5px; }
 .ol-sec.changed select { border-color: var(--accent); }
 .warn { border-left: 3px solid var(--copper); background: var(--sunk); padding: 8px 10px; font-size: 13px; border-radius: 0 5px 5px 0; }
+
+.pbonly { display: none; }
+body.pbmode .pbonly { display: block; }
+body.pbmode .bookonly { display: none !important; }
+.pbset { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; margin: 10px 0; font-size: 12.5px; }
+.pbset label { display: grid; gap: 3px; color: var(--muted); }
+.pbset input:not([type=checkbox]):not([type=color]), .pbset select { width: 100%; min-width: 0; box-sizing: border-box; }
+.pbset label.chk { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.pbpages { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 8px; }
+.pbcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); display: grid; gap: 6px; align-content: start; }
+.pbprev { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.pbtop select { width: 100%; font-size: 12px; }
+.pblist { display: grid; gap: 2px; }
+.pbitem { display: flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 2px 3px; border-radius: 4px; background: var(--sunk); cursor: grab; }
+.pbitem.drag { opacity: .4; } .pbitem.over { outline: 2px solid var(--accent); }
+.pbitem .pbn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbitem .pbno { color: var(--muted); font: 500 10.5px var(--f-mono); }
+.pbitem button { border: 0; background: none; cursor: pointer; padding: 1px 3px; color: var(--muted); font-size: 11px; }
+.pbitem button:hover { color: var(--ink); }
 .stats { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
 .stats b { color: var(--ink); font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; }
 
@@ -421,6 +440,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
       <!-- MANUSCRIPT -->
       <div class="panel" id="panel-manuscript" role="tabpanel">
         <div class="sect">
+          <div class="field"><span class="lab">Type of book</span><div class="seg" id="docSeg"><button type="button" data-v="book">Text book</button><button type="button" data-v="photobook">Photobook</button></div></div>
+          <p class="hint pbonly">Photobook: drop pictures or a .zip with only pictures below. They are placed in file-name order, one or more per page; you can reorder them on the Structure tab. Add more pictures at any time, they join the book by file name.</p>
           <label class="drop" id="drop" for="fileIn">
             <strong>Drop your manuscript here</strong>
             <span class="hint">or click to choose files: a whole project, or the text, the settings and the images separately, in any order.</span>
@@ -441,7 +462,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <input type="file" id="imgIn2" hidden multiple accept="image/*">
           <p class="hint">Text files that book.json names (front.md, part1.md …) are put in the order book.json gives, also when you add them later. Plain text without headings is formatted automatically.</p>
         </div>
-        <div class="sect">
+        <div class="sect bookonly">
           <div class="editorbar">
             <h2 style="margin:0;font:500 11px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Manuscript text</h2>
             <span class="sample-tag" id="sampleTag">Sample text: replace it with your own</span>
@@ -530,7 +551,28 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 
       <!-- STRUCTURE -->
       <div class="panel" id="panel-structure" role="tabpanel" hidden>
-        <div class="sect">
+        <div class="sect pbonly" id="pbPanel">
+          <div class="stats" id="pbStats"></div>
+          <div id="pbWarn" class="results"></div>
+          <div class="pickers">
+            <label class="btn small" for="pbAdd">Add pictures</label>
+            <input type="file" id="pbAdd" multiple hidden accept="image/*,.zip">
+            <button type="button" class="btn small" id="pbSort" title="Put all pictures back in file-name order">Sort by file name</button>
+            <button type="button" class="btn small" id="pbClear">Remove all</button>
+          </div>
+          <div class="pbset">
+            <label>Layout<select id="pbLayout"></select></label>
+            <label>Margin (mm)<input type="number" data-pb="margin" min="0" max="40" step="1"></label>
+            <label>Gap (mm)<input type="number" data-pb="gap" min="0" max="20" step="1"></label>
+            <label>Background<input type="color" data-pb="bg"></label>
+            <label>Pictures<span class="seg" id="pbFit"><button type="button" data-v="fill">Fill the frame</button><button type="button" data-v="fit">Show whole picture</button></span></label>
+            <label class="chk"><input type="checkbox" data-pb="captions"> File names as captions</label>
+            <label class="chk"><input type="checkbox" data-pb="numbers"> Page numbers</label>
+          </div>
+          <p class="hint">The number is the place of each picture in the book. Change it with ◀ ▶ or drag a picture onto another one. Pick another layout per page in the page header; later pages move up to fill.</p>
+          <div class="pbpages" id="pbPages"></div>
+        </div>
+        <div class="sect bookonly">
           <div class="stats" id="structStats"></div>
           <div id="structWarn" class="results"></div>
           <p class="hint">Each heading becomes a chapter unless you give it another role. Front and back sections (preface, sources, acknowledgements) start on a right-hand page and are not numbered.</p>
@@ -1067,6 +1109,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 <script src="lib/pdfmake.js"></script>
 <script src="engine-parse.js"></script>
 <script src="engine-canvas.js"></script>
+<script src="engine-photo.js"></script>
 <script src="engine-pdf.js"></script>
 <script src="engine-epub.js"></script>
 <script src="format.js"></script>
