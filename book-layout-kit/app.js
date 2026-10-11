@@ -821,7 +821,8 @@ const BY_LANG = { dutch: 'nl', nederlands: 'nl', english: 'en', french: 'fr', ge
 const BY_CH = /^(hoofdstuk|chapter|kapitel|chapitre|cap[ií]tulo|capitolo)\s+(\d+|[ivxlc]+)\s*[:.\-–—]?\s*(.*)$/i;
 const BY_BACK = /^(epiloog|epilogue|[ée]pilogue|nawoord|afterword|verder lezen|further reading|lectures|weiterf[üu]hrende|bronnen|sources|literatuur|dankwoord|acknowledg|bedankt|over de auteur|about the author|colofon|appendix|bijlage|woord van dank|remerciements|danksagung|agradecimientos)/i;
 const BY_DEDIC = /^(opdracht|toewijding|dedication|widmung|d[ée]dicace|dedicatoria|dedica)\b/i;
-function bookyaiToKit(raw) {
+function bookyaiToKit(raw, ills) {
+  ills = ills || {}; let chN = 0;
   const lines = raw.replace(/\r\n?/g, '\n').split('\n');
   const head = { title: '', subtitle: '', colophon: [] };
   const out = [], roles = []; let mode = null, dedic = [], inDedic = false, seenH2 = false;
@@ -838,7 +839,11 @@ function bookyaiToKit(raw) {
       seenH2 = true; inDedic = false;
       const t = h2[1];
       let m;
-      if ((m = BY_CH.exec(t))) { out.push('## ' + (m[3] || t).trim()); roles.push(null); mode = 'chapter'; }
+      if ((m = BY_CH.exec(t))) {
+        out.push('## ' + (m[3] || t).trim()); roles.push(null); mode = 'chapter'; chN++;
+        const f = ills[/^\d+$/.test(m[2]) ? +m[2] : chN];
+        if (f) out.push('', `![WIDE: ](${f})`, '');   // the chapter's illustration opens the chapter
+      }
       else if (mode === null || mode === 'front') {
         if (BY_DEDIC.test(t)) { inDedic = true; mode = 'front'; }
         else { out.push('## ' + t); roles.push('front'); mode = 'front'; }
@@ -859,12 +864,17 @@ async function importBookyai(flat, by) {
   let info = {};
   if (by.bj) { try { info = JSON.parse(await by.bj.text()); } catch (e) { info = {}; } }
   upPlan(5, 'Reading the Bookyai export');
-  const k = bookyaiToKit(await by.e.text()); upStep('Reading the text');
+  // illustrations: the images folder, as named per chapter in book.json (otherwise in file-name order, which is the order they were made in)
+  const imgFiles = flat.filter(e => e.name.startsWith(by.prefix + 'images/') && IMG_EXT.includes(ext(e.name)));
+  const ills = {}, have = new Set(imgFiles.map(e => base(e.name)));
+  (info.chapters || []).forEach(ch => { const f = ch.illustration && ch.illustration.file && base(ch.illustration.file); if (f && have.has(f)) ills[ch.num] = f; });
+  if (!Object.keys(ills).length) imgFiles.map(e => base(e.name)).sort().forEach((f, i) => { ills[i + 1] = f; });
+  const k = bookyaiToKit(await by.e.text(), ills); upStep('Reading the text');
   const find = nm => flat.find(e => e.name === by.prefix + nm);
   const pic = async nm => { const e = find(nm); if (!e) return null; const a = await addImage(nm, await e.blob()); upStep('Reading ' + nm); return a; };
   const front = await pic('cover.png'), back = await pic('back-cover.png') || await pic('back-cover-art.png');
   let ill = 0;
-  for (const e of flat.filter(e => e.name.startsWith(by.prefix + 'images/') && IMG_EXT.includes(ext(e.name)))) { if (await addImage(base(e.name), await e.blob())) ill++; }
+  for (const e of imgFiles) { if (await addImage(base(e.name), await e.blob(), { max: 2200 })) ill++; }
   upStep('Reading the pictures');
   const c = BK.defaults();
   c.title = info.title || k.head.title; c.subtitle = info.subtitle || k.head.subtitle; c.author = info.author || '';
@@ -884,7 +894,7 @@ async function importBookyai(flat, by) {
   S.pdf = null; S.epub = null;
   fillForm(); $('#editor').value = S.md; sampleTag(); renderAssets(); changed(true); parse();
   const n = S.model ? BK.chaptersOf(S.model).length : 0;
-  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${ill} illustrations loaded` : '');
+  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${Object.keys(ills).length} chapter illustrations placed` : '');
   status(msg); toast(msg);
 }
 
