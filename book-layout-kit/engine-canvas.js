@@ -155,14 +155,42 @@ function drawSpaced(c, s, x, y, sp) {
 }
 
 // ---------------------------------------------------------------- QR
-BK.qrDataURL = function (text) {
+BK.qrDataURL = function (text, fg, bg) {
+  // fg = module colour, bg = background colour or null for transparent
   const q = qrcode(0, 'M');
   q.addData(text); q.make();
-  const n = q.getModuleCount(), box = 20, border = 2;
+  const n = q.getModuleCount(), box = 20, border = bg ? 2 : 0;
   const cv = canvasOf((n + border * 2) * box, (n + border * 2) * box), c = cv.getContext('2d');
-  c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height); c.fillStyle = '#000';
+  if (bg) { c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height); }
+  c.fillStyle = fg || '#000';
   for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect((k + border) * box, (r + border) * box, box, box);
   return cv.toDataURL('image/png');
+};
+// colour maths, to warn when a QR code would be hard to scan
+BK.hexRgb = h => { h = String(h || '').replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); return /^[0-9a-f]{6}$/i.test(h) ? [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)) : null; };
+BK.contrast = (a, b) => {
+  const L = h => { const r = BK.hexRgb(h); if (!r) return null; const f = r.map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * f[0] + .7152 * f[1] + .0722 * f[2]; };
+  const x = L(a), y = L(b); if (x == null || y == null) return null;
+  return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
+};
+// Which colours the QR code gets: classic = black on white; text = same colour as the text around it, straight on the cover; custom = your two colours
+BK.qrColors = function (cv, textCol, groundCol) {
+  const sc = cv.qr_scheme || 'classic';
+  if (sc === 'text') return { fg: textCol, bg: null, ground: groundCol };
+  if (sc === 'custom') return { fg: cv.qr_fg || '#000000', bg: cv.qr_bg || null, ground: cv.qr_bg || groundCol };
+  return { fg: '#000000', bg: '#ffffff', ground: '#ffffff' };
+};
+// recolour an uploaded QR picture: dark pixels get fg, light pixels bg (or see-through)
+BK.recolorQr = async function (src, fg, bg) {
+  const im = await BK.loadImg(src), cv = canvasOf(im.naturalWidth, im.naturalHeight), c = cv.getContext('2d');
+  c.drawImage(im, 0, 0); const d = c.getImageData(0, 0, cv.width, cv.height), px = d.data;
+  const F = BK.hexRgb(fg) || [0, 0, 0], B = bg ? BK.hexRgb(bg) : null;
+  for (let i = 0; i < px.length; i += 4) {
+    const dark = (px[i] * .3 + px[i + 1] * .59 + px[i + 2] * .11) < 128 && px[i + 3] > 20;
+    if (dark) { px[i] = F[0]; px[i + 1] = F[1]; px[i + 2] = F[2]; px[i + 3] = 255; }
+    else if (B) { px[i] = B[0]; px[i + 1] = B[1]; px[i + 2] = B[2]; px[i + 3] = 255; } else px[i + 3] = 0;
+  }
+  c.putImageData(d, 0, 0); return cv.toDataURL('image/png');
 };
 
 // ---------------------------------------------------------------- cover
@@ -177,9 +205,12 @@ BK.qrInfo = function (v, assets) {
   if (/^[^\s\/]+\.[a-z]{2,}([\/?#]\S*)?$/i.test(v) && !/\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(v)) return { kind: 'link', href: 'https://' + v };
   return { kind: 'none', unknown: true };
 };
-BK.qrSource = function (v, assets) {
+BK.qrSource = async function (v, assets, fg, bg) {
+  // a picture (data URL) of the QR code in the wanted colours; bg null = see-through
   const q = BK.qrInfo(v, assets);
-  return q.kind === 'image' ? q.dataURL : q.kind === 'link' ? BK.qrDataURL(q.href) : undefined;
+  if (q.kind === 'link') return BK.qrDataURL(q.href, fg, bg);
+  if (q.kind === 'image') return (fg === '#000000' && bg === '#ffffff') ? q.dataURL : BK.recolorQr(q.dataURL, fg, bg);
+  return undefined;
 };
 const hexRgb = h => { h = String(h || '#000').replace('#', ''); if (h.length === 3) h = [...h].map(x => x + x).join(''); const n = parseInt(h, 16) || 0; return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 BK.coverStyle = cfg => {
@@ -412,30 +443,50 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
         top += h + X(1.5);
       });
     }
+    // where the QR code and its text go: text to the right (default), above or below the code
+    const qrGeom = () => {
+      const qs = X(30), box = qs + X(4), pos = cv.qr_pos === 'above' || cv.qr_pos === 'below' ? cv.qr_pos : 'right';
+      const barW = opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0, fullW = X(W - 32) - barW, gap = X(2.5);
+      const base = X(H) - X(12);                                    // bottom edge of the whole block
+      let qx = X(16), qy, ty = 0, o = null;
+      if (pos === 'right') {
+        qy = base - box;
+        if (cv.qr_text) { const tw = X(W - 32) - box - X(5) - barW; o = { x: qx + box + X(5), width: tw, align: 'left', size: 7.5, lh: 1.35 }; ty = qy + X(9); }
+      } else {
+        o = cv.qr_text ? { x: qx, width: fullW, align: 'left', size: 7.5, lh: 1.35 } : null;
+        const th = o ? blockH(cv.qr_text, Object.assign({}, o, { x: 0 })) : 0;
+        if (pos === 'below') { qy = base - th - (th ? gap : 0) - box; ty = qy + box + gap; }
+        else { qy = base - box; ty = qy - gap - th; }
+      }
+      return { qx, qy, qs, ty, o, top: pos === 'above' && o ? ty : qy };
+    };
+    const qrTopLimit = () => qrGeom().top - X(4);
     const blurb = (cv.blurb || []).filter(Boolean);
     if (blurb.length && on('blurb')) {
       const top = X(H * yb / 100);
       // the text stops above the QR code and the barcode box, and above the bottom margin
       let lim = X(H - 10);
-      if (cv.qr && on('qr')) lim = Math.min(lim, X(H) - X(12) - X(34) - X(4));
+      if (cv.qr && on('qr')) lim = Math.min(lim, qrTopLimit());
       if (opt && opt.barcode) lim = Math.min(lim, X(H - ((opt.barcodePos || {}).bottom ?? BK.KDP.barcodeMargin) - BK.KDP.barcode[1] - 3));
       const bw = wAt(top / ppm), o = Object.assign(fitText(blurb, { x: 0, width: X(bw), align: isArch ? 'center' : 'justify', size: 10.2 * (isArch ? num('arch_back_blurb_size', 100) / 100 : 1), lh: 1.42, paraGap: X(2.2) }, Math.max(X(15), lim - top - X(5)), 7.5), { x: isArch ? X(W / 2) : X((W - bw) / 2) }), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
       const plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
       if (!plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
       T(blurb, Object.assign({ top, color: isArch ? inkAt(top / ppm, (top + h) / ppm) : cv.ink }, o));
     }
-    if (cv.qr && on('qr')) {
-      const qsrc = BK.qrSource(cv.qr, assets);
+    if (cv.qr && on('qr') && BK.qrInfo(cv.qr, assets).kind !== 'none') {
+      const g = qrGeom();
+      const inBand = g.qy >= X(H - bbh) && !bimg;
+      const textCol = isArch ? inkAt(g.qy / ppm, (g.qy + g.qs) / ppm) : (inBand || !panelOn ? cv.band_ink : cv.ink);
+      const ground = isArch ? (inArch(g.qy / ppm, (g.qy + g.qs) / ppm) ? cv.mid : cv.band) : (inBand || !panelOn ? cv.band : cv.mid);
+      const qc = BK.qrColors(cv, textCol, ground);
+      const qsrc = await BK.qrSource(cv.qr, assets, qc.fg, qc.bg);
       if (qsrc) {
         const im = await BK.loadImg(qsrc);
-        const qx = X(16), qs = X(30), qy = X(H) - X(12) - qs - X(4);
-        c.fillStyle = '#fff'; c.fillRect(qx, qy, qs + X(4), qs + X(4));
-        c.imageSmoothingEnabled = false; c.drawImage(im, qx + X(2), qy + X(2), qs, qs); c.imageSmoothingEnabled = true;
+        c.imageSmoothingEnabled = false; if (qc.bg) c.drawImage(im, g.qx, g.qy, g.qs + X(4), g.qs + X(4)); else c.drawImage(im, g.qx + X(2), g.qy + X(2), g.qs, g.qs); c.imageSmoothingEnabled = true;
         if (cv.qr_text) {
-          const tw = X(W - 32) - qs - X(9) - (opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0), o = { x: qx + qs + X(4) + X(5), width: tw, align: 'left', size: 7.5, lh: 1.35 }, ty = qy + X(9);
-          const inBand = qy >= X(H - bbh) && !bimg;
-          if (!inBand && panelOn) { const h = blockH(cv.qr_text, Object.assign({}, o, { x: 0 })); panel(o.x, ty, tw, h, '#ffffff', .88); }
-          T(cv.qr_text, Object.assign({ top: ty, color: inBand || !panelOn ? cv.band_ink : cv.ink }, o));
+          const o = g.o;
+          if (!inBand && panelOn && !isArch) { const h = blockH(cv.qr_text, Object.assign({}, o, { x: 0 })); panel(o.x, g.ty, o.width, h, '#ffffff', .88); }
+          T(cv.qr_text, Object.assign({ top: g.ty, color: textCol }, o));
         }
       }
     }

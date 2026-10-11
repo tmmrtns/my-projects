@@ -804,6 +804,21 @@ function qrStatus() {
   else if (q.kind === 'image') t = 'Using your uploaded QR image: ' + q.name;
   else if (q.unknown) { t = 'Not recognised: type a web address (https://… or www.…) or the name of an uploaded image'; warn = true; }
   el.textContent = t; el.style.color = warn ? '#b0501e' : '';
+  // colour scheme: show the custom pickers only when wanted, and warn when the contrast is too low to scan
+  const sc = c.cover.qr_scheme || 'classic', cc = $('#qrCustomCols'), cs = $('#qrColState');
+  if (cc) cc.hidden = sc !== 'custom';
+  if (cs) {
+    let fg = null, bg = null, msg = '';
+    if (sc === 'text') { fg = c.cover.band_ink; bg = c.cover.band; msg = 'on the bottom band'; }
+    else if (sc === 'custom') { fg = c.cover.qr_fg; bg = c.cover.qr_bg; }
+    const r = fg && bg ? BK.contrast(fg, bg) : null;
+    if (sc === 'classic') cs.textContent = 'Black on white: scans everywhere.';
+    else if (r == null) cs.textContent = '';
+    else if (r < 3) { cs.textContent = `Contrast ${r.toFixed(1)}:1 ${msg}: too low, it will probably not scan. Use a darker or lighter colour.`; }
+    else if (r < 5) { cs.textContent = `Contrast ${r.toFixed(1)}:1 ${msg}: may scan, test it with your phone before printing.`; }
+    else cs.textContent = `Contrast ${r.toFixed(1)}:1 ${msg}: good. Light code on a dark background scans on most phones, but a few older scanner apps need dark on light; test before printing.`;
+    cs.style.color = r != null && r < 3 ? '#b0501e' : '';
+  }
 }
 function logoStatus() {
   const c = S.cfg;

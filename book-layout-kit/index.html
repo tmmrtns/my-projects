@@ -791,7 +791,13 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><label for="c-blurb">Blurb (blank line = new paragraph, Enter = new line)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
           <div class="row">
             <div class="field"><label for="c-qr">QR code link</label><input type="text" id="c-qr" data-ck="qr" placeholder="https://… or www.… or an image file" autocomplete="off" spellcheck="false"><span class="hint" id="qrState" role="status"></span></div>
-            <div class="field"><label for="c-qrt">Text beside the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
+            <div class="field"><label for="c-qrt">Text with the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
+            <div class="field"><label for="c-qrpos">Text position</label><select id="c-qrpos" data-cs="qr_pos"><option value="right">Beside the QR code</option><option value="above">Above the QR code</option><option value="below">Below the QR code</option></select></div>
+            <div class="field"><label for="c-qrsch">QR code colours</label><select id="c-qrsch" data-cs="qr_scheme"><option value="classic">Black on white (safest)</option><option value="text">Same colour as the text, no box</option><option value="custom">My own colours</option></select><span class="hint" id="qrColState" role="status"></span></div>
+            <div class="colors" id="qrCustomCols">
+              <label class="color"><input type="color" data-col="qr_fg" aria-label="QR code colour"> QR code <input type="text" class="hex" data-hex="qr_fg" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="QR code colour code"></label>
+              <label class="color"><input type="color" data-col="qr_bg" aria-label="QR background"> Background <input type="text" class="hex" data-hex="qr_bg" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="QR background colour code"></label>
+            </div>
           </div>
           <label class="check"><input type="checkbox" data-b="include_covers"> Put the covers in the PDF (front first, back last)</label>
           <p class="hint" id="icNote" hidden>With KDP on, the covers stay out of the interior PDF.</p>
