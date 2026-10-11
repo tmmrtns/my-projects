@@ -580,7 +580,18 @@ function assembleKit(j, texts) {
 let kitJson = null;
 try { kitJson = JSON.parse(localStorage.getItem('blk-kitjson') || 'null'); } catch (e) { kitJson = null; }
 const kitNames = j => j ? [].concat(j.front || [], j.parts || [], j.chapters || [], j.back || []) : [];
+// upload progress bar
+let upTotal = 0, upDone = 0, upTok = 0;
+function upStart(label) { upTok++; upTotal = 0; upDone = 0; const b = $('#upProg'); b.hidden = false; b.classList.add('ind'); b.querySelector('.uplab').textContent = label; b.querySelector('.upfill').style.width = '0%'; }
+function upPlan(n, label) { upTotal = Math.max(1, n); upDone = 0; const b = $('#upProg'); b.classList.remove('ind'); if (label) b.querySelector('.uplab').textContent = label; b.querySelector('.upfill').style.width = '0%'; }
+function upStep(label) { upDone++; const b = $('#upProg'); b.querySelector('.upfill').style.width = Math.min(100, upDone / upTotal * 100) + '%'; if (label) b.querySelector('.uplab').textContent = label + ` (${Math.min(upDone, upTotal)} of ${upTotal})`; }
+function upEnd() { const b = $('#upProg'); b.querySelector('.upfill').style.width = '100%'; b.classList.remove('ind'); const t = upTok; setTimeout(() => { if (t === upTok) b.hidden = true; }, 700); }
 async function importEntries(entries) {
+  upStart('Opening files…');
+  await new Promise(r => setTimeout(r, 30));
+  try { await importEntries0(entries); } finally { upEnd(); }
+}
+async function importEntries0(entries) {
   // expand zip archives
   const flat = [];
   for (const e of entries) {
@@ -595,7 +606,8 @@ async function importEntries(entries) {
   const json = flat.find(e => base(e.name) === 'book.json') || flat.find(e => ext(e.name) === 'json');
   const docs = flat.filter(e => ['md', 'markdown', 'txt', 'docx', 'pdf', 'odt', 'html', 'htm'].includes(ext(e.name)));
   let added = 0;
-  for (const im of imgs) { if (await addImage(base(im.name), await im.blob())) added++; }
+  upPlan(imgs.length + docs.length + 1, 'Reading');
+  for (const im of imgs) { if (await addImage(base(im.name), await im.blob())) added++; upStep('Reading pictures'); if (upDone % 6 === 0) await new Promise(r => setTimeout(r, 0)); }
   let meta = {}, md = null, cfg = null, roles = null, note = '';
   let j = null;
   if (json) {
@@ -616,7 +628,7 @@ async function importEntries(entries) {
     docs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     for (const d of docs) {
       const x = ext(d.name);
-      status('Reading ' + base(d.name) + '…');
+      status('Reading ' + base(d.name) + '…'); upStep('Reading ' + base(d.name)); await new Promise(r => setTimeout(r, 0));
       try {
         if (x === 'md' || x === 'markdown') {
           let t = await d.text();
@@ -685,8 +697,9 @@ async function pbImport(flat) {
   const pb = PB(), sortedNow = pb.items.slice().sort(BK.pbCompare);
   const wasSorted = pb.items.every((n, i) => n === sortedNow[i]);
   const fresh = []; let k = 0, bad = 0;
+  upPlan(imgs.length, 'Reading pictures');
   for (const im of imgs) {
-    status(`Reading picture ${++k} of ${imgs.length}…`);
+    status(`Reading picture ${++k} of ${imgs.length}…`); upStep('Reading pictures');
     const nm = base(im.name), a = await addImage(nm, await im.blob(), { max: 2600, thumb: true });
     if (!a) { bad++; continue; }
     if (!pb.items.includes(nm) && !fresh.includes(nm)) fresh.push(nm);

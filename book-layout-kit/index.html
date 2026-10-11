@@ -163,6 +163,12 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .ol-sec.changed select { border-color: var(--accent); }
 .warn { border-left: 3px solid var(--copper); background: var(--sunk); padding: 8px 10px; font-size: 13px; border-radius: 0 5px 5px 0; }
 
+.upbar { position: relative; height: 22px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunk); margin: 8px 0; }
+.upbar[hidden] { display: none; }
+.upfill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); opacity: .35; transition: width .15s; }
+.upbar.ind .upfill { width: 35% !important; animation: upind 1s ease-in-out infinite alternate; }
+@keyframes upind { from { left: 0; } to { left: 65%; } }
+.uplab { position: relative; font: 12px var(--f-ui); line-height: 20px; padding: 0 8px; }
 .pbonly { display: none; }
 body.pbmode .pbonly { display: block; }
 body.pbmode .bookonly { display: none !important; }
@@ -465,6 +471,7 @@ body.pbmode .bookonly { display: none !important; }
             <span class="types bookonly">.md .txt .docx .pdf .odt .html · book.json · .zip · .jpg .png .webp</span>
             <span class="types pbonly">.jpg .png .webp · .zip</span>
           </label>
+          <div class="upbar" id="upProg" hidden role="progressbar" aria-label="Upload progress"><div class="upfill"></div><span class="uplab"></span></div>
           <input type="file" id="fileIn" multiple hidden accept=".md,.markdown,.txt,.docx,.pdf,.odt,.html,.htm,.zip,.json,image/*">
           <div class="pickers">
             <label class="btn small" for="dirIn" title="A folder with book.json, the markdown files and the images">Project folder</label>
