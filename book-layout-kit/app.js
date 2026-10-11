@@ -490,6 +490,8 @@ function fromKitJson(j) {
   }
   return c;
 }
+// the adjustable cover values and their defaults (a value left at its default is not written to book.json)
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -512,12 +514,14 @@ function toKitJson(files, cfgIn) {
   delete cv.image_x; delete cv.image_y;
   if (cv.subtitle_source === 'auto') delete cv.subtitle_source;
   if (cv.back_subtitle_source === 'none') delete cv.back_subtitle_source;
-  const DEF = { band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 };
+  const DEF = Object.assign({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 }, BK.defaults().cover.top_band != null ? ARCH_DEF() : {});
   for (const k of Object.keys(DEF)) if (cv[k] === DEF[k] || cv[k] == null) delete cv[k];
   if (cv.back_shade !== false) delete cv.back_shade;
   if (!cv.back_image) { delete cv.back_image_x; delete cv.back_image_y; }
   cv.hide = Object.assign({}, cv.hide); if (!Object.keys(cv.hide).length) delete cv.hide;
   if (cv.band_shade !== false) delete cv.band_shade;
+  if (cv.arch_fill !== false) delete cv.arch_fill;
+  if (cv.arch_line !== false) delete cv.arch_line;
   if (cv.style === 'auto') delete cv.style;
   for (const k of Object.keys(cv)) if (cv[k] === '' || (Array.isArray(cv[k]) && !cv[k].length)) delete cv[k];
   j.cover = cv;
@@ -769,7 +773,7 @@ function fillForm() {
   $$('[data-cs]').forEach(el => { el.value = c.cover[el.dataset.cs] || (el.dataset.cs === 'back_subtitle_source' ? 'none' : 'auto'); });
   $$('[data-hide]').forEach(el => { el.checked = !(c.cover.hide || {})[el.dataset.hide]; });
   $$('[data-cb]').forEach(el => { el.checked = c.cover[el.dataset.cb] !== false; });
-  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + '%'; });
+  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + '%'; });
   $$('#bandSwatches .sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toLowerCase() === String(c.cover.band).toLowerCase())));
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
@@ -779,6 +783,9 @@ function fillForm() {
   $('#coverStyleHint').textContent = c.cover.style === 'photo' && !a ? 'Photo style needs a cover photo; until you add one the classic bands are used.'
     : (c.cover.style === 'auto' ? `Automatic picks ${a ? 'the photo style because a photo is set' : 'classic bands because no photo is set'}.` : '');
   $('#coverPhotoSect').style.opacity = st === 'photo' || c.cover.style !== 'classic' ? 1 : .6;
+  const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn
+  $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
+  $('#coverPhotoSect').hidden = eff === 'arch'; $('#backPhotoSect').hidden = eff === 'arch';
   renderKdp();
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }
@@ -814,7 +821,7 @@ async function drawCovers() {
       wrap.append(fig);
     }
     stage.replaceChildren(wrap);
-    $('#deskInfo').innerHTML = `<span>${BK.coverStyle(S.cfg) === 'photo' && BK.findAsset(S.assets, S.cfg.cover.image) ? 'Photo cover' : 'Classic cover'} · <b>${G.W} × ${G.H}</b> mm</span>`;
+    $('#deskInfo').innerHTML = `<span>${BK.coverStyle(S.cfg) === 'photo' && BK.findAsset(S.assets, S.cfg.cover.image) ? 'Photo cover' : BK.coverStyle(S.cfg) === 'arch' ? 'Arch cover' : 'Classic cover'} · <b>${G.W} × ${G.H}</b> mm</span>`;
   } catch (e) { console.error(e); stage.innerHTML = `<div class="empty"><strong>Cover preview failed</strong><span>${BK.esc(e.message)}</span></div>`; }
 }
 

@@ -169,6 +169,8 @@ const G = [
   { group: 'Cover tab', items: [
     { k: 'Classic bands', d: 'Typographic cover in three bands, in the tradition of classic paperbacks: label in the top band, title, rule, subtitle and author in the light middle band, a footer line at the bottom.',
       ex: () => `<div class="two">${cover({})}${back({})}</div>` },
+    { k: 'Top and bottom band', d: 'With the classic bands, two sliders set the height of the top band and of the bottom band separately (100% is the classic proportion, 0% removes a band). The middle band takes the rest and its text follows.' },
+    { k: 'Arch', d: 'A coloured page with an arched panel: label, title, subtitles, author and footer line sit in and around the arch. Sliders set the width, height and position of the arch, the height of every text line (distance from the top) and its size as a percentage. The back cover uses the same arch with its own quote, subtitle and blurb settings. Band is the page colour, Middle band the arch, Text on middle the text inside the arch.' },
     { k: 'Photo', d: 'The same bands with your photo filling the middle band. Title and label in the top band, subtitle, author and footer in the bottom band, with thin light lines along the photo.',
       ex: () => `<div class="two">${cover({ photo: true })}${back({})}</div>` },
     { k: 'Automatic', d: 'Photo style when a cover photo is set, classic bands when not.' },

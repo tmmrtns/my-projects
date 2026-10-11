@@ -221,8 +221,49 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   let style = BK.coverStyle(cfg);
   const asset = cv.image ? BK.findAsset(assets, cv.image) : null;
   if (style === 'photo' && !asset) style = 'classic';
+  // arch style: a coloured page with an arched panel (round top). Geometry in mm, all of it adjustable.
+  const isArch = style === 'arch';
+  const num = (k, d) => { const v = +cv[k]; return Number.isFinite(v) && cv[k] !== '' && cv[k] != null ? v : d; };
+  const aw = W * Math.max(30, Math.min(100, num('arch_w', 82))) / 100, ah = H * Math.max(25, Math.min(100, num('arch_h', 84))) / 100;
+  const ay = H * Math.max(0, Math.min(40, num('arch_y', 6))) / 100, ar = Math.min(aw / 2, ah), archFill = cv.arch_fill !== false;
+  const chord = y => { const cy = ay + ar; if (y >= cy) return aw; const d = cy - y; return d >= ar ? 0 : aw * Math.sqrt(1 - (d / ar) * (d / ar)); };
+  const inArch = (y0, y1) => archFill && y0 >= ay - .01 && y1 <= ay + ah + .01;
+  const inkAt = (y0, y1) => inArch(y0, y1) ? cv.ink : cv.band_ink;
+  const archPath = inset => {
+    const r = Math.max(1, ar - inset), x0 = (W - aw) / 2 + inset, x1 = (W + aw) / 2 - inset;
+    c.beginPath(); c.moveTo(X(x0), X(ay + ah - inset)); c.lineTo(X(x0), X(ay + ar));
+    c.ellipse(X(W / 2), X(ay + ar), X(aw / 2 - inset), X(r), 0, Math.PI, 2 * Math.PI);
+    c.lineTo(X(x1), X(ay + ah - inset)); c.closePath();
+  };
+  const drawArch = () => {
+    band(0, H, cv.band);
+    if (archFill) { archPath(0); c.fillStyle = cv.mid; c.fill(); }
+    else { archPath(0); c.strokeStyle = cv.band_ink; c.lineWidth = Math.max(1, .8 * pxpt); c.globalAlpha = .85; c.stroke(); c.globalAlpha = 1; }
+    if (cv.arch_line !== false) {
+      archPath(archFill ? 5.5 : 3.5); c.strokeStyle = archFill ? cv.ink : cv.band_ink; c.lineWidth = Math.max(1, .6 * pxpt); c.globalAlpha = archFill ? .55 : .45; c.stroke(); c.globalAlpha = 1;
+    }
+  };
+  // one centred text block at a given distance from the top (in % of the cover height), narrowed to the arch at that height
+  const archBlock = (txt, o, yPct, sizePct, maxHmm, minSz) => {
+    const topMM = H * yPct / 100, wmm = topMM >= ay + ah ? W - 16 : Math.max(30, Math.min(aw - 14, chord(topMM) - 14));
+    const oo = fitText(txt, Object.assign({ width: X(wmm) }, o, { size: o.size * sizePct / 100 }), X(maxHmm), minSz);
+    const h = measureTxt(txt, oo).h / ppm;
+    T(txt, Object.assign({ top: X(topMM), color: inkAt(topMM, topMM + h) }, oo));
+    return topMM + h;
+  };
   if (side === 'front') {
-    if (style === 'photo') {
+    if (isArch) {
+      drawArch();
+      const sz = k => num(k, 100);
+      if (cv.label && on('label')) archBlock(cv.label, { size: 8, spacing: .4, upper: true, lh: 1.3 }, num('arch_label_y', 14), sz('arch_label_size'), H * .1, 4);
+      if (on('title')) archBlock(titleLines, { size: 25, lh: 1.15, spacing: .06, upper: true }, num('arch_title_y', 24), sz('arch_title_size'), H * .3, 8);
+      let ey = H * num('arch_sub_y', 42) / 100;
+      [[subt, { size: 11.5, italic: true, lh: 1.3 }], [subt2, { size: 9.5, lh: 1.3 }]].forEach(([t, o]) => {
+        if (!t) return; ey = archBlock(t, o, ey / H * 100, sz('arch_sub_size'), H * .2, 5) + 1.5;
+      });
+      if (cfg.author && on('author')) archBlock(cfg.author, { size: 11, spacing: .3, upper: true, lh: 1.2 }, num('arch_author_y', 80), sz('arch_author_size'), H * .1, 5);
+      if (cv.footer && on('footer')) archBlock(cv.footer, { size: 8, spacing: .32, upper: true, lh: 1.2 }, num('arch_footer_y', 94), sz('arch_footer_size'), H * .1, 4);
+    } else if (style === 'photo') {
       // the bands above and below the photo can be made thinner (band_size 100 = full, 0 = none: the photo fills the cover)
       const bs = Math.max(0, Math.min(100, cv.band_size ?? 100)) / 100, bh = H * .27 * bs;
       if (bh > 0) { band(0, bh, cv.band); band(H - bh, bh, cv.band); }
@@ -256,26 +297,35 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
         X(H * (subt2 ? .742 : .755)), footTop - X(2), X(H * (subt2 ? .83 : .815)), cv.band_ink, X(3));
       if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .045) - 8 * 1.2 * pxpt, size: 8, spacing: .35, upper: true, color: cv.band_ink });
     } else {
-      band(0, H * .295, cv.band); band(H * .295, H * .41, cv.mid); band(H * .705, H * .295 + 1, cv.band);
-      if (cv.label && on('label')) T(cv.label, { top: X(H * .115), size: 9, spacing: .45, upper: true, color: cv.band_ink });
-      if (on('title')) T(titleLines, Object.assign({ top: X(H * .37), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(H * .135), 12)));
-      if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525), X(24), Math.max(1, .7 * pxpt)); }
+      // the top and bottom band can each be made thicker or thinner (100 = the classic proportions); the middle band takes what is left
+      const tb = Math.max(0, Math.min(150, num('top_band', 100))) / 100, bb = Math.max(0, Math.min(150, num('bottom_band', 100))) / 100;
+      const topH = H * .295 * tb, botH = H * .295 * bb, midH = H - topH - botH, dy = (topH - botH) / 2;
+      if (topH > 0) band(0, topH, cv.band);
+      band(topH, midH, cv.mid);
+      if (botH > 0) band(H - botH, botH + 1, cv.band);
+      if (cv.label && on('label') && topH > 12) T(cv.label, { top: X(topH * .39), size: 9, spacing: .45, upper: true, color: cv.band_ink });
+      if (on('title')) T(titleLines, Object.assign({ top: X(H * .37 + dy), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(Math.min(H * .135, midH * .33)), 12)));
+      if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525 + dy), X(24), Math.max(1, .7 * pxpt)); }
       flowBelow([subt && { t: subt, o: { size: 11.5, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
         cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
-        X(H * (subt2 ? .543 : .553)), X(H * .705) - X(6), X(H * (subt2 ? .65 : .63)), cv.ink, X(4));
-      if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .105) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
+        X(H * (subt2 ? .543 : .553) + dy), X(H - botH) - X(6), X(H * (subt2 ? .65 : .63) + dy), cv.ink, X(4));
+      if (cv.footer && on('footer') && botH > 12) T(cv.footer, { top: X(H - botH * .356) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
     }
   } else {
     // back: bands above and below (thinner or none), the middle in colour or a picture, text that can be moved
-    const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, bbh = H * .295 * bbs;
-    const bimg = cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
-    if (bimg) {
+    const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, bbh = isArch ? 0 : H * .295 * bbs;
+    const bimg = !isArch && cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
+    if (isArch) drawArch();
+    else if (bimg) {
       const im = await BK.loadImg(bimg.dataURL);
       const y0 = bbh > 0 ? X(bbh) : -X(bd.t), y1 = bbh > 0 ? X(H - bbh) : X(H + bd.b);
       drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.back_image_x ?? 50, cv.back_image_y ?? 50);
     } else band(bbh, H - 2 * bbh + 1, cv.mid);
     if (bbh > 0) { band(0, bbh, cv.band); band(H - bbh, bbh + 1, cv.band); }
-    const scratch = canvasOf(8, 8).getContext('2d'), panelOn = cv.back_shade !== false;
+    const scratch = canvasOf(8, 8).getContext('2d'), panelOn = !isArch && cv.back_shade !== false;
+    // arch style: own text positions, text narrowed to the arch at that height
+    const yq = isArch ? num('arch_back_quote_y', 17) : (cv.back_quote_y ?? 10.5), ys = isArch ? num('arch_back_sub_y', 25) : (cv.back_subtitle_y ?? 22), yb = isArch ? num('arch_back_blurb_y', 30) : (cv.back_blurb_y ?? 33);
+    const bwMM = isArch ? Math.max(40, aw - 26) : W - 32, wAt = yMM => isArch ? Math.max(30, Math.min(bwMM, chord(yMM) - 14)) : W - 32;
     // a panel behind text that does not sit wholly on a plain area of the right colour
     const panel = (x, y, w, h, col, alpha) => {
       const pd = X(4), r = X(2); c.save(); c.globalAlpha = alpha; c.fillStyle = col; c.beginPath();
@@ -285,37 +335,37 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const blockH = (txt, o) => { const sc = scratch; return textBlock(sc, txt, Object.assign({ pxpt, fam, align: 'center', x: 0, width: X(W - 16), top: 0, color: '#000' }, o)); };
     const quote = cv.quote && on('quote') ? cv.quote : '';
     if (quote) {
-      const top = X(H * (cv.back_quote_y ?? 10.5) / 100), below = Math.min(cv.back_subtitle_source && cv.back_subtitle_source !== 'none' ? X(H * (cv.back_subtitle_y ?? 22) / 100) : 1e9, X(H * (cv.back_blurb_y ?? 33) / 100));
-      const o = fitText(quote, { size: 13, lh: 1.3, italic: true, width: X(W - 32), x: 0 }, Math.max(X(10), below - top - X(6)), 8.5), h = blockH(quote, o);
+      const top = X(H * yq / 100), below = Math.min(cv.back_subtitle_source && cv.back_subtitle_source !== 'none' ? X(H * ys / 100) : 1e9, X(H * yb / 100));
+      const o = fitText(quote, { size: 13 * (isArch ? num('arch_back_quote_size', 100) / 100 : 1), lh: 1.3, italic: true, width: X(wAt(top / ppm)), x: 0 }, Math.max(X(10), below - top - X(6)), 8.5), h = blockH(quote, o);
       const inBand = top + h <= X(bbh);
       if (!inBand && panelOn) panel(X(16), top, X(W - 32), h, cv.band, .86);
-      T(quote, Object.assign({ top, color: cv.band_ink }, o, { x: X(W / 2) }));
+      T(quote, Object.assign({ top, color: isArch ? inkAt(top / ppm, (top + h) / ppm) : cv.band_ink }, o, { x: X(W / 2) }));
     }
     // subtitles of the book, if the author wants them on the back as well
     const bsrc = cv.back_subtitle_source || 'none';
     const bsubs = (bsrc === 'both' ? [s1, s2] : bsrc === 'first' ? [s1] : bsrc === 'second' ? [s2] : bsrc === 'auto' ? [s2 || s1] : []).filter(Boolean);
     if (bsubs.length && on('subtitle')) {
-      const top0 = X(H * (cv.back_subtitle_y ?? 22) / 100);
+      const top0 = X(H * ys / 100);
       let top = top0;
       bsubs.forEach((t, i) => {
-        const o = { size: i ? 9.5 : 11.5, lh: 1.3, italic: !i, width: X(W - 32) }, h = blockH(t, o);
+        const o = { size: i ? 9.5 : 11.5, lh: 1.3, italic: !i, width: X(wAt(top / ppm)) }, h = blockH(t, o);
         const inBand = top + h <= X(bbh), inBandB = top >= X(H - bbh), plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
         if (!inBand && !inBandB && !plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
-        T(t, Object.assign({ top, color: inBand || inBandB ? cv.band_ink : cv.ink }, o, { x: X(W / 2) }));
+        T(t, Object.assign({ top, color: isArch ? inkAt(top / ppm, (top + h) / ppm) : (inBand || inBandB ? cv.band_ink : cv.ink) }, o, { x: X(W / 2) }));
         top += h + X(1.5);
       });
     }
     const blurb = (cv.blurb || []).filter(Boolean);
     if (blurb.length && on('blurb')) {
-      const top = X(H * (cv.back_blurb_y ?? 33) / 100);
+      const top = X(H * yb / 100);
       // the text stops above the QR code and the barcode box, and above the bottom margin
       let lim = X(H - 10);
       if (cv.qr && on('qr')) lim = Math.min(lim, X(H) - X(12) - X(34) - X(4));
       if (opt && opt.barcode) lim = Math.min(lim, X(H - ((opt.barcodePos || {}).bottom ?? BK.KDP.barcodeMargin) - BK.KDP.barcode[1] - 3));
-      const o = Object.assign(fitText(blurb, { x: 0, width: X(W - 32), align: 'justify', size: 10.2, lh: 1.42, paraGap: X(2.2) }, Math.max(X(15), lim - top - X(5)), 7.5), { x: X(16) }), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
+      const bw = wAt(top / ppm), o = Object.assign(fitText(blurb, { x: 0, width: X(bw), align: isArch ? 'center' : 'justify', size: 10.2 * (isArch ? num('arch_back_blurb_size', 100) / 100 : 1), lh: 1.42, paraGap: X(2.2) }, Math.max(X(15), lim - top - X(5)), 7.5), { x: isArch ? X(W / 2) : X((W - bw) / 2) }), h = blockH(blurb, Object.assign({}, o, { x: 0 }));
       const plain = !bimg && top >= X(bbh) && top + h <= X(H - bbh);
       if (!plain && panelOn) panel(X(16), top, X(W - 32), h, cv.mid, .88);
-      T(blurb, Object.assign({ top, color: cv.ink }, o));
+      T(blurb, Object.assign({ top, color: isArch ? inkAt(top / ppm, (top + h) / ppm) : cv.ink }, o));
     }
     if (cv.qr && on('qr')) {
       const qsrc = /^https?:\/\//i.test(cv.qr) ? BK.qrDataURL(cv.qr) : (BK.findAsset(assets, cv.qr) || {}).dataURL;
