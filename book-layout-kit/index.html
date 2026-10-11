@@ -617,6 +617,28 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <label class="color"><input type="color" data-col="ink" aria-label="Text on middle"> Text on middle <input type="text" class="hex" data-hex="ink" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Text on middle colour code"></label>
           </div>
         </div>
+        <div class="sect" id="coverLogoSect">
+          <h2>Logo</h2>
+          <div class="coverimg">
+            <div class="thumb" id="logoThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#1a1a1a"></div>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="logoIn">Choose logo</label><button class="btn small" id="logoTree" type="button">Use the tree logo</button><button class="btn small ghost" id="logoClear" type="button">Remove</button></div>
+              <input type="file" id="logoIn" hidden accept="image/*">
+              <p class="hint">A small logo, centred. A white drawing on a black ground (or the other way round, see Invert) takes the text colour of the place where it sits.</p>
+            </div>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-cb="logo_front_top"> Front, top</label>
+            <label class="check"><input type="checkbox" data-cb="logo_front_bottom"> Front, bottom</label>
+            <label class="check"><input type="checkbox" data-cb="logo_back_top"> Back, top</label>
+            <label class="check"><input type="checkbox" data-cb="logo_back_bottom"> Back, bottom</label>
+          </div>
+          <div class="field"><span class="lab">Logo size (longest side)</span><div class="range"><input type="range" min="5" max="60" step="1" data-pos="logo_size" data-unit="mm" aria-label="Logo size (longest side)"><output></output></div></div>
+          <div class="field"><span class="lab">Distance from the top or bottom edge</span><div class="range"><input type="range" min="0" max="60" step="1" data-pos="logo_margin" data-unit="mm" aria-label="Distance from the top or bottom edge"><output></output></div></div>
+          <div class="field"><label for="c-logocol">Logo colour</label>
+            <select id="c-logocol" data-cs="logo_color"><option value="text">Same as the text next to it</option><option value="original">Original colours</option></select></div>
+          <label class="check"><input type="checkbox" data-cb="logo_invert"> Invert (for a dark drawing on a light ground)</label>
+        </div>
         <div class="sect" id="coverBandsSect">
           <h2>Bands</h2>
           <p class="hint">Make the top and the bottom band thicker or thinner. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>

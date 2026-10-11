@@ -251,6 +251,24 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     T(txt, Object.assign({ top: X(topMM), color: inkAt(topMM, topMM + h) }, oo));
     return topMM + h;
   };
+  // small logo: where it goes on this side, and how much room it takes (the label and the footer line make way for it)
+  const lAsset = cv.logo ? BK.findAsset(assets, cv.logo) : null;
+  const logoSlots = lAsset ? (side === 'front' ? [cv.logo_front_top && 'top', cv.logo_front_bottom && 'bottom'] : [cv.logo_back_top && 'top', cv.logo_back_bottom && 'bottom']).filter(Boolean) : [];
+  let im = null, dw = 0, dh = 0, lm = 0, lt = 0, lb = H, eT = 0, eB = 0;
+  if (logoSlots.length) {
+    im = await BK.loadImg(lAsset.dataURL);
+    const ls = Math.max(5, Math.min(60, num('logo_size', 16))), ratio = im.naturalWidth / im.naturalHeight;
+    lm = Math.max(0, Math.min(60, num('logo_margin', 10))); dh = ratio >= 1 ? ls / ratio : ls; dw = ratio >= 1 ? ls : ls * ratio;
+    if (logoSlots.includes('top')) lt = lm + dh;
+    if (logoSlots.includes('bottom')) lb = H - lm - dh;
+    // heights of the coloured bands at the top and bottom of this side (none for the arch style): they decide the logo colour
+    if (!isArch) {
+      if (side === 'front' && style === 'photo') eT = eB = H * .27 * Math.max(0, Math.min(100, num('band_size', 100))) / 100;
+      else if (side === 'front') { eT = H * .295 * Math.max(0, Math.min(150, num('top_band', 100))) / 100; eB = H * .295 * Math.max(0, Math.min(150, num('bottom_band', 100))) / 100; }
+      else eT = eB = H * .295 * Math.max(0, Math.min(100, num('back_band_size', 100))) / 100;
+    }
+  }
+  const lblTop = t => Math.max(t, lt ? X(lt + 4) : 0), ftrTop = (t, fh) => Math.min(t, lb < H ? X(lb - 4) - fh : 1e9);
   if (side === 'front') {
     if (isArch) {
       drawArch();
@@ -284,18 +302,18 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
         c.fillStyle = gt; c.fillRect(left, -X(bd.t), fullW, X(zone + bd.t));
         c.fillStyle = gb; c.fillRect(left, X(H - zone), fullW, X(zone + bd.b));
       }
-      if (cv.label && on('label')) T(cv.label, { top: X(H * .045), size: 8, spacing: .45, upper: true, color: cv.band_ink });
+      if (cv.label && on('label')) T(cv.label, { top: lblTop(X(H * .045)), size: 8, spacing: .45, upper: true, color: cv.band_ink });
       // title vertically centred in the box top .095H, height .15H
       const lh = 1.15;
       if (on('title')) {
         const to = fitText(titleLines, { size: 21, lh, spacing: .08, upper: true }, X(H * .15), 11), th = measureTxt(titleLines, to).h;
         T(titleLines, Object.assign({ top: X(H * .095) + (X(H * .15) - th) / 2, color: cv.band_ink }, to));
       }
-      const footTop = cv.footer && on('footer') ? X(H - H * .045) - 8 * 1.2 * pxpt : X(H - 6);
+      const footTop = cv.footer && on('footer') ? ftrTop(X(H - H * .045) - 8 * 1.2 * pxpt, 8 * 1.2 * pxpt) : X(H - 6);
       flowBelow([subt && { t: subt, o: { size: 11, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
         cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
         X(H * (subt2 ? .742 : .755)), footTop - X(2), X(H * (subt2 ? .83 : .815)), cv.band_ink, X(3));
-      if (cv.footer && on('footer')) T(cv.footer, { top: X(H - H * .045) - 8 * 1.2 * pxpt, size: 8, spacing: .35, upper: true, color: cv.band_ink });
+      if (cv.footer && on('footer')) T(cv.footer, { top: ftrTop(X(H - H * .045) - 8 * 1.2 * pxpt, 8 * 1.2 * pxpt), size: 8, spacing: .35, upper: true, color: cv.band_ink });
     } else {
       // the top and bottom band can each be made thicker or thinner (100 = the classic proportions); the middle band takes what is left
       const tb = Math.max(0, Math.min(150, num('top_band', 100))) / 100, bb = Math.max(0, Math.min(150, num('bottom_band', 100))) / 100;
@@ -303,13 +321,13 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       if (topH > 0) band(0, topH, cv.band);
       band(topH, midH, cv.mid);
       if (botH > 0) band(H - botH, botH + 1, cv.band);
-      if (cv.label && on('label') && topH > 12) T(cv.label, { top: X(topH * .39), size: 9, spacing: .45, upper: true, color: cv.band_ink });
+      if (cv.label && on('label') && topH > 12) T(cv.label, { top: lblTop(X(topH * .39)), size: 9, spacing: .45, upper: true, color: cv.band_ink });
       if (on('title')) T(titleLines, Object.assign({ top: X(H * .37 + dy), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(Math.min(H * .135, midH * .33)), 12)));
       if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525 + dy), X(24), Math.max(1, .7 * pxpt)); }
       flowBelow([subt && { t: subt, o: { size: 11.5, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
         cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
         X(H * (subt2 ? .543 : .553) + dy), X(H - botH) - X(6), X(H * (subt2 ? .65 : .63) + dy), cv.ink, X(4));
-      if (cv.footer && on('footer') && botH > 12) T(cv.footer, { top: X(H - botH * .356) - 8.5 * 1.2 * pxpt, size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
+      if (cv.footer && on('footer') && botH > 12) T(cv.footer, { top: ftrTop(X(H - botH * .356) - 8.5 * 1.2 * pxpt, 8.5 * 1.2 * pxpt), size: 8.5, spacing: .35, upper: true, color: cv.band_ink });
     }
   } else {
     // back: bands above and below (thinner or none), the middle in colour or a picture, text that can be moved
@@ -392,6 +410,26 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
         c.drawImage(im, X(bx + bw / 2) - im.naturalWidth * s / 2, X(by + bh / 2) - im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s);
       }
     }
+  }
+  // draw the logo (prepared above)
+  for (const sl of logoSlots) {
+    const y0 = sl === 'top' ? lm : H - lm - dh, yc = y0 + dh / 2;
+    const col = isArch ? inkAt(yc, yc) : ((yc <= eT || yc >= H - eB) ? cv.band_ink : cv.ink);
+    const px = Math.max(8, Math.round(dw * ppm)), py = Math.max(8, Math.round(dh * ppm));
+    // shrink in steps: one big jump from a large picture to a small logo loses the thin lines
+    let src = im, sw = im.naturalWidth, sh = im.naturalHeight;
+    while (sw / 2 > px && sh / 2 > py) { const t = canvasOf(Math.round(sw / 2), Math.round(sh / 2)), tg = t.getContext('2d'); tg.imageSmoothingQuality = 'high'; tg.drawImage(src, 0, 0, t.width, t.height); src = t; sw = t.width; sh = t.height; }
+    const lc = canvasOf(px, py), g = lc.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, px, py);
+    if (cv.logo_color !== 'original') {
+      // a white (or black, when "invert" is on) drawing on a plain ground: the ground becomes transparent and the drawing takes the text colour
+      const [r, gg, bl] = hexRgb(col).split(',').map(Number), d = g.getImageData(0, 0, px, py), a = d.data;
+      for (let i = 0; i < a.length; i += 4) {
+        const lum = (.299 * a[i] + .587 * a[i + 1] + .114 * a[i + 2]) / 255, al = Math.min(1, Math.max(0, ((cv.logo_invert ? 1 - lum : lum) - .08) * 1.15)) * (a[i + 3] / 255);
+        a[i] = r; a[i + 1] = gg; a[i + 2] = bl; a[i + 3] = Math.round(al * 255);
+      }
+      g.putImageData(d, 0, 0);
+    }
+    c.drawImage(lc, X(W / 2 - dw / 2), X(y0), X(dw), X(dh));
   }
   return canvas;
 };
