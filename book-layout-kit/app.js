@@ -79,7 +79,8 @@ $$('.tabs button').forEach(b => b.addEventListener('click', () => { showTab(b.da
 function setView(v) {
   S.view = v;
   $$('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
-  $('#pager').hidden = v !== 'pages' || !S.pdfDoc;
+  $('#pager').hidden = v !== 'pages' || !S.pdfDoc || !!S.tiles;
+  $('#pgBox').hidden = v !== 'pages' || !S.pdfDoc;
   $('#guidesLbl').hidden = v !== 'wrap';
   if (v === 'cover') drawCovers(); else if (v === 'wrap') drawWrapView(); else if (v === 'scan') { if (window.BKO) window.BKO.render(); } else renderSpread();
 }
@@ -1213,6 +1214,9 @@ function spreadOf(p) {
 }
 async function renderSpread() {
   const stage = $('#stage');
+  stage.classList.toggle('tilestage', !!S.tiles && !!S.pdfDoc);
+  $('#pgBox').hidden = S.view !== 'pages' || !S.pdfDoc;
+  if (S.tiles && S.pdfDoc) { $('#pager').hidden = true; return renderTiles(); }
   if (!S.pdfDoc) {
     stage.innerHTML = `<div class="empty"><strong>No pages yet</strong><span>Build the book to see every page here, spread by spread, with the covers first and last.</span><div><button class="btn primary" type="button" id="emptyBuild">Build PDF &amp; EPUB</button></div></div>`;
     $('#emptyBuild').addEventListener('click', () => build('both'));
@@ -1222,7 +1226,7 @@ async function renderSpread() {
   $('#pager').hidden = false;
   const tok = ++renderTok;
   const [l, r] = spreadOf(S.page);
-  const availH = Math.max(260, stage.clientHeight - 40), availW = Math.max(240, stage.clientWidth - 40);
+  const availH = Math.max(160, stage.clientHeight - 48), availW = Math.max(160, stage.clientWidth - 48);
   const first = await S.pdfDoc.getPage(l || r);
   const vp1 = first.getViewport({ scale: 1 });
   const scale = Math.min(availH / vp1.height, availW / (2 * vp1.width));
@@ -1251,6 +1255,72 @@ async function renderSpread() {
   const lab = p => p == null ? '' : (co && p === 1 ? 'front cover' : (co && p === n ? 'back cover' : 'page ' + (p - co)));
   $('#pageLabel').textContent = [lab(l), lab(r)].filter(Boolean).join(' · ') + ` / ${n - 2 * co}`;
   $('#pageSlider').max = n; $('#pageSlider').value = r || l;
+}
+
+
+// tiles: many pages at once (click one to open it in the spread view)
+async function renderTiles() {
+  const stage = $('#stage'), tok = ++renderTok, n = S.pdfDoc.numPages, co = S.pdf && S.pdf.covers ? 1 : 0;
+  const first = await S.pdfDoc.getPage(1), vp1 = first.getViewport({ scale: 1 });
+  const tw = +$('#tileSize').value || 150, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const grid = document.createElement('div'); grid.className = 'tiles'; grid.style.setProperty('--tw', tw + 'px');
+  const cur = spreadOf(S.page);
+  const cells = [];
+  for (let p = 1; p <= n; p++) {
+    const f = document.createElement('figure'); f.className = 'tile'; f.dataset.p = p;
+    f.classList.toggle('on', p === cur[0] || p === cur[1]);
+    const cv = document.createElement('canvas'); cv.width = Math.round(tw * dpr); cv.height = Math.round(tw * dpr * vp1.height / vp1.width); cv.style.aspectRatio = `${vp1.width} / ${vp1.height}`;
+    const cap = document.createElement('figcaption'); cap.textContent = co && p === 1 ? 'front cover' : (co && p === n ? 'back cover' : String(p - co));
+    f.append(cv, cap); f.addEventListener('click', () => { S.page = p; S.tiles = false; $$('#pgMode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === 'spread'))); $('#tileSize').hidden = true; renderSpread(); });
+    grid.append(f); cells.push(f);
+  }
+  stage.replaceChildren(grid);
+  $('#pager').hidden = true;
+  const queue = [], done = new Set(); let busy = false;
+  const pump = async () => {
+    if (busy) return; busy = true;
+    while (queue.length) {
+      if (tok !== renderTok) break;
+      const f = queue.shift(), p = +f.dataset.p; if (done.has(p)) continue; done.add(p);
+      const cv = f.querySelector('canvas');
+      try { const pg = await S.pdfDoc.getPage(p), vp = pg.getViewport({ scale: cv.width / vp1.width }); await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise; } catch (e) { console.error(e); }
+    }
+    busy = false;
+  };
+  const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) { queue.push(e.target); io.unobserve(e.target); } pump(); }, { root: stage, rootMargin: '300px' });
+  cells.forEach(c => io.observe(c));
+  const on = grid.querySelector('.tile.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+}
+function initViewer() {
+  $$('#pgMode button').forEach(b => b.addEventListener('click', () => {
+    S.tiles = b.dataset.m === 'tiles';
+    $$('#pgMode button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('#tileSize').hidden = !S.tiles; $('#pager').hidden = S.tiles || !S.pdfDoc;
+    renderSpread();
+  }));
+  $('#tileSize').addEventListener('input', debounce(() => { if (S.tiles) renderSpread(); }, 120));
+  // the preview follows the size of its pane (also when the divider is dragged)
+  let lastW = 0, lastH = 0;
+  new ResizeObserver(debounce(() => {
+    const st = $('#stage'), w = st.clientWidth, h = st.clientHeight;
+    if (Math.abs(w - lastW) < 4 && Math.abs(h - lastH) < 4) return;
+    lastW = w; lastH = h;
+    if (S.view === 'pages' && S.pdfDoc && !S.tiles) renderSpread(); else if (S.view === 'cover') drawCovers(); else if (S.view === 'wrap') drawWrapView();
+  }, 150)).observe($('#stage'));
+  // resizable settings pane
+  const main = $('.main'), sp = $('#split'), KEY = 'blk-benchw';
+  const clamp = w => Math.max(300, Math.min(w, Math.round(main.clientWidth * .75)));
+  const set = w => main.style.setProperty('--benchw', clamp(w) + 'px');
+  try { const w = +localStorage.getItem(KEY); if (w) set(w); } catch (e) { /* ignore */ }
+  const store = () => { try { localStorage.setItem(KEY, parseInt(getComputedStyle(main).getPropertyValue('--benchw'), 10)); } catch (e) { /* ignore */ } };
+  sp.addEventListener('pointerdown', e => {
+    sp.setPointerCapture(e.pointerId); sp.classList.add('drag'); document.body.classList.add('splitting');
+    const mv = ev => set(ev.clientX - main.getBoundingClientRect().left);
+    const up = () => { sp.classList.remove('drag'); document.body.classList.remove('splitting'); sp.removeEventListener('pointermove', mv); sp.removeEventListener('pointerup', up); sp.removeEventListener('pointercancel', up); store(); };
+    sp.addEventListener('pointermove', mv); sp.addEventListener('pointerup', up); sp.addEventListener('pointercancel', up);
+  });
+  sp.addEventListener('dblclick', () => { main.style.removeProperty('--benchw'); try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ } });
+  sp.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); set($('.bench').offsetWidth + (e.key === 'ArrowLeft' ? -30 : 30)); store(); });
 }
 
 // ---------------------------------------------------------------- edit from the page viewer
@@ -1486,7 +1556,7 @@ function markSel() {
   $('#pSel').textContent = lab ? 'Selected: ' + lab + ' (click a page to select it)' : '';
   const loc = S.sel ? locate(S.sel) : null, gen = !loc || loc.generated;
   const real = !gen && loc.o;
-  $('#pedit').hidden = !S.pdfDoc;
+  $('#pedit').hidden = !S.pdfDoc || pbOn();
   $('#vDelPage').disabled = gen;
   $('#vEdit').disabled = gen; $('#vRemPage').disabled = gen || real.type === 'part'; $('#vRemSec').disabled = gen;
   $('#vRemSec').textContent = gen ? 'Remove chapter' : real.type === 'part' ? 'Remove part and its chapters' : real.sec.role === 'chapter' || real.sec.role === 'plain' || real.sec.role === 'appendix' ? 'Remove chapter' : 'Remove section';
@@ -1886,7 +1956,7 @@ function initCollapse() {
     }
   });
 }
-initForm(); initPhoto(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
+initForm(); initPhoto(); initViewer(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
 try { const t = sessionStorage.getItem('blk-tab'); if (t && $('#panel-' + t)) showTab(t); } catch (e) { /* ignore */ }
 parse();
 status(S.isSample ? 'Sample manuscript loaded · drop your own on the left' : 'Your manuscript is restored from this browser');
