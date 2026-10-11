@@ -78,7 +78,11 @@ body.splitting { user-select: none; cursor: col-resize; }
 .tile.on canvas { outline: 3px solid var(--accent); }
 .stage.tilestage { place-items: start stretch; }
 
-.bench { display: grid; grid-template-rows: auto 1fr; min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
+.bench { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
+.gtabs { display: flex; gap: 4px; padding: 8px 12px 0; background: var(--surface); }
+.gtabs button { border: 1px solid transparent; border-bottom: 0; background: none; padding: 7px 14px; font: 600 13.5px var(--f-ui); cursor: pointer; color: var(--muted); border-radius: 7px 7px 0 0; }
+.gtabs button[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); }
+.tabs.sub1 { height: 0; padding: 0; border: 0; overflow: hidden; }
 .tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tabs button { border: 0; background: none; padding: 11px 7px 9px; font-size: 13.5px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; font-weight: 500; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -169,6 +173,10 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
 .upbar.ind .upfill { width: 35% !important; animation: upind 1s ease-in-out infinite alternate; }
 @keyframes upind { from { left: 0; } to { left: 65%; } }
 .uplab { position: relative; font: 12px var(--f-ui); line-height: 20px; padding: 0 8px; }
+.pgal { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 6px; max-height: 190px; overflow: auto; padding: 2px; }
+.pgal button { aspect-ratio: 1; border: 2px solid var(--line); border-radius: 5px; background-size: cover; background-position: center; cursor: pointer; padding: 0; }
+.pgal button[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); }
+.pgal .none { font-size: 11px; color: var(--muted); }
 .pbonly { display: none; }
 body.pbmode .pbonly { display: block; }
 body.pbmode .bookonly { display: none !important; }
@@ -448,15 +456,20 @@ body.pbmode .bookonly { display: none !important; }
   </header>
   <div class="main">
     <section class="bench" aria-label="Manuscript and settings">
-      <nav class="tabs" role="tablist">
-        <button role="tab" aria-selected="true" data-tab="manuscript" id="tab-manuscript">Manuscript</button>
-        <button role="tab" aria-selected="false" data-tab="extract" id="tab-extract" hidden>Extract</button>
-        <button role="tab" aria-selected="false" data-tab="structure" id="tab-structure">Structure</button>
-        <button role="tab" aria-selected="false" data-tab="book" id="tab-book">Book</button>
-        <button role="tab" aria-selected="false" data-tab="cover" id="tab-cover">Cover</button>
-        <button role="tab" aria-selected="false" data-tab="kdp" id="tab-kdp">KDP</button>
-        <button role="tab" aria-selected="false" data-tab="export" id="tab-export">Export</button>
-        <button role="tab" aria-selected="false" data-tab="guide" id="tab-guide">Guide</button>
+      <nav class="gtabs" id="groupTabs" role="tablist" aria-label="Sections">
+        <button type="button" role="tab" data-group="source" aria-selected="true">Source</button>
+        <button type="button" role="tab" data-group="book" aria-selected="false">Book</button>
+        <button type="button" role="tab" data-group="export" aria-selected="false">Export</button>
+        <button type="button" role="tab" data-group="guide" aria-selected="false">Guide</button>
+      </nav>
+      <nav class="tabs" id="subTabs" role="tablist" aria-label="Pages of this section">
+        <button role="tab" aria-selected="true" data-tab="manuscript" data-group="source" id="tab-manuscript">Manuscript</button>
+        <button role="tab" aria-selected="false" data-tab="extract" data-group="source" id="tab-extract" hidden>Extract</button>
+        <button role="tab" aria-selected="false" data-tab="book" data-group="book" id="tab-book">Book</button>
+        <button role="tab" aria-selected="false" data-tab="cover" data-group="book" id="tab-cover">Cover</button>
+        <button role="tab" aria-selected="false" data-tab="structure" data-group="book" id="tab-structure">Structure</button>
+        <button role="tab" aria-selected="false" data-tab="export" data-group="export" id="tab-export">Export</button>
+        <button role="tab" aria-selected="false" data-tab="guide" data-group="guide" id="tab-guide">Guide</button>
       </nav>
 
       <!-- MANUSCRIPT -->
@@ -699,12 +712,12 @@ body.pbmode .bookonly { display: none !important; }
         <div class="sect">
           <h2 id="styleHead">Style</h2>
           <div class="seg" data-seg="cover.style">
-            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch / shapes</button><button type="button" data-v="photo" id="segPhoto">Photo (older)</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
+            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch / shapes</button><button type="button" data-v="photo" id="segPhoto">Photo</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
           <p class="hint" id="coverStyleHint"></p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small ghost" id="resetBands" type="button">Reset to the original 3 bands</button><button class="btn small ghost" id="resetArch" type="button">Reset to the original arch</button></div>
           <p class="hint">Resets the style, band sizes, arch size, pictures and opacity (and for the arch the text positions) of the side you are editing. Your colours and texts stay.</p>
         </div>
-        <div class="sect">
+        <div class="sect" id="coverColoursSect">
           <h2>Colours</h2>
           <div class="swatches" id="bandSwatches"></div>
           <div class="colors">
@@ -863,21 +876,20 @@ body.pbmode .bookonly { display: none !important; }
             <select id="c-logocol" data-cs="logo_color"><option value="text">Same as the text next to it</option><option value="original">Original colours</option></select></div>
           <label class="check"><input type="checkbox" data-cb="logo_invert"> Invert (for a dark drawing on a light ground)</label>
         </div>
-        <div class="sect" id="coverPhotoSect">
-          <h2>Cover photo</h2>
-          <div class="coverimg">
-            <div class="thumb" id="coverThumb"></div>
-            <div style="display:grid;gap:8px">
-              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="coverIn">Choose photo</label><button class="btn small ghost" id="coverClear" type="button">Remove</button></div>
-              <input type="file" id="coverIn" hidden accept="image/*">
-              <p class="hint">Landscape works best: the photo fills the middle band. At least 1800 px wide.</p>
-            </div>
-          </div>
+        <div class="sect" id="coverPhotoSect" data-open="1">
+          <h2>Cover picture</h2>
+          <p class="hint">The picture fills the whole cover. Pick one of the pictures that are loaded (also those from an imported folder) or upload another. At least 1800 px wide.</p>
+          <div class="pgal" id="coverGal"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><label class="btn small" for="coverIn">Upload a picture</label><button class="btn small ghost" id="coverClear" type="button">No picture</button></div>
+          <input type="file" id="coverIn" hidden accept="image/*">
+          <div class="thumb" id="coverThumb" hidden></div>
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="image_x" aria-label="Crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="image_y" aria-label="Crop top to bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, less leaves room for the colour)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="image_zoom" aria-label="Picture size"><output></output></div></div>
-          <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_size" aria-label="Band height"><output></output></div></div>
-          <label class="check"><input type="checkbox" data-cb="band_shade"> Soft shade behind text when the bands are thinner</label>
+          <details class="grp"><summary>Bands over the picture</summary>
+            <div class="field"><span class="lab">Band height (0% = the picture fills the cover)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_size" aria-label="Band height"><output></output></div></div>
+            <label class="check"><input type="checkbox" data-cb="band_shade"> Soft shade behind text when the bands are thinner</label>
+          </details>
         </div>
         <div class="sect">
           <h2>Show on the front cover</h2>
@@ -912,14 +924,12 @@ body.pbmode .bookonly { display: none !important; }
         <div class="sect" id="backPhotoSect" data-open="1">
           <h2>Text position and size: back (bands)</h2>
           <div id="backPicBlock">
-          <div class="coverimg">
-            <div class="thumb" id="backThumb"></div>
-            <div style="display:grid;gap:8px">
-              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="backIn">Choose picture</label><button class="btn small ghost" id="backClear" type="button">Remove</button></div>
-              <input type="file" id="backIn" hidden accept="image/*">
-              <p class="hint">Optional. It fills the middle of the back cover, between the bands.</p>
-            </div>
-          </div>
+          <strong style="font-size:13px">Back cover picture</strong>
+          <p class="hint">Optional. Pick a loaded picture or upload one. Without one the back uses the front picture (photo style) or colours.</p>
+          <div class="pgal" id="backGal"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><label class="btn small" for="backIn">Upload a picture</label><button class="btn small ghost" id="backClear" type="button">No picture</button></div>
+          <input type="file" id="backIn" hidden accept="image/*">
+          <div class="thumb" id="backThumb" hidden></div>
           <div class="field"><span class="lab">Picture crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_x" aria-label="Back picture crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Picture crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_y" aria-label="Back picture crop top to bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, less leaves room for the colour)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="back_image_zoom" aria-label="Picture size"><output></output></div></div>
@@ -968,9 +978,31 @@ body.pbmode .bookonly { display: none !important; }
       </div>
 
       <!-- KDP -->
-      <div class="panel" id="panel-kdp" role="tabpanel" hidden>
+      <!-- GUIDE -->
+      <div class="panel" id="panel-guide" role="tabpanel" hidden>
         <div class="sect">
-          <h2>Publish on Amazon KDP</h2>
+          <p class="hint">Every option in the kit, with what it does. Point at an item to see an example page; on a phone, tap it.</p>
+          <div class="field"><label for="guideSearch">Find an option</label><input type="text" id="guideSearch" placeholder="for example: drop cap, footnote, QR"></div>
+        </div>
+        <div id="guideList"></div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="panel" id="panel-export" role="tabpanel" hidden>
+        <div class="sect">
+          <h2>Build</h2>
+          <div class="field"><label for="f-out">File name</label><input type="text" id="f-out" data-k="output" placeholder="from the title"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="buildBtn2" type="button">Build PDF &amp; EPUB</button>
+            <button class="btn" id="buildPdfBtn" type="button">PDF only</button>
+            <button class="btn" id="buildEpubBtn" type="button">EPUB only</button>
+          </div>
+          <div class="progress" id="prog" hidden><i></i></div>
+          <div class="results" id="results"><p class="hint">Nothing built yet. The PDF has the covers, the body padded to an even page count, index page numbers from a second layout pass, and pages for the turned maps and plates.</p></div>
+        </div>
+
+        <div class="sect">
+          <h2>Print on Amazon KDP</h2>
           <label class="check kdpmain"><input type="checkbox" data-kdp="on"> Prepare this book for KDP</label>
           <p class="hint">A KDP paperback or hardcover is made from <b>two files</b>: the <b>inside pages</b> (a PDF without cover) and the <b>cover</b> (one PDF holding back cover, spine and front cover). The steps below make both. A Kindle e-book needs an EPUB and a cover image.</p>
         </div>
@@ -1031,44 +1063,13 @@ body.pbmode .bookonly { display: none !important; }
             <div id="kdpUpload"></div>
           </section>
         </div>
-      </div>
-
-      <!-- GUIDE -->
-      <div class="panel" id="panel-guide" role="tabpanel" hidden>
         <div class="sect">
-          <p class="hint">Every option in the kit, with what it does. Point at an item to see an example page; on a phone, tap it.</p>
-          <div class="field"><label for="guideSearch">Find an option</label><input type="text" id="guideSearch" placeholder="for example: drop cap, footnote, QR"></div>
-        </div>
-        <div id="guideList"></div>
-      </div>
-
-      <!-- EXPORT -->
-      <div class="panel" id="panel-export" role="tabpanel" hidden>
-        <div class="sect">
-          <h2>Build</h2>
-          <div class="field"><label for="f-out">File name</label><input type="text" id="f-out" data-k="output" placeholder="from the title"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn primary" id="buildBtn2" type="button">Build PDF &amp; EPUB</button>
-            <button class="btn" id="buildPdfBtn" type="button">PDF only</button>
-            <button class="btn" id="buildEpubBtn" type="button">EPUB only</button>
-          </div>
-          <div class="progress" id="prog" hidden><i></i></div>
-          <div class="results" id="results"><p class="hint">Nothing built yet. The PDF has the covers, the body padded to an even page count, index page numbers from a second layout pass, and pages for the turned maps and plates.</p></div>
-        </div>
-        <div class="sect">
-          <h2>Cover files</h2>
-          <p class="hint">The covers on their own, at 300 dpi.</p>
+          <h2>Cover pictures</h2>
+          <p class="hint">The covers on their own, at 300 dpi. The print cover for KDP is made in the KDP part above.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" type="button" data-cover="front">Front cover (.jpg)</button>
             <button class="btn" type="button" data-cover="back">Back cover (.jpg)</button>
             <button class="btn" type="button" data-cover="ebook" title="1600 x 2560 px, the ratio Kindle asks for">Kindle e-book cover (.jpg)</button>
-          </div>
-          <div id="coverKdpExports" hidden>
-            <p class="hint" style="margin-top:12px">For the KDP paperback: back, spine and front in one sheet, with bleed. Upload the PDF.</p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn primary" type="button" data-cover="wrap-pdf">Print cover (.pdf)</button>
-              <button class="btn" type="button" data-cover="wrap-jpg">Print cover (.jpg)</button>
-            </div>
           </div>
         </div>
         <div class="sect">

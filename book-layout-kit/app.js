@@ -70,11 +70,35 @@ async function saveFile(filename, data) {
 
 // ---------------------------------------------------------------- tabs and views
 function showTab(name) {
+  if (name === 'kdp') name = 'export';
+  const btn = $('.tabs button[data-tab="' + name + '"]') || $('#tab-manuscript');
+  name = btn.dataset.tab;
+  const group = btn.dataset.group;
+  $$('#groupTabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.group === group)));
+  $$('#subTabs button').forEach(b => { b.dataset.hid = b.dataset.group === group ? '' : '1'; });
+  syncSubTabs();
   $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
   $$('.panel').forEach(p => { p.hidden = p.id !== 'panel-' + name; });
   try { sessionStorage.setItem('blk-tab', name); } catch (e) { /* ignore */ }
 }
-$$('.tabs button').forEach(b => b.addEventListener('click', () => { showTab(b.dataset.tab); if (b.dataset.tab === 'cover' && S.view !== 'cover' && S.view !== 'wrap' && typeof setView === 'function') setView('cover'); }));
+// the second row only shows the pages of the chosen section (and not at all when it has just one)
+function syncSubTabs() {
+  let vis = 0;
+  $$('#subTabs button').forEach(b => { const show = !b.dataset.hid && !b.hidden; b.style.display = show ? '' : 'none'; if (show) vis++; });
+  $('#subTabs').classList.toggle('sub1', vis <= 1);
+}
+new MutationObserver(syncSubTabs).observe($('#tab-extract'), { attributes: true, attributeFilter: ['hidden'] });
+$$('#groupTabs button').forEach(b => b.addEventListener('click', () => {
+  const g = b.dataset.group, mine = $$('#subTabs button[data-group="' + g + '"]').filter(x => !x.hidden);
+  let want = null; try { want = sessionStorage.getItem('blk-tab-' + g); } catch (e) { /* ignore */ }
+  const t = mine.find(x => x.dataset.tab === want) || mine[0];
+  if (t) t.click();
+}));
+$$('.tabs button').forEach(b => b.addEventListener('click', () => {
+  showTab(b.dataset.tab);
+  try { sessionStorage.setItem('blk-tab-' + b.dataset.group, b.dataset.tab); } catch (e) { /* ignore */ }
+  if (b.dataset.tab === 'cover' && S.view !== 'cover' && S.view !== 'wrap' && typeof setView === 'function') setView('cover');
+}));
 
 function setView(v) {
   S.view = v;
@@ -898,6 +922,23 @@ async function importBookyai(flat, by) {
   status(msg); toast(msg);
 }
 
+
+// a row of the loaded pictures to choose from (also those that came with an imported folder)
+function renderGallery(id, current, pick) {
+  const box = $('#' + id); if (!box) return;
+  const names = [...S.assets.keys()].filter(n => !/^qr_/i.test(n));
+  const sig = names.join('|') + '#' + (current || '');
+  if (box.dataset.sig === sig) return; box.dataset.sig = sig;
+  box.innerHTML = '';
+  if (!names.length) { box.innerHTML = '<span class="hint">No pictures loaded yet: upload one, or add pictures on the Source tab.</span>'; return; }
+  const none = document.createElement('button'); none.type = 'button'; none.className = 'none'; none.textContent = 'None'; none.setAttribute('aria-pressed', String(!current)); none.addEventListener('click', () => pick('')); box.append(none);
+  for (const n of names) {
+    const a = S.assets.get(n), b = document.createElement('button'); b.type = 'button'; b.title = n;
+    b.style.backgroundImage = `url("${a.thumb || a.dataURL}")`; b.setAttribute('aria-pressed', String(n === current));
+    b.addEventListener('click', () => pick(n)); box.append(b);
+  }
+}
+
 // start over: remove the pictures, or everything, so nothing old ends up in a new book
 function clearImages() {
   S.assets.clear();
@@ -1002,6 +1043,7 @@ function initForm() {
   $$('[data-seg]').forEach(seg => seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     const path = seg.dataset.seg.split('.');
     if (path.length === 2) S.cfg[path[0]][path[1] === 'style' ? CK('style') : path[1]] = b.dataset.v; else S.cfg[path[0]] = b.dataset.v;
+    if (seg.dataset.seg === 'cover.style' && b.dataset.v === 'photo') { const cv = S.cfg.cover; cv.band_size = 0; cv.back_band_size = 0; }   // the picture fills the cover
     fillForm(); changed();
   })));
   $('#f-size').addEventListener('input', e => { S.cfg.font_size = +e.target.value; fillForm(); changed(); });
@@ -1065,6 +1107,8 @@ function fillForm() {
   logoStatus();
   qrStatus();
   opStatus();
+  renderGallery('coverGal', c.cover.image, n => { S.cfg.cover.image = n; if (n && ['classic', 'auto', undefined].includes(S.cfg.cover.style)) { S.cfg.cover.style = 'photo'; S.cfg.cover.band_size = 0; S.cfg.cover.back_band_size = 0; } fillForm(); changed(); });
+  renderGallery('backGal', c.cover.back_image, n => { S.cfg.cover.back_image = n; fillForm(); changed(); });
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   // the settings below belong to the side that is being edited (the back, once it has its own layout)
@@ -1073,12 +1117,13 @@ function fillForm() {
   $('#coverEditWrap').hidden = same;
   $$('#coverEditSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.side === (editBack ? 'back' : 'front'))));
   $('#styleHead').textContent = editBack ? 'Style (back cover)' : 'Style';
-  $('#coverStyleHint').textContent = sideStyle === 'photo' ? 'This book uses the older Photo style. Choose Classic bands to put pictures in the outer or middle band instead.'
+  $('#coverStyleHint').textContent = sideStyle === 'photo' ? 'Photo: one picture fills the whole cover. Pick it below; pictures that are loaded (also from an imported folder) are listed.'
     : (sideStyle === 'auto' ? `Automatic picks ${a ? 'the older photo style because a photo is set' : 'classic bands because no photo is set'}. Choose Classic bands to use pictures in the bands.` : '');
   const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn on the side being edited
   // the older "Photo" and "Automatic" choices only show while they are in use: the classic bands now take pictures themselves
-  $('#segPhoto').hidden = sideStyle !== 'photo'; $('#segAuto').hidden = sideStyle !== 'auto';
+  $('#segAuto').hidden = sideStyle !== 'auto';
   $('#coverDividerSect').hidden = editBack || !(eff === 'classic' || eff === 'arch') || st === 'photo';
+  { const hd = c.cover.hide || {}, textOn = !(hd.label && hd.title && hd.subtitle && hd.author && hd.footer); $('#coverColoursSect').hidden = eff === 'photo' && !textOn && !editBack; }
   $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
   $('#coverPhotoSect').hidden = editBack || !(st === 'photo' || c.cover.style === 'photo');
   const backStyle = BK.coverStyle({ cover: Object.assign({}, c.cover, { style: same || c.cover.bk_style === undefined ? c.cover.style : c.cover.bk_style }) });
@@ -1257,7 +1302,6 @@ function renderKdp() {
   const k = BK.kdpCfg(S.cfg), on = k.on;
   $('#kdpBody').hidden = !on;
   $('#viewSeg [data-v="wrap"]').hidden = !on;
-  $('#coverKdpExports').hidden = !on;
   const ic = $('[data-b="include_covers"]'); if (ic) { ic.disabled = on; ic.parentElement.style.opacity = on ? .55 : 1; }
   $('#icNote').hidden = !on;
   const set = (el, v) => { if (document.activeElement !== el) { if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : v; } };
@@ -2128,7 +2172,8 @@ function initCollapse() {
   });
 }
 initForm(); initPhoto(); initViewer(); initClear(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
-try { const t = sessionStorage.getItem('blk-tab'); if (t && $('#panel-' + t)) showTab(t); } catch (e) { /* ignore */ }
+showTab('manuscript');
+try { const t = sessionStorage.getItem('blk-tab'); if (t) showTab(t); } catch (e) { /* ignore */ }
 parse();
 status(S.isSample ? 'Sample manuscript loaded · drop your own on the left' : 'Your manuscript is restored from this browser');
 setView('cover');

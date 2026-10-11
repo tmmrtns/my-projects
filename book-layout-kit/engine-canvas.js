@@ -496,9 +496,9 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   } else {
     // back: bands above and below (thinner or none), the middle in colour or a picture, text that can be moved
     // classic style: the bands are as thick as on the front (own sizes when the back has its own layout); the older photo style keeps its one band height setting
-    const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, legacyBack = !!cv.back_image || cv.style === 'photo';
+    const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, backPic = cv.back_image || (style === 'photo' ? cv.image : ''), legacyBack = !!backPic || style === 'photo';
     const bbT = isArch ? 0 : H * .295 * (legacyBack ? bbs : Math.max(0, Math.min(150, num('top_band', 100))) / 100), bbB = isArch ? 0 : H * .295 * (legacyBack ? bbs : Math.max(0, Math.min(150, num('bottom_band', 100))) / 100);
-    const bimg = !isArch && cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
+    const bimg = !isArch && backPic ? BK.findAsset(assets, backPic) : null;
     if (isArch) await drawArch();
     else if (bimg) {
       const im = await BK.loadImg(bimg.dataURL), see = (bbT > 0 || bbB > 0) && bandOp < 1;
