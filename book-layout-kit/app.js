@@ -1569,9 +1569,17 @@ $('#logoIn').addEventListener('change', async e => {
 });
 $('#logoTree').addEventListener('click', async () => {
   try {
-    const r = await fetch('logos/tree-of-life.png'); if (!r.ok) throw new Error(r.status);
-    const a = await addImage('tree-of-life.png', await r.blob()); if (a) useLogo('tree-of-life.png');
-  } catch (err) { toast('The tree logo could not be loaded here. Use Choose logo instead.'); }
+    let blob;
+    // from a web server the picture is fetched; opened as a local file it comes from logos/tree-of-life.js instead
+    try { const r = await fetch('logos/tree-of-life.png'); if (!r.ok) throw new Error(r.status); blob = await r.blob(); }
+    catch (e) {
+      await BK.loadScript('logos/tree-of-life.js');
+      const u = window.BK_LOGO_TREE, bin = atob(u.split(',')[1]), arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      blob = new Blob([arr], { type: 'image/png' });
+    }
+    const a = await addImage('tree-of-life.png', blob); if (a) useLogo('tree-of-life.png');
+  } catch (err) { console.error(err); toast('The tree logo could not be loaded (' + (err && err.message || err) + '). Use Choose logo instead.'); }
 });
 $('#logoClear').addEventListener('click', () => { S.cfg.cover.logo = ''; fillForm(); changed(); });
 // a logo that is chosen but not placed anywhere shows nothing, so the first time it goes at the bottom of the front
