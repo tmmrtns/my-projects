@@ -837,16 +837,49 @@ function findBookyai(flat) {
     const ts = (/^exports_(\d+)$/i.exec(m[2]) || [])[1] || '0', prefix = m[1] ? m[1] + '/' : '';
     if (!best || ts > best.ts || (ts === best.ts && dir === best.dir && e.size > best.e.size)) best = { e, ts, prefix, dir };
   }
-  if (!best) return null;
+  if (!best) {
+    // no whole-book markdown in any export (some exports hold only a PDF): assemble the book from the project's own chapter_NN.md files
+    const b = flat.find(e => /(^|\/)book\.json$/.test(e.name) && flat.some(x => x.name.startsWith(e.name.slice(0, -9) + 'chapter_') && /chapter_\d+\.md$/i.test(x.name)));
+    if (!b) return null;
+    const prefix = b.name.slice(0, -9), re = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 'exports_(\\d+)/');
+    const ex = flat.map(x => re.exec(x.name)).filter(Boolean).map(m => m[1]).sort().pop();
+    return { e: null, assemble: true, ts: ex || '0', prefix, dir: ex ? prefix + 'exports_' + ex + '/' : prefix, bj: b };
+  }
   const bj = flat.find(e => e.name === best.prefix + 'book.json');
   return Object.assign(best, { bj });
+}
+// the project's sources as one export-style markdown text: preface first, then chapter_01.md, chapter_02.md ...
+async function assembleBookyai(flat, by, info) {
+  const re = new RegExp('^' + by.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + 'chapter_\\d+\\.md$', 'i');
+  const chs = flat.filter(e => re.test(e.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const out = ['# ' + (info.title || 'Untitled'), ''];
+  if (info.subtitle) out.push('### ' + info.subtitle, '');
+  const pre = flat.find(e => e.name === by.prefix + 'preface.md');
+  if (pre) {
+    const L = (await pre.text()).replace(/\r\n?/g, '\n').split('\n'); let i = 0;
+    while (i < L.length && !L[i].trim()) i++;
+    const h = /^#{1,6}\s+(.*)$/.exec(L[i] || '');
+    out.push('## ' + (h ? h[1].trim() : 'Preface'), '', ...L.slice(h ? i + 1 : i), '');
+  }
+  for (const e of chs) {
+    const L = (await e.text()).replace(/\r\n?/g, '\n').split('\n'); let i = 0;
+    while (i < L.length && !L[i].trim()) i++;
+    const h = /^#\s+(.*)$/.exec(L[i] || '');
+    if (!h) { out.push(...L, ''); continue; }
+    const title = h[1].trim(); out.push('## ' + title); i++;
+    let j = i; while (j < L.length && !L[j].trim()) j++;
+    const d = /^##\s+(.*)$/.exec(L[j] || '');
+    if (d && d[1].trim().toLowerCase() === title.toLowerCase()) i = j + 1;   // the same title repeated right below
+    out.push(...L.slice(i), '');
+  }
+  return out.join('\n');
 }
 const BY_LANG = { dutch: 'nl', nederlands: 'nl', english: 'en', french: 'fr', german: 'de', spanish: 'es', italian: 'it' };
 const BY_CH = /^(hoofdstuk|chapter|kapitel|chapitre|cap[ií]tulo|capitolo)\s+(\d+|[ivxlc]+)\s*[:.\-–—]?\s*(.*)$/i;
 const BY_BACK = /^(epiloog|epilogue|[ée]pilogue|nawoord|afterword|verder lezen|further reading|lectures|weiterf[üu]hrende|bronnen|sources|literatuur|dankwoord|acknowledg|bedankt|over de auteur|about the author|colofon|appendix|bijlage|woord van dank|remerciements|danksagung|agradecimientos)/i;
 const BY_FRONT = /^(introduction|prologue|proloog|foreword|voorwoord|preface|inleiding|introducci[oó]n|avant-propos|vorwort|einleitung|prefacio|prefazione|pr[eé]face|prolog|prologo|pr[oó]logo)\b/i;
 const BY_DEDIC = /^(opdracht|toewijding|dedication|widmung|d[ée]dicace|dedicatoria|dedica)\b/i;
-function bookyaiToKit(raw, ills, chTitles) {
+function bookyaiToKit(raw, ills, chTitles, onlyTitles) {
   ills = ills || {}; let chN = 0; chTitles = chTitles || new Set();
   const norm = t => String(t).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
   const lines = raw.replace(/\r\n?/g, '\n').split('\n');
@@ -865,7 +898,7 @@ function bookyaiToKit(raw, ills, chTitles) {
       seenH2 = true; inDedic = false;
       const t = h2[1];
       let m;
-      if ((m = BY_CH.exec(t)) || chTitles.has(norm(t))) {
+      if ((m = onlyTitles ? null : BY_CH.exec(t)) || (chTitles.has(norm(t)) && !BY_BACK.test(t))) {
         out.push('## ' + ((m && m[3]) || t).trim()); roles.push(null); mode = 'chapter'; chN++;
         const f = ills[m && /^\d+$/.test(m[2]) ? +m[2] : chN];
         if (f) out.push('', `![WIDE: ](${f})`, '');   // the chapter's illustration opens the chapter
@@ -897,7 +930,7 @@ async function importBookyai(flat, by) {
   let info = {};
   if (by.bj) { try { info = JSON.parse(await by.bj.text()); } catch (e) { info = {}; } }
   upPlan(5, 'Reading the Bookyai export');
-  const raw = await by.e.text();
+  const raw = by.assemble ? await assembleBookyai(flat, by, info) : await by.e.text();
   // pictures: the export often has its own images folder that the text refers to; otherwise the project's illustrations open the chapters (as book.json says)
   const isImg = e => IMG_EXT.includes(ext(e.name));
   const exImgs = flat.filter(e => e.name.startsWith(by.dir + 'images/') && isImg(e));
@@ -913,7 +946,7 @@ async function importBookyai(flat, by) {
   const norm = t => String(t).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
   const chTitles = new Set();
   (info.chapters || []).forEach(ch => { if (ch.title) { chTitles.add(norm(ch.title)); const m = BY_CH.exec(ch.title); if (m && m[3]) chTitles.add(norm(m[3])); } });
-  const k = bookyaiToKit(raw, ills, chTitles); upStep('Reading the text');
+  const k = bookyaiToKit(raw, ills, chTitles, !!by.assemble); upStep('Reading the text');
   const find = nm => flat.find(e => e.name === by.prefix + nm);
   const pic = async nm => { const e = find(nm); if (!e) return null; const a = await addImage(nm, await e.blob()); upStep('Reading ' + nm); return a; };
   const front = await pic('cover.png'), back = await pic('back-cover.png') || await pic('back-cover-art.png');
@@ -939,7 +972,7 @@ async function importBookyai(flat, by) {
   S.pdf = null; S.epub = null;
   fillForm(); $('#editor').value = S.md; sampleTag(); renderAssets(); changed(true); parse();
   const n = S.model ? BK.chaptersOf(S.model).length : 0;
-  const msg = `Bookyai export of ${by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${refs || Object.keys(ills).length} illustrations placed` : '');
+  const msg = `Bookyai ${by.assemble ? 'project (chapter files)' : 'export of ' + by.ts.replace(/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/, '$1-$2-$3 $4:$5')} imported · ${n} chapters` + (front ? ' · cover' : '') + (back ? ' · back cover' : '') + (ill ? ` · ${refs || Object.keys(ills).length} illustrations placed` : '');
   status(msg); toast(msg);
 }
 
