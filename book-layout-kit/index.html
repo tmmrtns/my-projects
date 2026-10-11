@@ -620,6 +620,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="seg" data-seg="cover.style">
             <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch</button><button type="button" data-v="photo" id="segPhoto">Photo (older)</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
           <p class="hint" id="coverStyleHint"></p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small ghost" id="resetBands" type="button">Reset to the original 3 bands</button><button class="btn small ghost" id="resetArch" type="button">Reset to the original arch</button></div>
+          <p class="hint">Resets the style, band sizes, arch size, pictures and opacity (and for the arch the text positions) of the side you are editing. Your colours and texts stay.</p>
         </div>
         <div class="sect">
           <h2>Colours</h2>
@@ -632,7 +634,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           </div>
           <div class="field"><span class="lab">Band colour opacity (outer bands, or the page around the arch)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_opacity" aria-label="Band colour opacity (outer bands, or the page around the arch)"><output></output></div></div>
           <div class="field"><span class="lab">Middle colour opacity (middle band, or the arch)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="mid_opacity" aria-label="Middle colour opacity (middle band, or the arch)"><output></output></div></div>
-          <p class="hint">100% is solid colour. Lower the opacity to let a picture underneath shine through; it only shows where a picture lies under the colour.</p>
+          <p class="hint">100% is solid colour. Lower it to let something shine through: a picture that runs through the cover, or else the colour of the neighbouring part (bands let the middle colour through, the middle lets the band colour through).</p>
+          <p class="hint" id="opHint" role="status"></p>
         </div>
         <div class="sect" id="coverLogoSect">
           <h2>Logo</h2>
@@ -838,6 +841,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <div class="field"><label for="c-qr">QR code link</label><input type="text" id="c-qr" data-ck="qr" placeholder="https://… or www.… or an image file" autocomplete="off" spellcheck="false"><span class="hint" id="qrState" role="status"></span></div>
             <div class="field"><label for="c-qrt">Text with the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
             <div class="field"><label for="c-qrpos">Text position</label><select id="c-qrpos" data-cs="qr_pos"><option value="right">Beside the QR code</option><option value="above">Above the QR code</option><option value="below">Below the QR code</option></select></div>
+            <div class="field"><span class="lab">QR code size (100% = 30 mm)</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="qr_size" aria-label="QR code size"><output></output></div></div>
             <label class="check"><input type="checkbox" data-cb="qr_text_rotate"> Turn the text 90° (only when it sits beside the code)</label>
             <div class="field"><label for="c-qrsch">QR code colours</label><select id="c-qrsch" data-cs="qr_scheme"><option value="classic">Black on white (safest)</option><option value="text">Same colour as the text, no box</option><option value="custom">My own colours</option></select><span class="hint" id="qrColState" role="status"></span></div>
             <div class="colors" id="qrCustomCols">

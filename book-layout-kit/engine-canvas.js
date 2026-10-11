@@ -314,19 +314,23 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       const targets = r.run ? regs.filter(q => q === r || !q.asset) : [r];
       for (const q of targets) { c.save(); q.path(); c.clip(q.eo ? 'evenodd' : 'nonzero'); drawCoverFit(c, im, ...(r.run ? FR : r.box), ...args); c.restore(); }
     }
-    for (const r of regs) fill(r, r.asset || anyRun ? r.op : 1);
+    // no picture under a region: its colour lets the colour of the neighbouring part show through as far as its opacity allows
+    for (const r of regs) {
+      if (r.asset || anyRun) fill(r, r.op);
+      else { if (r.op < 1 && r.under) fill({ path: r.path, eo: r.eo, col: r.under }, 1); fill(r, r.op); }
+    }
   };
   const rectsPath = rs => () => { c.beginPath(); for (const q of rs) if (q[3] > 0) c.rect(...q); };
   const classicRegs = (topH, midH, botH) => {
     const top = [left, -X(bd.t), fullW, X(topH + bd.t)], bot = [left, X(H - botH), fullW, X(botH + bd.b) + 1], mid = [left, X(topH), fullW, X(midH) + 1];
-    return [{ path: rectsPath(topH > 0 && botH > 0 ? [top, bot] : topH > 0 ? [top] : botH > 0 ? [bot] : []), box: FRM(), col: cv.band, op: bandOp, asset: outerA, key: 'band_image', run: cv.band_image_run === true },
-      { path: rectsPath([mid]), box: mid, col: cv.mid, op: midOp, asset: midA, key: 'band_mid_image', run: cv.band_mid_image_run === true }];
+    return [{ path: rectsPath(topH > 0 && botH > 0 ? [top, bot] : topH > 0 ? [top] : botH > 0 ? [bot] : []), box: FRM(), col: cv.band, under: cv.mid, op: bandOp, asset: outerA, key: 'band_image', run: cv.band_image_run === true },
+      { path: rectsPath([mid]), box: mid, col: cv.mid, under: cv.band, op: midOp, asset: midA, key: 'band_mid_image', run: cv.band_mid_image_run === true }];
   };
   const drawArch = async () => {
     const x0 = (W - aw) / 2, FR = FRM();
     await paintRegions([
-      { path: () => { c.beginPath(); c.rect(...FR); archSub(0); }, eo: true, box: FR, col: cv.band, op: bandOp, asset: bgAsset, key: 'arch_bg_image', run: cv.arch_bg_image_run === true },
-      { path: () => archPath(0), box: [X(x0), X(ay), X(aw), X(ah)], col: archFill ? cv.mid : null, op: midOp, asset: inAsset, key: 'arch_image', run: cv.arch_image_run === true }]);
+      { path: () => { c.beginPath(); c.rect(...FR); archSub(0); }, eo: true, box: FR, col: cv.band, under: archFill ? cv.mid : null, op: bandOp, asset: bgAsset, key: 'arch_bg_image', run: cv.arch_bg_image_run === true },
+      { path: () => archPath(0), box: [X(x0), X(ay), X(aw), X(ah)], col: archFill ? cv.mid : null, under: cv.band, op: midOp, asset: inAsset, key: 'arch_image', run: cv.arch_image_run === true }]);
     if (!archFill) { archPath(0); c.strokeStyle = cv.band_ink; c.lineWidth = Math.max(1, .8 * pxpt); c.globalAlpha = .85; c.stroke(); c.globalAlpha = 1; }
     if (cv.arch_line !== false) {
       archPath(archFill ? 5.5 : 3.5); c.strokeStyle = archFill ? cv.ink : cv.band_ink; c.lineWidth = Math.max(1, .6 * pxpt); c.globalAlpha = archFill ? .55 : .45; c.stroke(); c.globalAlpha = 1;
@@ -466,7 +470,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     }
     // where the QR code and its text go: text to the right (default), above or below the code
     const qrGeom = () => {
-      const qs = X(30), box = qs + X(4), pos = cv.qr_pos === 'above' || cv.qr_pos === 'below' ? cv.qr_pos : 'right';
+      const qs = X(30 * Math.max(40, Math.min(250, num('qr_size', 100))) / 100), box = qs + X(4), pos = cv.qr_pos === 'above' || cv.qr_pos === 'below' ? cv.qr_pos : 'right';
       const barW = opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0, fullW = X(W - 32) - barW, gap = X(2), base = X(H) - X(12);   // base = bottom edge of the whole block
       const qx = X(16), txt = cv.qr_text, mh = o => blockH(txt, Object.assign({}, o, { x: 0 }));
       // natural width of the longest line, so short text hugs the code instead of floating in a wide box

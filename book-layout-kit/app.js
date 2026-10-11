@@ -790,6 +790,7 @@ function fillForm() {
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
   qrStatus();
+  opStatus();
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   // the settings below belong to the side that is being edited (the back, once it has its own layout)
@@ -813,6 +814,37 @@ function fillForm() {
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }
 
+function opStatus() {
+  const el = $('#opHint'); if (!el) return;
+  const c = S.cfg.cover, st = BK.coverStyle({ cover: Object.assign({}, c, { style: CV('style') }) }), arch = st === 'arch';
+  const keys = arch ? [['arch_bg_image', 'page'], ['arch_image', 'arch']] : [['band_image', 'outer bands'], ['band_mid_image', 'middle band']];
+  const pics = keys.map(([k, n]) => ({ n, has: !!CV(k), run: CV(k + '_run') === true }));
+  const lines = [];
+  for (const [i, [op, name]] of [['band_opacity', arch ? 'The page colour' : 'The band colour'], ['mid_opacity', arch ? 'The arch colour' : 'The middle colour']].entries()) {
+    const v = CV(op); if (v === undefined || v >= 100) continue;
+    const other = pics[1 - i], own = pics[i];
+    if (own.has) lines.push(`${name} is ${v}% over its own picture.`);
+    else if (other.has && other.run) lines.push(`${name} is ${v}%: the ${other.n} picture shows through.`);
+    else if (other.has) lines.push(`${name} is ${v}%, but the ${other.n} picture stays in its own part: tick "run through the whole cover" on it to see it here. Now the other colour shows through.`);
+    else lines.push(`${name} is ${v}%: the other colour shows through.`);
+  }
+  el.textContent = lines.join(' ');
+}
+function resetLayout(kind) {
+  const c = S.cfg.cover, d = BK.defaults().cover, editBack = CK('style') !== 'style';
+  const msg = kind === 'arch' ? 'Set the arch back to the original format? This resets the style, arch size, pictures, opacity' + (editBack ? '' : ' and text positions') + ' of the side you are editing. Colours and texts stay.' : 'Set the cover back to the original 3 bands? This resets the style, band sizes, pictures and opacity of the side you are editing. Colours and texts stay.';
+  if (!confirm(msg)) return;
+  for (const k of Object.keys(d)) {
+    if (!BK.layoutKey(k) || ['band', 'band_ink', 'mid', 'ink', 'style'].includes(k)) continue;
+    c[CK(k)] = d[k];
+  }
+  c[CK('style')] = kind;
+  if (kind === 'arch' && !editBack) for (const k of Object.keys(d)) if (/^arch_(label|title|sub|author|footer|back_quote|back_sub|back_blurb)/.test(k)) c[k] = d[k];
+  if (kind === 'classic') { c.band_size = 100; }
+  fillForm(); changed(); setView('cover'); toast('Back to the original ' + (kind === 'arch' ? 'arch' : '3 bands') + '.');
+}
+$('#resetBands').addEventListener('click', () => resetLayout('classic'));
+$('#resetArch').addEventListener('click', () => resetLayout('arch'));
 function qrStatus() {
   const c = S.cfg, el = $('#qrState'); if (!el) return;
   const q = BK.qrInfo(c.cover.qr, S.assets);
@@ -855,6 +887,7 @@ function changed(needParse) {
   S.stale = true;
   logoStatus();
   qrStatus();
+  opStatus();
   save();
   coverSoon();
   renderWordInfo();
