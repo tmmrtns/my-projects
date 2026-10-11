@@ -514,7 +514,7 @@ function toKitJson(files, cfgIn) {
   delete cv.image_x; delete cv.image_y;
   if (cv.subtitle_source === 'auto') delete cv.subtitle_source;
   if (cv.back_subtitle_source === 'none') delete cv.back_subtitle_source;
-  const DEF = Object.assign({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 }, BK.defaults().cover.top_band != null ? ARCH_DEF() : {});
+  const DEF = Object.assign({ band_opacity: 100, band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22, back_image_x: 50, back_image_y: 50 }, BK.defaults().cover.top_band != null ? ARCH_DEF() : {});
   for (const k of Object.keys(DEF)) if (cv[k] === DEF[k] || cv[k] == null) delete cv[k];
   if (cv.back_shade !== false) delete cv.back_shade;
   if (!cv.back_image) { delete cv.back_image_x; delete cv.back_image_y; }

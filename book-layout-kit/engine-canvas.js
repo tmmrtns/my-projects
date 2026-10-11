@@ -229,10 +229,14 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   c.translate(X(bd.l), X(bd.t));       // from here on, 0,0 is the top left corner of the trimmed page
   const T = (s, o) => textBlock(c, s, Object.assign({ pxpt, fam, align: 'center', x: X(W / 2), width: X(W - 16) }, o));
   const fullW = X(W + bd.l + bd.r), left = -X(bd.l);
-  const band = (y, h, col) => {
+  const band = (y, h, col, alpha) => {
     const y0 = y <= 0 ? -bd.t : y, y1 = y + h >= H - 1 ? H + bd.b : y + h;
-    c.fillStyle = col; c.fillRect(left, X(y0), fullW, X(y1 - y0) + 1);
+    c.save(); if (alpha != null && alpha < 1) c.globalAlpha = Math.max(0, alpha);
+    c.fillStyle = col; c.fillRect(left, X(y0), fullW, X(y1 - y0) + 1); c.restore();
   };
+  // opacity of the band colour (100 = solid; lower lets the picture underneath shine through) and of the arch
+  const pct = (k, d) => Math.max(0, Math.min(100, cv[k] == null || cv[k] === '' ? d : +cv[k])) / 100;
+  const bandOp = pct('band_opacity', 100), archOp = pct('arch_opacity', 100);
   const hide = cv.hide || {}, on = k => !hide[k];
   // text that has to stay inside its band: measure it, and make the type smaller until it fits (and no word is wider than the line)
   const sc0 = canvasOf(8, 8).getContext('2d');
@@ -301,6 +305,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     }
     if (archFill) {
       archPath(0);
+      c.save(); c.globalAlpha = archOp;
       if (inAsset) {
         const im = await BK.loadImg(inAsset.dataURL), x0 = (W - aw) / 2;
         c.save(); c.clip();
@@ -308,6 +313,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
         tint(cv.mid, num('arch_image_tint', 25), X(x0), X(ay), X(aw), X(ah));
         c.restore();
       } else { c.fillStyle = cv.mid; c.fill(); }
+      c.restore();
     } else { archPath(0); c.strokeStyle = cv.band_ink; c.lineWidth = Math.max(1, .8 * pxpt); c.globalAlpha = .85; c.stroke(); c.globalAlpha = 1; }
     if (cv.arch_line !== false) {
       archPath(archFill ? 5.5 : 3.5); c.strokeStyle = archFill ? cv.ink : cv.band_ink; c.lineWidth = Math.max(1, .6 * pxpt); c.globalAlpha = archFill ? .55 : .45; c.stroke(); c.globalAlpha = 1;
@@ -354,10 +360,12 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     } else if (style === 'photo') {
       // the bands above and below the photo can be made thinner (band_size 100 = full, 0 = none: the photo fills the cover)
       const bs = Math.max(0, Math.min(100, cv.band_size ?? 100)) / 100, bh = H * .27 * bs;
-      if (bh > 0) { band(0, bh, cv.band); band(H - bh, bh, cv.band); }
-      const im = await BK.loadImg(asset.dataURL);
-      const y0 = bh > 0 ? X(bh) : -X(bd.t), y1 = bh > 0 ? X(H - bh) : X(H + bd.b);
+      const im = await BK.loadImg(asset.dataURL), see = bh > 0 && bandOp < 1;
+      if (bh > 0 && !see) { band(0, bh, cv.band); band(H - bh, bh, cv.band); }
+      // see-through bands: the photo runs behind them, over the whole cover
+      const y0 = bh > 0 && !see ? X(bh) : -X(bd.t), y1 = bh > 0 && !see ? X(H - bh) : X(H + bd.b);
       drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.image_x ?? 50, cv.image_y ?? 50);
+      if (see) { band(0, bh, cv.band, bandOp); band(H - bh, bh, cv.band, bandOp); }
       if (bh > 0) {
         c.fillStyle = cv.band_ink;
         c.fillRect(left, X(bh - .6), fullW, Math.max(1, .8 * pxpt));
@@ -405,11 +413,11 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const bimg = !isArch && cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
     if (isArch) await drawArch();
     else if (bimg) {
-      const im = await BK.loadImg(bimg.dataURL);
-      const y0 = bbh > 0 ? X(bbh) : -X(bd.t), y1 = bbh > 0 ? X(H - bbh) : X(H + bd.b);
+      const im = await BK.loadImg(bimg.dataURL), see = bbh > 0 && bandOp < 1;
+      const y0 = bbh > 0 && !see ? X(bbh) : -X(bd.t), y1 = bbh > 0 && !see ? X(H - bbh) : X(H + bd.b);
       drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.back_image_x ?? 50, cv.back_image_y ?? 50);
     } else band(bbh, H - 2 * bbh + 1, cv.mid);
-    if (bbh > 0) { band(0, bbh, cv.band); band(H - bbh, bbh + 1, cv.band); }
+    if (bbh > 0) { const a = bimg ? bandOp : 1; band(0, bbh, cv.band, a); band(H - bbh, bbh + 1, cv.band, a); }
     const scratch = canvasOf(8, 8).getContext('2d'), panelOn = !isArch && cv.back_shade !== false;
     // arch style: own text positions, text narrowed to the arch at that height
     const yq = isArch ? num('arch_back_quote_y', 17) : (cv.back_quote_y ?? 10.5), ys = isArch ? num('arch_back_sub_y', 25) : (cv.back_subtitle_y ?? 22), yb = isArch ? num('arch_back_blurb_y', 30) : (cv.back_blurb_y ?? 33);

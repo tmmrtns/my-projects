@@ -2,6 +2,7 @@
 <script src="../login.js"></script>
 <meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Book Layout Kit</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f4858'/%3E%3Cpath d='M18 50V30a14 14 0 0 1 28 0v20z' fill='%23f4efe6'/%3E%3Crect x='18' y='50' width='28' height='3' fill='%23f4efe6'/%3E%3Cpath d='M24 50V31a8 8 0 0 1 16 0v19z' fill='none' stroke='%232f4858' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital@0;1&family=Cormorant+Garamond:ital@0;1&family=Libre+Baskerville:ital@0;1&family=Lora:ital@0;1&family=Source+Serif+4:ital@0;1&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -654,6 +655,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         <div class="sect" id="coverArchSect">
           <h2>Arch</h2>
           <p class="hint">Colours for this style: Band is the page, Middle band is the arch, Text on middle is the text inside the arch, Text on band is the text outside it. Every position is the distance from the top of the cover; every size is a percentage of the normal size.</p>
+          <div class="field"><span class="lab">Arch opacity (lower lets the page colour or picture show through)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_opacity" aria-label="Arch opacity (lower lets the page colour or picture show through)"><output></output></div></div>
           <div class="field"><span class="lab">Arch width (% of the cover width)</span><div class="range"><input type="range" min="30" max="100" step="1" data-pos="arch_w" aria-label="Arch width (% of the cover width)"><output></output></div></div>
           <div class="field"><span class="lab">Arch height (% of the cover height)</span><div class="range"><input type="range" min="25" max="100" step="1" data-pos="arch_h" aria-label="Arch height (% of the cover height)"><output></output></div></div>
           <div class="field"><span class="lab">Arch: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Arch: distance from the top"><output></output></div></div>
@@ -722,6 +724,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="image_x" aria-label="Crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="image_y" aria-label="Crop top to bottom"><output></output></div></div>
           <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_size" aria-label="Band height"><output></output></div></div>
+          <div class="field"><span class="lab">Band opacity (lower lets the photo show through the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_opacity" aria-label="Band opacity (lower lets the photo show through the bands)"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="band_shade"> Soft shade behind text when the bands are thinner</label>
         </div>
         <div class="sect">
@@ -767,6 +770,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Picture crop left–right</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_x" aria-label="Back picture crop left to right"><output></output></div></div>
           <div class="field"><span class="lab">Picture crop top–bottom</span><div class="range"><input type="range" min="0" max="100" data-pos="back_image_y" aria-label="Back picture crop top to bottom"><output></output></div></div>
           <div class="field"><span class="lab">Band height (0% removes the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="back_band_size" aria-label="Back cover band height"><output></output></div></div>
+          <div class="field"><span class="lab">Band opacity (lower lets the photo show through the bands)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_opacity" aria-label="Band opacity (lower lets the photo show through the bands)"><output></output></div></div>
           <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_quote_y" aria-label="Quote position"><output></output></div></div>
           <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_blurb_y" aria-label="Blurb position"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="back_shade"> Soft panel behind text that sits on a picture or outside its band</label>
