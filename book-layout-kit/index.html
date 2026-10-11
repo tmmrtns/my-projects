@@ -620,7 +620,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         <div class="sect">
           <h2 id="styleHead">Style</h2>
           <div class="seg" data-seg="cover.style">
-            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch</button><button type="button" data-v="photo" id="segPhoto">Photo (older)</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
+            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch / shapes</button><button type="button" data-v="photo" id="segPhoto">Photo (older)</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
           <p class="hint" id="coverStyleHint"></p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn small ghost" id="resetBands" type="button">Reset to the original 3 bands</button><button class="btn small ghost" id="resetArch" type="button">Reset to the original arch</button></div>
           <p class="hint">Resets the style, band sizes, arch size, pictures and opacity (and for the arch the text positions) of the side you are editing. Your colours and texts stay.</p>
@@ -697,11 +697,12 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <label class="check"><input type="checkbox" data-cb="band_mid_image_run" data-off="1"> Let the picture run through the whole cover (off: only in the middle band)</label>
         </div>
         <div class="sect" id="coverArchSect">
-          <h2>Arch</h2>
+          <h2>Arch and shapes</h2>
           <p class="hint">Colours for this style: Band is the page, Middle band is the arch, Text on middle is the text inside the arch, Text on band is the text outside it. Every position is the distance from the top of the cover; every size is a percentage of the normal size.</p>
-          <div class="field"><span class="lab">Arch width (% of the cover width)</span><div class="range"><input type="range" min="30" max="100" step="1" data-pos="arch_w" aria-label="Arch width (% of the cover width)"><output></output></div></div>
-          <div class="field"><span class="lab">Arch height (% of the cover height)</span><div class="range"><input type="range" min="25" max="100" step="1" data-pos="arch_h" aria-label="Arch height (% of the cover height)"><output></output></div></div>
-          <div class="field"><span class="lab">Arch: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Arch: distance from the top"><output></output></div></div>
+          <div class="field"><label for="c-shape">Shape</label><select id="c-shape" data-cs="arch_shape"><option value="arch">Arch (round top)</option><option value="oval">Oval</option><option value="circle">Circle</option><option value="rectangle">Rectangle</option><option value="rounded">Rounded rectangle</option><option value="square">Square</option><option value="capsule">Capsule (round top and bottom)</option></select><span class="hint">Circle and square use the smaller of width and height and sit in the middle of that box.</span></div>
+          <div class="field"><span class="lab">Width of the shape (% of the cover width)</span><div class="range"><input type="range" min="30" max="100" step="1" data-pos="arch_w" aria-label="Width of the shape (% of the cover width)"><output></output></div></div>
+          <div class="field"><span class="lab">Height of the shape (% of the cover height)</span><div class="range"><input type="range" min="25" max="100" step="1" data-pos="arch_h" aria-label="Height of the shape (% of the cover height)"><output></output></div></div>
+          <div class="field"><span class="lab">Shape: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Shape: distance from the top"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="arch_fill"> Fill the arch (off: outline only)</label>
           <label class="check"><input type="checkbox" data-cb="arch_line"> Thin line inside the arch</label>
           <label class="check"><input type="checkbox" data-cb="arch_wide"> Let text run wider than the arch (text above or below the arch always may)</label>

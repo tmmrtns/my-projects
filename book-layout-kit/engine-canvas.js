@@ -223,7 +223,7 @@ BK.coverStyle = cfg => {
 // opt.bleed = { l, r, t, b } in mm: the artwork runs on past the trimmed page on those sides (for print covers)
 // the settings of the layout (style, bands, arch, pictures, colours, opacity). The back cover uses the front's unless "same layout" is switched off:
 // then every one of them can have its own value, stored with the prefix bk_ (a value that is not set there is taken from the front)
-BK.layoutKey = k => /^(style|top_band|bottom_band|arch_w|arch_h|arch_y|arch_fill|arch_line|arch_wide|band_opacity|mid_opacity|band|band_ink|mid|ink)$/.test(k) || /^(band_image|band_mid_image|arch_image|arch_bg_image)(_x|_y|_zoom|_run)?$/.test(k);
+BK.layoutKey = k => /^(style|top_band|bottom_band|arch_w|arch_h|arch_y|arch_shape|arch_fill|arch_line|arch_wide|band_opacity|mid_opacity|band|band_ink|mid|ink)$/.test(k) || /^(band_image|band_mid_image|arch_image|arch_bg_image)(_x|_y|_zoom|_run)?$/.test(k);
 BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   const G = BK.geom(cfg), W = G.W, H = G.H, cv = Object.assign(BK.defaults().cover, cfg.cover || {});
   const ownBack = side === 'back' && cv.back_same_layout === false, bkStyle = ownBack ? cv.bk_style : undefined;
@@ -286,18 +286,44 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   // arch style: a coloured page with an arched panel (round top). Geometry in mm, all of it adjustable.
   const isArch = style === 'arch';
   const num = (k, d) => { const v = +cv[k]; return Number.isFinite(v) && cv[k] !== '' && cv[k] != null ? v : d; };
-  const aw = W * Math.max(30, Math.min(100, num('arch_w', 82))) / 100, ah = H * Math.max(25, Math.min(100, num('arch_h', 84))) / 100;
-  const ay = H * Math.max(0, Math.min(40, num('arch_y', 6))) / 100, ar = Math.min(aw / 2, ah);
+  // the panel can be an arch (round top), oval, circle, rectangle, rounded rectangle, square or capsule; width and height give the box it sits in
+  const SHAPES = ['arch', 'oval', 'circle', 'rectangle', 'rounded', 'square', 'capsule'], shape = SHAPES.includes(cv.arch_shape) ? cv.arch_shape : 'arch';
+  const aw0 = W * Math.max(30, Math.min(100, num('arch_w', 64))) / 100, ah0 = H * Math.max(25, Math.min(100, num('arch_h', 70))) / 100, ay0 = H * Math.max(0, Math.min(40, num('arch_y', 10))) / 100;
+  const sq = shape === 'circle' || shape === 'square', sideMM = Math.min(aw0, ah0);
+  const aw = sq ? sideMM : aw0, ah = sq ? sideMM : ah0, ay = sq ? ay0 + (ah0 - sideMM) / 2 : ay0, ar = Math.min(aw / 2, ah);
   const aOf = k => cv[k] ? BK.findAsset(assets, cv[k]) : null;
   const archFill = cv.arch_fill !== false || !!aOf('arch_image');
-  const chord = y => { const cy = ay + ar; if (y >= cy) return aw; const d = cy - y; return d >= ar ? 0 : aw * Math.sqrt(1 - (d / ar) * (d / ar)); };
+  const capTop = (y, R, cy) => { const d = cy - y; return d >= R ? 0 : aw * Math.sqrt(1 - (d / R) * (d / R)); };
+  const chord = y => {
+    if (y < ay || y > ay + ah) return 0;
+    if (shape === 'oval' || shape === 'circle') { const cy = ay + ah / 2, d = Math.abs(y - cy), R = ah / 2; return d >= R ? 0 : aw * Math.sqrt(1 - (d / R) * (d / R)); }
+    if (shape === 'capsule') { const R = Math.min(aw / 2, ah / 2); return y < ay + R ? capTop(y, R, ay + R) : y > ay + ah - R ? capTop(2 * (ay + ah - R) - y, R, ay + ah - R) : aw; }
+    if (shape === 'arch') { const cy = ay + ar; return y >= cy ? aw : capTop(y, ar, cy); }
+    return aw;
+  };
+  // the width a block of text can use when it starts at y and runs span mm down (the narrowest point of that stretch)
+  const chordSpan = (y, span) => { let m = chord(y); for (let k = 1; k <= 4; k++) m = Math.min(m, chord(Math.min(y + span * k / 4, ay + ah - .01))); return m; };
   const inArch = (y0, y1) => archFill && y0 >= ay - .01 && y1 <= ay + ah + .01;
   const inkAt = (y0, y1) => inArch(y0, y1) ? cv.ink : cv.band_ink;
   const archSub = inset => {
-    const r = Math.max(1, ar - inset), x0 = (W - aw) / 2 + inset, x1 = (W + aw) / 2 - inset;
-    c.moveTo(X(x0), X(ay + ah - inset)); c.lineTo(X(x0), X(ay + ar));
-    c.ellipse(X(W / 2), X(ay + ar), X(aw / 2 - inset), X(r), 0, Math.PI, 2 * Math.PI);
-    c.lineTo(X(x1), X(ay + ah - inset)); c.closePath();
+    const x0 = (W - aw) / 2 + inset, x1 = (W + aw) / 2 - inset, y0 = ay + inset, y1 = ay + ah - inset, cx = W / 2;
+    if (shape === 'oval' || shape === 'circle') { c.ellipse(X(cx), X(ay + ah / 2), X(Math.max(1, aw / 2 - inset)), X(Math.max(1, ah / 2 - inset)), 0, 0, 2 * Math.PI); c.closePath(); return; }
+    if (shape === 'capsule') {
+      const R = Math.max(1, Math.min(aw / 2, ah / 2) - inset), rr = Math.min(aw / 2, ah / 2);
+      c.moveTo(X(x0), X(y1 - rr)); c.lineTo(X(x0), X(y0 + rr));
+      c.ellipse(X(cx), X(y0 + rr), X(aw / 2 - inset), X(R), 0, Math.PI, 2 * Math.PI); c.lineTo(X(x1), X(y1 - rr));
+      c.ellipse(X(cx), X(y1 - rr), X(aw / 2 - inset), X(R), 0, 0, Math.PI); c.closePath(); return;
+    }
+    if (shape === 'rectangle' || shape === 'square') { c.rect(X(x0), X(y0), X(x1 - x0), X(y1 - y0)); return; }
+    if (shape === 'rounded') {
+      const r = Math.max(.5, Math.min(12, aw / 6, ah / 6) - inset * .5), w = x1 - x0, h = y1 - y0;
+      c.moveTo(X(x0 + r), X(y0)); c.lineTo(X(x1 - r), X(y0)); c.arcTo(X(x1), X(y0), X(x1), X(y0 + r), X(r)); c.lineTo(X(x1), X(y1 - r)); c.arcTo(X(x1), X(y1), X(x1 - r), X(y1), X(r));
+      c.lineTo(X(x0 + r), X(y1)); c.arcTo(X(x0), X(y1), X(x0), X(y1 - r), X(r)); c.lineTo(X(x0), X(y0 + r)); c.arcTo(X(x0), X(y0), X(x0 + r), X(y0), X(r)); c.closePath(); return;
+    }
+    const r = Math.max(1, ar - inset);
+    c.moveTo(X(x0), X(y1)); c.lineTo(X(x0), X(ay + ar));
+    c.ellipse(X(cx), X(ay + ar), X(aw / 2 - inset), X(r), 0, Math.PI, 2 * Math.PI);
+    c.lineTo(X(x1), X(y1)); c.closePath();
   };
   const archPath = inset => { c.beginPath(); archSub(inset); };
   // Pictures. Layers, bottom to top: picture, the colour with its opacity, text. A region with a picture first gets its colour as a base (this fills what a smaller picture leaves open);
@@ -338,9 +364,11 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   };
   // one centred text block at a given distance from the top (in % of the cover height), narrowed to the arch at that height
   const archBlock = (txt, o, yPct, sizePct, maxHmm, minSz) => {
-    const topMM = H * yPct / 100, wmm = (cv.arch_wide === true || topMM < ay - .5 || topMM >= ay + ah) ? W - 16 : Math.max(30, Math.min(aw - 14, chord(topMM) - 14));
-    const oo = fitText(txt, Object.assign({ width: X(wmm) }, o, { size: o.size * sizePct / 100 }), X(maxHmm), minSz);
-    const h = measureTxt(txt, oo).h / ppm;
+    const topMM = H * yPct / 100, wide = cv.arch_wide === true || topMM < ay - .5 || topMM >= ay + ah;
+    const wFor = span => wide ? W - 16 : Math.max(30, Math.min(aw - 14, chordSpan(topMM, span) - 14));
+    const fit = w => fitText(txt, Object.assign({ width: X(w) }, o, { size: o.size * sizePct / 100 }), X(maxHmm), minSz);
+    let oo = fit(wFor(0)), h = measureTxt(txt, oo).h / ppm;
+    if (!wide && shape !== 'arch' && shape !== 'rectangle' && shape !== 'rounded' && shape !== 'square') { const w2 = wFor(h); if (w2 < wFor(0) - .5) { oo = fit(w2); h = measureTxt(txt, oo).h / ppm; } }   // rounded shapes get narrower further down
     T(txt, Object.assign({ top: X(topMM), color: inkAt(topMM, topMM + h) }, oo));
     return topMM + h;
   };
@@ -438,7 +466,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const scratch = canvasOf(8, 8).getContext('2d'), panelOn = !isArch && cv.back_shade !== false;
     // arch style: own text positions, text narrowed to the arch at that height
     const yq = isArch ? num('arch_back_quote_y', 17) : (cv.back_quote_y ?? 10.5), ys = isArch ? num('arch_back_sub_y', 25) : (cv.back_subtitle_y ?? 22), yb = isArch ? num('arch_back_blurb_y', 30) : (cv.back_blurb_y ?? 33);
-    const bwMM = isArch ? Math.max(40, aw - 26) : W - 32, wAt = yMM => isArch ? ((cv.arch_wide === true || yMM < ay - .5 || yMM >= ay + ah) ? W - 32 : Math.max(30, Math.min(bwMM, chord(yMM) - 14))) : W - 32;
+    const bwMM = isArch ? Math.max(30, aw - 26) : W - 32, wAt = yMM => isArch ? ((cv.arch_wide === true || yMM < ay - .5 || yMM >= ay + ah) ? W - 32 : Math.max(30, Math.min(bwMM, chordSpan(yMM, H * .12) - 14))) : W - 32;
     // a panel behind text that does not sit wholly on a plain area of the right colour
     const panel = (x, y, w, h, col, alpha) => {
       const pd = X(4), r = X(2); c.save(); c.globalAlpha = alpha; c.fillStyle = col; c.beginPath();
