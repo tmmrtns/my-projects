@@ -170,9 +170,9 @@ body.pbmode .bookonly { display: none !important; }
 .pbset label { display: grid; gap: 3px; color: var(--muted); }
 .pbset input:not([type=checkbox]):not([type=color]), .pbset select { width: 100%; min-width: 0; box-sizing: border-box; }
 .pbset label.chk { display: flex; align-items: center; gap: 6px; color: var(--ink); }
-.pbpages { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 8px; }
-.pbcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); display: grid; gap: 6px; align-content: start; }
-.pbprev { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.pbpages { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--pbw, 200px), 100%), 1fr)); gap: 12px; margin-top: 8px; }
+.pbcard { min-width: 0; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); display: grid; gap: 6px; align-content: start; }
+.pbprev { width: 100%; max-width: 100%; min-width: 0; height: auto; border: 1px solid var(--line); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .pbtop select { width: 100%; font-size: 12px; }
 .pblist { display: grid; gap: 2px; }
 .pbitem { display: flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 2px 3px; border-radius: 4px; background: var(--sunk); cursor: grab; }
@@ -584,6 +584,7 @@ body.pbmode .bookonly { display: none !important; }
             <label>Gap (mm)<input type="number" data-pb="gap" min="0" max="20" step="1"></label>
             <label>Background<input type="color" data-pb="bg"></label>
             <label>Pictures<span class="seg" id="pbFit"><button type="button" data-v="fill">Fill the frame</button><button type="button" data-v="fit">Show whole picture</button></span></label>
+            <label>Page size in this list<input type="range" id="pbZoom" min="110" max="520" step="10" value="200"></label>
             <label class="chk"><input type="checkbox" data-pb="captions"> File names as captions</label>
             <label class="chk"><input type="checkbox" data-pb="numbers"> Page numbers</label>
           </div>

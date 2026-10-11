@@ -681,6 +681,7 @@ async function pbImport(flat) {
   const imgs = flat.filter(e => IMG_EXT.includes(ext(e.name)) && !/(^|\/)(__MACOSX|\.)/.test(e.name));
   if (!imgs.length) { status('No pictures found'); toast('No pictures found. A photobook is made from .jpg, .png or .webp files, or a .zip with them.'); return; }
   imgs.sort((a, b) => BK.pbCompare(base(a.name), base(b.name)));
+  const coverBefore = JSON.stringify(S.cfg.cover);
   const pb = PB(), sortedNow = pb.items.slice().sort(BK.pbCompare);
   const wasSorted = pb.items.every((n, i) => n === sortedNow[i]);
   const fresh = []; let k = 0, bad = 0;
@@ -694,7 +695,8 @@ async function pbImport(flat) {
   // by default the order follows the file names; once the order was changed by hand, new pictures go at the end
   pb.items = pb.items.concat(fresh);
   if (wasSorted) pb.items.sort(BK.pbCompare); else fresh.sort(BK.pbCompare), pb.items = pb.items.filter(n => !fresh.includes(n)).concat(fresh);
-  changed(); parse();
+  if (JSON.stringify(S.cfg.cover) !== coverBefore) S.cfg.cover = JSON.parse(coverBefore);   // adding pictures never touches the cover
+  fillForm(); changed(); parse();
   status(`${fresh.length} new picture${fresh.length === 1 ? '' : 's'} added · ${pb.items.length} in the book${bad ? ` · ${bad} could not be read` : ''}`);
   if ($('#tab-structure')) $('#tab-structure').click();
 }
@@ -722,7 +724,7 @@ function renderPhoto() {
   $$('[data-pb]').forEach(el => { if (document.activeElement === el) return; if (el.type === 'checkbox') el.checked = !!pb[el.dataset.pb]; else el.value = pb[el.dataset.pb]; });
   $$('#pbFit button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === pb.fit)));
   // pages
-  const grid = $('#pbPages'); grid.innerHTML = '';
+  const grid = $('#pbPages'); grid.innerHTML = ''; grid.style.setProperty('--pbw', ($('#pbZoom').value || 200) + 'px');
   if (!pages.length) { grid.innerHTML = '<p class="hint">No pictures yet. Drop pictures or a .zip with pictures on the Manuscript tab, or use “Add pictures” above.</p>'; return; }
   const G = BK.geom(S.cfg), todo = [];
   for (const pg of pages) {
@@ -755,7 +757,7 @@ function renderPhoto() {
     todo.push([pg, cv]);
   }
   (async () => {
-    const ppm = Math.min(1.3, 190 / G.W);
+    const ppm = Math.min(3, Math.max(.8, (+($('#pbZoom').value) || 200) * 1.5 / G.W));
     for (const [pg, cv] of todo) {
       if (tok !== pbToken) return;
       try { const src = await BK.drawPhotoPage(pg, S.cfg, S.assets, ppm, { thumb: true }); cv.width = src.width; cv.height = src.height; cv.getContext('2d').drawImage(src, 0, 0); } catch (e) { console.error(e); }
@@ -771,6 +773,8 @@ function initPhoto() {
     changed(); clearTimeout(initPhoto.t); initPhoto.t = setTimeout(renderPhoto, 300);
   }));
   $$('#pbFit button').forEach(b => b.addEventListener('click', () => { PB().fit = b.dataset.v; changed(); renderPhoto(); }));
+  try { const z = localStorage.getItem('blk-pbzoom'); if (z) $('#pbZoom').value = z; } catch (e) { /* ignore */ }
+  $('#pbZoom').addEventListener('input', () => { try { localStorage.setItem('blk-pbzoom', $('#pbZoom').value); } catch (e) { /* ignore */ } clearTimeout(initPhoto.z); initPhoto.z = setTimeout(renderPhoto, 150); });
   $('#pbSort').addEventListener('click', () => { PB().items.sort(BK.pbCompare); changed(); renderPhoto(); toast('Sorted by file name'); });
   $('#pbClear').addEventListener('click', () => { if (!confirm('Remove all pictures from the photobook?')) return; const pb = PB(); pb.items = []; pb.pageLayouts = {}; changed(); renderPhoto(); });
   $('#pbAdd').addEventListener('change', async e => { const f = [...e.target.files].map(fileEntry); e.target.value = ''; if (f.length) await importEntries(f); });
