@@ -491,7 +491,10 @@ function fromKitJson(j) {
   return c;
 }
 // the adjustable cover values and their defaults (a value left at its default is not written to book.json)
-const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|bands_images_back|band_mid_opacity|bk_|pics_back)/.test(k)) o[k] = d[k]; return o; };
+// layout settings: the back cover has its own copy (prefix bk_) when "same layout" is off and the back is being edited
+const CK = k => (S.cfg.cover.back_same_layout === false && S.coverEdit === 'back' && BK.layoutKey(k)) ? 'bk_' + k : k;
+const CV = k => { const c = S.cfg.cover, kk = CK(k); return c[kk] !== undefined ? c[kk] : c[k]; };
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|mid_opacity|back_same_layout)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -726,19 +729,19 @@ function initForm() {
   $$('[data-lines]').forEach(el => el.addEventListener('input', () => { S.cfg[el.dataset.lines] = el.value.split('\n').map(s => s.trim()).filter(Boolean); changed(el.dataset.lines === 'index_exclude'); }));
   $$('[data-seg]').forEach(seg => seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     const path = seg.dataset.seg.split('.');
-    if (path.length === 2) S.cfg[path[0]][path[1]] = b.dataset.v; else S.cfg[path[0]] = b.dataset.v;
+    if (path.length === 2) S.cfg[path[0]][path[1] === 'style' ? CK('style') : path[1]] = b.dataset.v; else S.cfg[path[0]] = b.dataset.v;
     fillForm(); changed();
   })));
   $('#f-size').addEventListener('input', e => { S.cfg.font_size = +e.target.value; fillForm(); changed(); });
   $$('[data-photo]').forEach(el => el.addEventListener('input', () => { S.cfg.photos[el.dataset.photo] = +el.value; el.nextElementSibling.value = el.value + ' mm'; changed(); }));
   const hexOf = v => { v = String(v || '').trim().replace(/^#/, ''); if (/^[0-9a-f]{3}$/i.test(v)) v = [...v].map(x => x + x).join(''); return /^[0-9a-f]{6}$/i.test(v) ? '#' + v.toLowerCase() : ''; };
-  $$('[data-col]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.col] = el.value; el.parentElement.querySelector('.hex').value = el.value; el.parentElement.querySelector('.hex').classList.remove('bad'); changed(); }));
+  $$('[data-col]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[CK(el.dataset.col)] = el.value; el.parentElement.querySelector('.hex').value = el.value; el.parentElement.querySelector('.hex').classList.remove('bad'); changed(); }));
   // a colour code can be typed or pasted: #2f4858, 2f4858 or #fa0
   $$('[data-hex]').forEach(el => {
     const picker = () => el.parentElement.querySelector('[data-col]');
     el.addEventListener('input', () => {
       const h = hexOf(el.value); el.classList.toggle('bad', !h && el.value.trim() !== '');
-      if (h) { picker().value = h; S.cfg.cover[el.dataset.hex] = h; changed(); }
+      if (h) { picker().value = h; S.cfg.cover[CK(el.dataset.hex)] = h; changed(); }
     });
     el.addEventListener('blur', () => { el.value = picker().value; el.classList.remove('bad'); });
     el.addEventListener('paste', () => setTimeout(() => el.dispatchEvent(new Event('input')), 0));
@@ -746,10 +749,15 @@ function initForm() {
   $$('[data-ck]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.ck] = el.value; changed(); }));
   $$('[data-clines]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.clines] = el.value.split('\n').map(s => s.trim()).filter(Boolean); changed(); }));
   $$('[data-cparas]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.cparas] = el.value.split(/\n\s*\n/).map(s => s.split('\n').map(x => x.trim()).filter(Boolean).join('\n')).filter(Boolean); changed(); }));
-  $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cs] = el.value; changed(); if (el.dataset.cs === 'pics_back') fillForm(); }));
+  $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[CK(el.dataset.cs)] = el.value; changed(); }));
   $$('[data-hide]').forEach(el => el.addEventListener('change', () => { const h = S.cfg.cover.hide = Object.assign({}, S.cfg.cover.hide); if (el.checked) delete h[el.dataset.hide]; else h[el.dataset.hide] = true; changed(); }));
-  $$('[data-cb]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cb] = el.checked; changed(); }));
-  $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.pos] = +el.value; el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); changed(); }));
+  $$('[data-cb]').forEach(el => el.addEventListener('change', () => {
+    S.cfg.cover[CK(el.dataset.cb)] = el.checked;
+    if (el.dataset.cb === 'back_same_layout') { S.coverEdit = 'front'; fillForm(); }
+    changed();
+  }));
+  $$('#coverEditSeg button').forEach(b => b.addEventListener('click', () => { S.coverEdit = b.dataset.side; fillForm(); setView('cover'); }));
+  $$('[data-pos]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[CK(el.dataset.pos)] = +el.value; el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); changed(); }));
 }
 function fillForm() {
   const c = S.cfg;
@@ -759,44 +767,48 @@ function fillForm() {
   $$('[data-lines]').forEach(el => { if (document.activeElement !== el) el.value = (c[el.dataset.lines] || []).join('\n'); });
   $$('[data-seg]').forEach(seg => {
     const path = seg.dataset.seg.split('.');
-    const v = path.length === 2 ? c[path[0]][path[1]] : c[path[0]];
+    const v = path.length === 2 ? (path[1] === 'style' ? CV('style') : c[path[0]][path[1]]) : c[path[0]];
     seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === (v || (path[1] === 'style' ? 'auto' : '')))));
   });
   const G = BK.geom(c);
   $('#f-size').value = G.FS; $('#o-size').value = G.FS + ' pt' + (c.font_size ? '' : ' (auto)');
   $('#pageInfo').textContent = `${G.W} × ${G.H} mm · text block ${G.TW.toFixed(0)} × ${G.TH.toFixed(0)} mm · margins inner ${G.inner}, outer ${G.outer}, top ${G.top}, bottom ${G.bottom} mm`;
   $$('[data-photo]').forEach(el => { el.value = c.photos[el.dataset.photo] || el.min; el.nextElementSibling.value = el.value + ' mm'; });
-  $$('[data-col]').forEach(el => { el.value = c.cover[el.dataset.col] || '#000000'; const hx = el.parentElement.querySelector('.hex'); if (document.activeElement !== hx) hx.value = el.value; });
+  $$('[data-col]').forEach(el => { el.value = CV(el.dataset.col) || '#000000'; const hx = el.parentElement.querySelector('.hex'); if (document.activeElement !== hx) hx.value = el.value; });
   $$('[data-ck]').forEach(el => { if (document.activeElement !== el) el.value = c.cover[el.dataset.ck] || ''; });
   $$('[data-clines]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.clines] || []).join('\n'); });
   $$('[data-cparas]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.cparas] || []).join('\n\n'); });
-  $$('[data-cs]').forEach(el => { el.value = c.cover[el.dataset.cs] || (el.dataset.cs === 'back_subtitle_source' ? 'none' : el.dataset.cs === 'logo_color' ? 'text' : el.dataset.cs === 'pics_back' ? '' : 'auto'); });
+  $$('[data-cs]').forEach(el => { el.value = CV(el.dataset.cs) || (el.dataset.cs === 'back_subtitle_source' ? 'none' : el.dataset.cs === 'logo_color' ? 'text' : 'auto'); });
   $$('[data-hide]').forEach(el => { el.checked = !(c.cover.hide || {})[el.dataset.hide]; });
-  $$('[data-cb]').forEach(el => { el.checked = c.cover[el.dataset.cb] !== false; });
-  $$('[data-pos]').forEach(el => { el.value = c.cover[el.dataset.pos] ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); });
+  $$('[data-cb]').forEach(el => { const v = CV(el.dataset.cb); el.checked = el.dataset.off ? v === true : v !== false; });
+  $$('[data-pos]').forEach(el => { el.value = CV(el.dataset.pos) ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); });
   $$('#bandSwatches .sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c.toLowerCase() === String(c.cover.band).toLowerCase())));
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
   const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
-  for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image'], ['bkArch', 'bk_arch_image'], ['bkArchBg', 'bk_arch_bg_image'], ['bkBandOut', 'bk_band_image'], ['bkBandMid', 'bk_band_mid_image']]) { const pa = c.cover[key] ? BK.findAsset(S.assets, c.cover[key]) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
+  for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image']]) { const pa = CV(key) ? BK.findAsset(S.assets, CV(key)) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
   qrStatus();
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
-  const st = BK.coverStyle(c);
-  $('#coverStyleHint').textContent = c.cover.style === 'photo' ? 'This book uses the older Photo style. Choose Classic bands to put pictures in the outer or middle band instead.'
-    : (c.cover.style === 'auto' ? `Automatic picks ${a ? 'the older photo style because a photo is set' : 'classic bands because no photo is set'}. Choose Classic bands to use pictures in the bands.` : '');
-  const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn
+  // the settings below belong to the side that is being edited (the back, once it has its own layout)
+  const sideStyle = CV('style'), st = BK.coverStyle({ cover: Object.assign({}, c.cover, { style: sideStyle }) });
+  const same = c.cover.back_same_layout !== false, editBack = !same && S.coverEdit === 'back';
+  $('#coverEditWrap').hidden = same;
+  $$('#coverEditSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.side === (editBack ? 'back' : 'front'))));
+  $('#styleHead').textContent = editBack ? 'Style (back cover)' : 'Style';
+  $('#coverStyleHint').textContent = sideStyle === 'photo' ? 'This book uses the older Photo style. Choose Classic bands to put pictures in the outer or middle band instead.'
+    : (sideStyle === 'auto' ? `Automatic picks ${a ? 'the older photo style because a photo is set' : 'classic bands because no photo is set'}. Choose Classic bands to use pictures in the bands.` : '');
+  const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn on the side being edited
   // the older "Photo" and "Automatic" choices only show while they are in use: the classic bands now take pictures themselves
-  $('#segPhoto').hidden = c.cover.style !== 'photo'; $('#segAuto').hidden = c.cover.style !== 'auto';
+  $('#segPhoto').hidden = sideStyle !== 'photo'; $('#segAuto').hidden = sideStyle !== 'auto';
   $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
-  $('#coverPhotoSect').hidden = !(st === 'photo' || c.cover.style === 'photo');
-  const own = c.cover.pics_back === 'own';
-  $('#backOwnSect').hidden = !own; $('#backOwnBands').hidden = eff === 'arch'; $('#backOwnArch').hidden = eff !== 'arch';
-  $('#backPhotoSect').hidden = eff === 'arch';
-  const backPic = st === 'photo' || c.cover.style === 'photo' || !!c.cover.back_image;   // the back picture is the older photo style's; the bands take pictures themselves
-  $('#backPicBlock').hidden = !backPic; $$('.backPicOnly').forEach(el => { el.hidden = !backPic; });
+  $('#coverPhotoSect').hidden = editBack || !(st === 'photo' || c.cover.style === 'photo');
+  const backStyle = BK.coverStyle({ cover: Object.assign({}, c.cover, { style: same || c.cover.bk_style === undefined ? c.cover.style : c.cover.bk_style }) });
+  $('#backPhotoSect').hidden = backStyle === 'arch';
+  const backPic = backStyle === 'photo' || c.cover.style === 'photo' || !!c.cover.back_image;   // the back picture and its band height are the older photo style's
+  $('#backPicBlock').hidden = !backPic;
   renderKdp();
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }
@@ -1630,15 +1642,19 @@ $('#logoTree').addEventListener('click', async () => {
   } catch (err) { console.error(err); toast('The tree logo could not be loaded (' + (err && err.message || err) + '). Use Choose logo instead.'); }
 });
 // pictures for the arch cover: inside the arch (arch_image) and outside it (arch_bg_image)
-for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image'], ['bkArch', 'bk_arch_image'], ['bkArchBg', 'bk_arch_bg_image'], ['bkBandOut', 'bk_band_image'], ['bkBandMid', 'bk_band_mid_image']]) {
+for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image'], ['bandOut', 'band_image'], ['bandMid', 'band_mid_image']]) {
   $('#' + id + 'In').addEventListener('change', async e => {
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     const a = await addImage(f.name, f);
     if (!a) return;
-    S.cfg.cover[key] = f.name; fillForm(); renderAssets(); changed(); setView('cover');
+    S.cfg.cover[CK(key)] = f.name;
+    // the colour over a new picture starts see-through, otherwise the picture would not show
+    const op = (key === 'band_image' || key === 'arch_bg_image') ? 'band_opacity' : 'mid_opacity';
+    if (CV(op) === undefined || CV(op) >= 100) S.cfg.cover[CK(op)] = 30;
+    fillForm(); renderAssets(); changed(); setView('cover');
   });
-  $('#' + id + 'Clear').addEventListener('click', () => { S.cfg.cover[key] = ''; fillForm(); changed(); });
+  $('#' + id + 'Clear').addEventListener('click', () => { S.cfg.cover[CK(key)] = ''; fillForm(); changed(); });
 }
 $('#logoClear').addEventListener('click', () => { S.cfg.cover.logo = ''; fillForm(); changed(); });
 // a logo that is chosen but not placed anywhere shows nothing, so the first time it goes at the bottom of the front
