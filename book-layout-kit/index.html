@@ -459,9 +459,11 @@ body.pbmode .bookonly { display: none !important; }
           <div class="field"><span class="lab">Type of book</span><div class="seg" id="docSeg"><button type="button" data-v="book">Text book</button><button type="button" data-v="photobook">Photobook</button></div></div>
           <p class="hint pbonly">Photobook: drop pictures or a .zip with only pictures below. They are placed in file-name order, one or more per page; you can reorder them on the Structure tab. Add more pictures at any time, they join the book by file name.</p>
           <label class="drop" id="drop" for="fileIn">
-            <strong>Drop your manuscript here</strong>
-            <span class="hint">or click to choose files: a whole project, or the text, the settings and the images separately, in any order.</span>
-            <span class="types">.md .txt .docx .pdf .odt .html · book.json · .zip · .jpg .png .webp</span>
+            <strong><span class="bookonly">Drop your manuscript here</span><span class="pbonly">Drop your images here</span></strong>
+            <span class="hint bookonly">or click to choose files: a whole project, or the text, the settings and the images separately, in any order.</span>
+            <span class="hint pbonly">or click to choose pictures, or a .zip with pictures. Add more at any time: they join the book by file name.</span>
+            <span class="types bookonly">.md .txt .docx .pdf .odt .html · book.json · .zip · .jpg .png .webp</span>
+            <span class="types pbonly">.jpg .png .webp · .zip</span>
           </label>
           <input type="file" id="fileIn" multiple hidden accept=".md,.markdown,.txt,.docx,.pdf,.odt,.html,.htm,.zip,.json,image/*">
           <div class="pickers">
