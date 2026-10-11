@@ -166,6 +166,21 @@ BK.qrDataURL = function (text) {
 };
 
 // ---------------------------------------------------------------- cover
+// What the QR field means: an image of a QR code that was added (by file name), a web link (with or without https://), a mail or phone link.
+// Returns { kind: 'image' | 'link' | 'none', href, dataURL }
+BK.qrInfo = function (v, assets) {
+  v = String(v || '').trim();
+  if (!v) return { kind: 'none' };
+  const a = BK.findAsset(assets, v);
+  if (a) return { kind: 'image', name: a.name || v, dataURL: a.dataURL };
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(v)) return { kind: 'link', href: v };
+  if (/^[^\s\/]+\.[a-z]{2,}([\/?#]\S*)?$/i.test(v) && !/\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(v)) return { kind: 'link', href: 'https://' + v };
+  return { kind: 'none', unknown: true };
+};
+BK.qrSource = function (v, assets) {
+  const q = BK.qrInfo(v, assets);
+  return q.kind === 'image' ? q.dataURL : q.kind === 'link' ? BK.qrDataURL(q.href) : undefined;
+};
 const hexRgb = h => { h = String(h || '#000').replace('#', ''); if (h.length === 3) h = [...h].map(x => x + x).join(''); const n = parseInt(h, 16) || 0; return `${n >> 16 & 255},${n >> 8 & 255},${n & 255}`; };
 BK.coverStyle = cfg => {
   const cv = cfg.cover || {};
@@ -410,7 +425,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       T(blurb, Object.assign({ top, color: isArch ? inkAt(top / ppm, (top + h) / ppm) : cv.ink }, o));
     }
     if (cv.qr && on('qr')) {
-      const qsrc = /^https?:\/\//i.test(cv.qr) ? BK.qrDataURL(cv.qr) : (BK.findAsset(assets, cv.qr) || {}).dataURL;
+      const qsrc = BK.qrSource(cv.qr, assets);
       if (qsrc) {
         const im = await BK.loadImg(qsrc);
         const qx = X(16), qs = X(30), qy = X(H) - X(12) - qs - X(4);

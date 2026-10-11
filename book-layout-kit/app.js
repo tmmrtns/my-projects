@@ -781,6 +781,7 @@ function fillForm() {
   for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image']]) { const pa = c.cover[key] ? BK.findAsset(S.assets, c.cover[key]) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
+  qrStatus();
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   const st = BK.coverStyle(c);
@@ -794,6 +795,16 @@ function fillForm() {
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }
 
+function qrStatus() {
+  const c = S.cfg, el = $('#qrState'); if (!el) return;
+  const q = BK.qrInfo(c.cover.qr, S.assets);
+  let t = '', warn = false;
+  if ((c.cover.hide || {}).qr) { el.textContent = 'QR code is switched off (tick "Show the QR code")'; el.style.color = ''; return; }
+  if (q.kind === 'link') t = 'QR code will point to ' + q.href;
+  else if (q.kind === 'image') t = 'Using your uploaded QR image: ' + q.name;
+  else if (q.unknown) { t = 'Not recognised: type a web address (https://… or www.…) or the name of an uploaded image'; warn = true; }
+  el.textContent = t; el.style.color = warn ? '#b0501e' : '';
+}
 function logoStatus() {
   const c = S.cfg;
   // which logo is in use, and where: shown on the buttons and in one line, so it is clear at a glance whether a logo is on
@@ -810,6 +821,7 @@ function logoStatus() {
 function changed(needParse) {
   S.stale = true;
   logoStatus();
+  qrStatus();
   save();
   coverSoon();
   renderWordInfo();

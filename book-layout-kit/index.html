@@ -790,7 +790,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><label for="c-quote">Quote in the top band (Enter = new line)</label><textarea id="c-quote" data-ck="quote" rows="2"></textarea></div>
           <div class="field"><label for="c-blurb">Blurb (blank line = new paragraph, Enter = new line)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
           <div class="row">
-            <div class="field"><label for="c-qr">QR code link</label><input type="url" id="c-qr" data-ck="qr" placeholder="https://"></div>
+            <div class="field"><label for="c-qr">QR code link</label><input type="text" id="c-qr" data-ck="qr" placeholder="https://… or www.… or an image file" autocomplete="off" spellcheck="false"><span class="hint" id="qrState" role="status"></span></div>
             <div class="field"><label for="c-qrt">Text beside the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
           </div>
           <label class="check"><input type="checkbox" data-b="include_covers"> Put the covers in the PDF (front first, back last)</label>
