@@ -646,40 +646,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <p class="hint">100% is solid colour. Lower it to let something shine through: a picture that runs through the cover, or else the colour of the neighbouring part (bands let the middle colour through, the middle lets the band colour through).</p>
           <p class="hint" id="opHint" role="status"></p>
         </div>
-        <div class="sect" id="coverLogoSect">
-          <h2>Logo</h2>
-          <div class="logostate" id="logoState" role="status"></div>
-          <div class="coverimg">
-            <div class="thumb" id="logoThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#1a1a1a"></div>
-            <div style="display:grid;gap:8px">
-              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="logoIn" id="logoOwn">Choose logo</label><button class="btn small" id="logoTree" type="button" aria-pressed="false">Use the tree logo</button><button class="btn small ghost" id="logoClear" type="button">Remove</button></div>
-              <input type="file" id="logoIn" hidden accept="image/*">
-              <p class="hint">A small logo, centred. A white drawing on a black ground (or the other way round, see Invert) takes the text colour of the place where it sits.</p>
-            </div>
-          </div>
-          <div class="checks">
-            <label class="check"><input type="checkbox" data-cb="logo_front_top"> Front, top</label>
-            <label class="check"><input type="checkbox" data-cb="logo_front_bottom"> Front, bottom</label>
-            <label class="check"><input type="checkbox" data-cb="logo_back_top"> Back, top</label>
-            <label class="check"><input type="checkbox" data-cb="logo_back_bottom"> Back, bottom</label>
-          </div>
-          <div class="field"><span class="lab">Logo size (longest side)</span><div class="range"><input type="range" min="5" max="60" step="1" data-pos="logo_size" data-unit="mm" aria-label="Logo size (longest side)"><output></output></div></div>
-          <div class="field"><span class="lab">Distance from the top or bottom edge</span><div class="range"><input type="range" min="0" max="60" step="1" data-pos="logo_margin" data-unit="mm" aria-label="Distance from the top or bottom edge"><output></output></div></div>
-          <div class="field"><label for="c-logocol">Logo colour</label>
-            <select id="c-logocol" data-cs="logo_color"><option value="text">Same as the text next to it</option><option value="original">Original colours</option></select></div>
-          <label class="check"><input type="checkbox" data-cb="logo_invert"> Invert (for a dark drawing on a light ground)</label>
-        </div>
-                <div class="sect" id="coverDividerSect">
-          <h2>Divider between title and subtitle</h2>
-          <div class="field"><label for="c-div">Divider or ornament</label><select id="c-div" data-cs="divider"><option value="auto">Automatic (short line on the bands, none on the arch)</option><option value="none">None</option><option value="line">Short line</option><option value="long">Long line</option><option value="double">Double line</option><option value="dotline">Line with a dot</option><option value="dots">Three dots</option><option value="diamond">Lines with a diamond</option><option value="star">Lines with a star</option><option value="fleuron">Fleuron ❦</option><option value="image">Picture or icon (choose below)</option></select></div>
-          <div class="coverimg" style="margin-top:10px"><div class="thumb" id="divThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#7a7a7a"></div><div style="display:grid;gap:8px"><strong style="font-size:13px">Picture or icon as divider</strong><div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="divIn">Choose picture</label><button class="btn small" id="divTree" type="button">Use the tree</button><button class="btn small ghost" id="divClear" type="button">Remove</button></div><input type="file" id="divIn" hidden accept="image/*"><p class="hint">A light drawing on a plain dark ground takes the text colour (like the logo). Tick "original colours" for a coloured picture.</p></div></div>
-          <label class="check"><input type="checkbox" data-cb="divider_original" data-off="1"> Keep the original colours of the picture</label>
-          <label class="check"><input type="checkbox" data-cb="divider_invert" data-off="1"> Dark drawing on a light ground (invert)</label>
-          <div class="field"><span class="lab">Size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="divider_size" aria-label="Divider size"><output></output></div></div>
-          <div class="field"><span class="lab">Nudge up or down (mm)</span><div class="range"><input type="range" min="-15" max="15" step="1" data-pos="divider_y" data-unit=" mm" aria-label="Divider nudge"><output></output></div></div>
-          <p class="hint">It is centred between the title and the subtitle and takes the text colour. On the front cover only.</p>
-        </div>
-<div class="sect" id="coverBandsSect">
+        <div class="sect" id="coverBandsSect">
           <h2>Bands</h2>
           <p class="hint">Make the top and the bottom band thicker or thinner, and use pictures in the bands. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>
           <div class="field"><span class="lab">Top band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="top_band" aria-label="Top band height"><output></output></div></div>
@@ -712,19 +679,6 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_mid_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, less leaves room for the colour)</span><div class="range"><input type="range" min="20" max="300" step="5" data-pos="band_mid_image_zoom" aria-label="Picture size"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="band_mid_image_run" data-off="1"> Let the picture run through the whole cover (off: only in the middle band)</label>
-          <details class="grp"><summary>Front: text position and size</summary>
-            <div class="field"><span class="lab">Top label: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_label_dy" data-unit=" mm" aria-label="Top label: move up or down"><output></output></div></div>
-            <div class="field"><span class="lab">Top label: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_label_size" aria-label="Top label: size"><output></output></div></div>
-            <div class="field"><span class="lab">Title: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_title_dy" data-unit=" mm" aria-label="Title: move up or down"><output></output></div></div>
-            <div class="field"><span class="lab">Title: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_title_size" aria-label="Title: size"><output></output></div></div>
-            <div class="field"><span class="lab">Subtitles: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_sub_dy" data-unit=" mm" aria-label="Subtitles: move up or down"><output></output></div></div>
-            <div class="field"><span class="lab">Subtitles: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_sub_size" aria-label="Subtitles: size"><output></output></div></div>
-            <div class="field"><span class="lab">Author: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_author_dy" data-unit=" mm" aria-label="Author: move up or down"><output></output></div></div>
-            <div class="field"><span class="lab">Author: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_author_size" aria-label="Author: size"><output></output></div></div>
-            <div class="field"><span class="lab">Footer line: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_footer_dy" data-unit=" mm" aria-label="Footer line: move up or down"><output></output></div></div>
-            <div class="field"><span class="lab">Footer line: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_footer_size" aria-label="Footer line: size"><output></output></div></div>
-            <p class="hint">Positions are in millimetres from the standard place (negative = up). Sizes are a percentage of the standard size; long text still shrinks to fit its band.</p>
-          </details>
         </div>
         <div class="sect" id="coverArchSect">
           <h2>Arch and shapes</h2>
@@ -764,27 +718,78 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, less leaves room for the colour)</span><div class="range"><input type="range" min="20" max="300" step="5" data-pos="arch_bg_image_zoom" aria-label="Picture size"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="arch_bg_image_run" data-off="1"> Let the picture run through the whole cover (off: only on the page around the arch)</label>
-          <details class="grp"><summary>Front: text position</summary>
+        </div>
+        <div class="sect" id="txtFrontBands" data-open="1">
+          <h2>Text position and size: front (bands)</h2>
+            <div class="field"><span class="lab">Top label: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_label_dy" data-unit=" mm" aria-label="Top label: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Top label: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_label_size" aria-label="Top label: size"><output></output></div></div>
+            <div class="field"><span class="lab">Title: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_title_dy" data-unit=" mm" aria-label="Title: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Title: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_title_size" aria-label="Title: size"><output></output></div></div>
+            <div class="field"><span class="lab">Subtitles: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_sub_dy" data-unit=" mm" aria-label="Subtitles: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Subtitles: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_sub_size" aria-label="Subtitles: size"><output></output></div></div>
+            <div class="field"><span class="lab">Author: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_author_dy" data-unit=" mm" aria-label="Author: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Author: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_author_size" aria-label="Author: size"><output></output></div></div>
+            <div class="field"><span class="lab">Footer line: move up or down</span><div class="range"><input type="range" min="-30" max="30" step="1" data-pos="classic_footer_dy" data-unit=" mm" aria-label="Footer line: move up or down"><output></output></div></div>
+            <div class="field"><span class="lab">Footer line: size</span><div class="range"><input type="range" min="30" max="250" step="1" data-pos="classic_footer_size" aria-label="Footer line: size"><output></output></div></div>
+            <p class="hint">Positions are in millimetres from the standard place (negative = up). Sizes are a percentage of the standard size; long text still shrinks to fit its band.</p>
+          
+        </div>
+        <div class="sect" id="txtFrontArch" data-open="1">
+          <h2>Text position and size: front (shape)</h2>
           <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
           <div class="field"><span class="lab">Title</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_title_y" aria-label="Title"><output></output></div></div>
           <div class="field"><span class="lab">Subtitles</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_sub_y" aria-label="Subtitles"><output></output></div></div>
           <div class="field"><span class="lab">Author</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_author_y" aria-label="Author"><output></output></div></div>
           <div class="field"><span class="lab">Footer line</span><div class="range"><input type="range" min="0" max="98" step="1" data-pos="arch_footer_y" aria-label="Footer line"><output></output></div></div>
-          </details>
-          <details class="grp"><summary>Front: text size</summary>
+          
           <div class="field"><span class="lab">Label size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_label_size" aria-label="Label size"><output></output></div></div>
           <div class="field"><span class="lab">Title size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_title_size" aria-label="Title size"><output></output></div></div>
           <div class="field"><span class="lab">Subtitle size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_sub_size" aria-label="Subtitle size"><output></output></div></div>
           <div class="field"><span class="lab">Author size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_author_size" aria-label="Author size"><output></output></div></div>
           <div class="field"><span class="lab">Footer size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_footer_size" aria-label="Footer size"><output></output></div></div>
-          </details>
-          <details class="grp"><summary>Back: text position and size</summary>
+          
+        </div>
+        <div class="sect" id="txtBackArch" data-open="1">
+          <h2>Text position and size: back (shape)</h2>
           <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_quote_y" aria-label="Quote: distance from the top"><output></output></div></div>
           <div class="field"><span class="lab">Subtitles: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_sub_y" aria-label="Subtitles: distance from the top"><output></output></div></div>
           <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_blurb_y" aria-label="Blurb: distance from the top"><output></output></div></div>
           <div class="field"><span class="lab">Quote size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_back_quote_size" aria-label="Quote size"><output></output></div></div>
           <div class="field"><span class="lab">Blurb size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_back_blurb_size" aria-label="Blurb size"><output></output></div></div>
-          </details>
+          
+        </div>
+        <div class="sect" id="coverDividerSect">
+          <h2>Divider between title and subtitle</h2>
+          <div class="field"><label for="c-div">Divider or ornament</label><select id="c-div" data-cs="divider"><option value="auto">Automatic (short line on the bands, none on the arch)</option><option value="none">None</option><option value="line">Short line</option><option value="long">Long line</option><option value="double">Double line</option><option value="dotline">Line with a dot</option><option value="dots">Three dots</option><option value="diamond">Lines with a diamond</option><option value="star">Lines with a star</option><option value="fleuron">Fleuron ❦</option><option value="image">Picture or icon (choose below)</option></select></div>
+          <div class="coverimg" style="margin-top:10px"><div class="thumb" id="divThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#7a7a7a"></div><div style="display:grid;gap:8px"><strong style="font-size:13px">Picture or icon as divider</strong><div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="divIn">Choose picture</label><button class="btn small" id="divTree" type="button">Use the tree</button><button class="btn small ghost" id="divClear" type="button">Remove</button></div><input type="file" id="divIn" hidden accept="image/*"><p class="hint">A light drawing on a plain dark ground takes the text colour (like the logo). Tick "original colours" for a coloured picture.</p></div></div>
+          <label class="check"><input type="checkbox" data-cb="divider_original" data-off="1"> Keep the original colours of the picture</label>
+          <label class="check"><input type="checkbox" data-cb="divider_invert" data-off="1"> Dark drawing on a light ground (invert)</label>
+          <div class="field"><span class="lab">Size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="divider_size" aria-label="Divider size"><output></output></div></div>
+          <div class="field"><span class="lab">Nudge up or down (mm)</span><div class="range"><input type="range" min="-15" max="15" step="1" data-pos="divider_y" data-unit=" mm" aria-label="Divider nudge"><output></output></div></div>
+          <p class="hint">It is centred between the title and the subtitle and takes the text colour. On the front cover only.</p>
+        </div>
+        <div class="sect" id="coverLogoSect">
+          <h2>Logo</h2>
+          <div class="logostate" id="logoState" role="status"></div>
+          <div class="coverimg">
+            <div class="thumb" id="logoThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#1a1a1a"></div>
+            <div style="display:grid;gap:8px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="logoIn" id="logoOwn">Choose logo</label><button class="btn small" id="logoTree" type="button" aria-pressed="false">Use the tree logo</button><button class="btn small ghost" id="logoClear" type="button">Remove</button></div>
+              <input type="file" id="logoIn" hidden accept="image/*">
+              <p class="hint">A small logo, centred. A white drawing on a black ground (or the other way round, see Invert) takes the text colour of the place where it sits.</p>
+            </div>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-cb="logo_front_top"> Front, top</label>
+            <label class="check"><input type="checkbox" data-cb="logo_front_bottom"> Front, bottom</label>
+            <label class="check"><input type="checkbox" data-cb="logo_back_top"> Back, top</label>
+            <label class="check"><input type="checkbox" data-cb="logo_back_bottom"> Back, bottom</label>
+          </div>
+          <div class="field"><span class="lab">Logo size (longest side)</span><div class="range"><input type="range" min="5" max="60" step="1" data-pos="logo_size" data-unit="mm" aria-label="Logo size (longest side)"><output></output></div></div>
+          <div class="field"><span class="lab">Distance from the top or bottom edge</span><div class="range"><input type="range" min="0" max="60" step="1" data-pos="logo_margin" data-unit="mm" aria-label="Distance from the top or bottom edge"><output></output></div></div>
+          <div class="field"><label for="c-logocol">Logo colour</label>
+            <select id="c-logocol" data-cs="logo_color"><option value="text">Same as the text next to it</option><option value="original">Original colours</option></select></div>
+          <label class="check"><input type="checkbox" data-cb="logo_invert"> Invert (for a dark drawing on a light ground)</label>
         </div>
         <div class="sect" id="coverPhotoSect">
           <h2>Cover photo</h2>
@@ -832,8 +837,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><label for="c-sub1">Subtitle on the cover (optional, Enter = new line; replaces the book's subtitle on the cover)</label><textarea id="c-sub1" data-ck="subtitle_text" rows="2"></textarea></div>
           <div class="field"><label for="c-sub2">Second subtitle on the cover (optional, Enter = new line)</label><textarea id="c-sub2" data-ck="subtitle2_text" rows="2"></textarea></div>
         </div>
-        <div class="sect" id="backPhotoSect">
-          <h2>Back cover text positions</h2>
+        <div class="sect" id="backPhotoSect" data-open="1">
+          <h2>Text position and size: back (bands)</h2>
           <div id="backPicBlock">
           <div class="coverimg">
             <div class="thumb" id="backThumb"></div>

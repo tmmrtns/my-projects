@@ -810,6 +810,10 @@ function fillForm() {
   $('#coverPhotoSect').hidden = editBack || !(st === 'photo' || c.cover.style === 'photo');
   const backStyle = BK.coverStyle({ cover: Object.assign({}, c.cover, { style: same || c.cover.bk_style === undefined ? c.cover.style : c.cover.bk_style }) });
   $('#backPhotoSect').hidden = backStyle === 'arch';
+  // text positions and sizes: always their own blocks, for the style of the side they belong to
+  const frontStyle = BK.coverStyle(c);
+  $('#txtFrontBands').hidden = !(frontStyle === 'classic' || (frontStyle === 'photo' && !a));
+  $('#txtFrontArch').hidden = frontStyle !== 'arch'; $('#txtBackArch').hidden = backStyle !== 'arch';
   const backPic = backStyle === 'photo' || c.cover.style === 'photo' || !!c.cover.back_image;   // the back picture and its band height are the older photo style's
   $('#backPicBlock').hidden = !backPic;
   renderKdp();
@@ -1744,7 +1748,7 @@ function initCollapse() {
     secs.forEach((sec, i) => {
       const h = sec.querySelector(':scope > h2'), key = p.id + ':' + (sec.id || i);
       h.classList.add('collapser'); h.setAttribute('role', 'button'); h.tabIndex = 0;
-      const saved = store(key), open = saved !== null && saved !== undefined ? saved === '1' : (p.id === 'panel-cover' ? i < 3 : true);
+      const saved = store(key), open = saved !== null && saved !== undefined ? saved === '1' : (p.id === 'panel-cover' ? (i < 3 || sec.dataset.open === '1') : true);
       const set = (o, save) => { sec.classList.toggle('collapsed', !o); h.setAttribute('aria-expanded', String(o)); if (save) store(key, o ? '1' : '0'); };
       set(open, false);
       h.addEventListener('click', () => set(sec.classList.contains('collapsed'), true));
