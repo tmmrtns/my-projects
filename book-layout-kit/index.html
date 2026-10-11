@@ -473,6 +473,10 @@ body.pbmode .bookonly { display: none !important; }
             <label class="btn small" for="textIn" title="Only the text: one or more files">Text files</label>
             <label class="btn small" for="imgIn2" title="Only the pictures">Images</label>
           </div>
+          <div class="pickers">
+            <button type="button" class="btn small" id="clearImgs" title="Remove all loaded pictures (and the photobook order), keep the text and settings">Clear images</button>
+            <button type="button" class="btn small" id="clearAll" title="Start with an empty book: text, settings, pictures and built files">Clear all</button>
+          </div>
           <input type="file" id="dirIn" hidden webkitdirectory multiple>
           <input type="file" id="zipIn" hidden accept=".zip">
           <input type="file" id="jsonIn" hidden accept=".json,application/json">

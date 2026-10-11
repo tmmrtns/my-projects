@@ -780,6 +780,37 @@ function initPhoto() {
   $('#pbAdd').addEventListener('change', async e => { const f = [...e.target.files].map(fileEntry); e.target.value = ''; if (f.length) await importEntries(f); });
 }
 
+
+// start over: remove the pictures, or everything, so nothing old ends up in a new book
+function clearImages() {
+  S.assets.clear();
+  const pb = PB(); pb.items = []; pb.pageLayouts = {}; pb.rot = {}; pb.focus = {};
+  for (const k of Object.keys(S.cfg.cover)) if (/(^|_)image$/.test(k) || k === 'logo') S.cfg.cover[k] = '';
+}
+function afterClear(msg) {
+  S.pdf = null; S.epub = null; S.sel = null;
+  if (S.pdfDoc) { try { S.pdfDoc.destroy(); } catch (e) { /* ignore */ } S.pdfDoc = null; }
+  $('#results').innerHTML = ''; $('#deskInfo').innerHTML = '';
+  fillForm(); $('#editor').value = S.md; sampleTag(); renderAssets();
+  changed(true); parse(); setView(S.view === 'pages' ? 'cover' : S.view);
+  status(msg); toast(msg);
+}
+function initClear() {
+  $('#clearImgs').addEventListener('click', () => {
+    if (!S.assets.size && !(S.cfg.photobook && S.cfg.photobook.items.length)) { toast('There are no pictures loaded.'); return; }
+    if (!confirm('Remove all pictures from the kit? Text and settings stay.')) return;
+    clearImages(); afterClear('Pictures cleared');
+  });
+  $('#clearAll').addEventListener('click', () => {
+    if (!confirm('Clear everything: text, settings, pictures and built files? This cannot be undone.')) return;
+    const type = S.cfg.doc_type;
+    S.assets.clear(); S.cfg = BK.defaults(); S.cfg.doc_type = type || 'book';
+    S.md = ''; S.isSample = false; S.isSampleCfg = false;
+    kitJson = null; try { localStorage.removeItem('blk-kitjson'); } catch (e) { /* ignore */ }
+    afterClear('Cleared: ready for a new book');
+  });
+}
+
 // ---------------------------------------------------------------- form binding
 function fillSelect(sel, opts) { sel.innerHTML = ''; for (const [v, t] of opts) sel.append(new Option(t, v)); }
 function initForm() {
@@ -1962,7 +1993,7 @@ function initCollapse() {
     }
   });
 }
-initForm(); initPhoto(); initViewer(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
+initForm(); initPhoto(); initViewer(); initClear(); initCollapse(); fillForm(); ed.value = S.md; sampleTag();
 try { const t = sessionStorage.getItem('blk-tab'); if (t && $('#panel-' + t)) showTab(t); } catch (e) { /* ignore */ }
 parse();
 status(S.isSample ? 'Sample manuscript loaded · drop your own on the left' : 'Your manuscript is restored from this browser');
