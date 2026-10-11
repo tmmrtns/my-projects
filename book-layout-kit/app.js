@@ -745,7 +745,7 @@ function initForm() {
   });
   $$('[data-ck]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.ck] = el.value; changed(); }));
   $$('[data-clines]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.clines] = el.value.split('\n').map(s => s.trim()).filter(Boolean); changed(); }));
-  $$('[data-cparas]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.cparas] = el.value.split(/\n\s*\n/).map(s => s.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean); changed(); }));
+  $$('[data-cparas]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.cparas] = el.value.split(/\n\s*\n/).map(s => s.split('\n').map(x => x.trim()).filter(Boolean).join('\n')).filter(Boolean); changed(); }));
   $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cs] = el.value; changed(); }));
   $$('[data-hide]').forEach(el => el.addEventListener('change', () => { const h = S.cfg.cover.hide = Object.assign({}, S.cfg.cover.hide); if (el.checked) delete h[el.dataset.hide]; else h[el.dataset.hide] = true; changed(); }));
   $$('[data-cb]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[el.dataset.cb] = el.checked; changed(); }));

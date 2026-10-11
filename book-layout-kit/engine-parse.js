@@ -197,7 +197,7 @@ BK.defaults = () => ({
     arch_w: 82, arch_h: 84, arch_y: 6, arch_fill: true, arch_line: true,
     arch_label_y: 14, arch_title_y: 30, arch_sub_y: 47, arch_author_y: 72, arch_footer_y: 94,
     arch_label_size: 100, arch_title_size: 100, arch_sub_size: 100, arch_author_size: 100, arch_footer_size: 100,
-    arch_back_quote_y: 17, arch_back_sub_y: 25, arch_back_blurb_y: 30, arch_back_quote_size: 100, arch_back_blurb_size: 100,
+    arch_back_quote_y: 17, arch_back_sub_y: 25, arch_back_blurb_y: 30, arch_back_quote_size: 100, arch_back_blurb_size: 100, arch_wide: false, subtitle_text: '', subtitle2_text: '',
     logo: '', logo_front_top: false, logo_front_bottom: false, logo_back_top: false, logo_back_bottom: false, logo_size: 16, logo_margin: 10, logo_color: 'text', logo_invert: false },
   roles: {},
   part_intro_off: {},

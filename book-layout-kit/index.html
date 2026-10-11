@@ -659,6 +659,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Arch: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Arch: distance from the top"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="arch_fill"> Fill the arch (off: outline only)</label>
           <label class="check"><input type="checkbox" data-cb="arch_line"> Thin line inside the arch</label>
+          <label class="check"><input type="checkbox" data-cb="arch_wide"> Let text run wider than the arch (text above or below the arch always may)</label>
           <details class="grp"><summary>Front: text position</summary>
           <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
           <div class="field"><span class="lab">Title</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_title_y" aria-label="Title"><output></output></div></div>
@@ -719,10 +720,12 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             </select>
             <span class="hint">They are the Subtitle and Second subtitle fields of the Book tab. Change them there and the cover follows.</span></div>
           <div class="row">
-            <div class="field"><label for="c-label">Label above the title</label><input type="text" id="c-label" data-ck="label"></div>
-            <div class="field"><label for="c-footer">Footer line</label><input type="text" id="c-footer" data-ck="footer"></div>
+            <div class="field"><label for="c-label">Label above the title (Enter = new line)</label><textarea id="c-label" data-ck="label" rows="2"></textarea></div>
+            <div class="field"><label for="c-footer">Footer line (Enter = new line)</label><textarea id="c-footer" data-ck="footer" rows="2"></textarea></div>
           </div>
-          <div class="field"><label for="c-lines">Title broken over lines (optional, one per line)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
+          <div class="field"><label for="c-sub1">Subtitle on the cover (optional, Enter = new line; replaces the book's subtitle on the cover)</label><textarea id="c-sub1" data-ck="subtitle_text" rows="2"></textarea></div>
+          <div class="field"><label for="c-sub2">Second subtitle on the cover (optional, Enter = new line)</label><textarea id="c-sub2" data-ck="subtitle2_text" rows="2"></textarea></div>
+          <div class="field"><label for="c-lines">Title broken over lines (optional: one line of the title per row)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
         </div>
         <div class="sect" id="backPhotoSect">
           <h2>Back cover picture and bands</h2>
@@ -757,8 +760,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
               <option value="second">Second subtitle only</option>
             </select></div>
           <div class="field"><span class="lab">Subtitles: distance from the top</span><div class="range"><input type="range" min="0" max="90" data-pos="back_subtitle_y" aria-label="Back cover subtitle position"><output></output></div></div>
-          <div class="field"><label for="c-quote">Quote in the top band</label><textarea id="c-quote" data-ck="quote" rows="2"></textarea></div>
-          <div class="field"><label for="c-blurb">Blurb (blank line between paragraphs)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
+          <div class="field"><label for="c-quote">Quote in the top band (Enter = new line)</label><textarea id="c-quote" data-ck="quote" rows="2"></textarea></div>
+          <div class="field"><label for="c-blurb">Blurb (blank line = new paragraph, Enter = new line)</label><textarea id="c-blurb" data-cparas="blurb" rows="5"></textarea></div>
           <div class="row">
             <div class="field"><label for="c-qr">QR code link</label><input type="url" id="c-qr" data-ck="qr" placeholder="https://"></div>
             <div class="field"><label for="c-qrt">Text beside the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>

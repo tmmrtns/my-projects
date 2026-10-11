@@ -116,15 +116,19 @@ function textBlock(c, s, o) {
   const width = (s0) => c.measureText(s0).width + sp * [...s0].length;
   const lines = [];
   const paras = Array.isArray(s) ? s : String(s).split('\n');
-  for (let p of paras) {
-    if (o.upper) p = p.toUpperCase();
-    const words = p.split(/\s+/).filter(Boolean);
-    let cur = '';
-    for (const w of words) {
-      const t = cur ? cur + ' ' + w : w;
-      if (cur && o.width && width(t) > o.width) { lines.push({ t: cur, last: false }); cur = w; } else cur = t;
-    }
-    lines.push({ t: cur, last: true, para: true });
+  for (let p0 of paras) {
+    // a line break inside a paragraph (Enter in the field) starts a new line; the gap between paragraphs only follows the last of them
+    const parts = String(p0).split('\n');
+    parts.forEach((part, pi) => {
+      const p = o.upper ? part.toUpperCase() : part;
+      const words = p.split(/\s+/).filter(Boolean);
+      let cur = '';
+      for (const w of words) {
+        const t = cur ? cur + ' ' + w : w;
+        if (cur && o.width && width(t) > o.width) { lines.push({ t: cur, last: false }); cur = w; } else cur = t;
+      }
+      lines.push({ t: cur, last: true, para: pi === parts.length - 1 });
+    });
   }
   const m = c.measureText('Hg');
   const asc = m.fontBoundingBoxAscent || size * .8, desc = m.fontBoundingBoxDescent || size * .22;
@@ -143,7 +147,7 @@ function textBlock(c, s, o) {
     y += lh;
     if (ln.para && o.paraGap) y += o.paraGap;
   }
-  return lines.length * lh + (o.paraGap || 0) * paras.length;
+  return lines.length * lh + (o.paraGap || 0) * lines.filter(l => l.para).length;
 }
 function drawSpaced(c, s, x, y, sp) {
   if (!sp) { c.fillText(s, x, y); return; }
@@ -215,7 +219,9 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   };
   // which subtitle lines of the book go on the cover
   const src = cv.subtitle_source || 'auto', s1 = cfg.subtitle || '', s2 = cfg.subtitle2 || '';
-  const subs = (src === 'both' ? [s1, s2] : src === 'first' ? [s1] : src === 'second' ? [s2] : src === 'none' ? [] : [s2 || s1]).filter(Boolean);
+  // the cover can carry its own subtitle text (with line breaks) instead of the book's subtitles
+  const own = [cv.subtitle_text, cv.subtitle2_text].filter(t => t && t.trim()).map(t => t.trim());
+  const subs = own.length ? own : (src === 'both' ? [s1, s2] : src === 'first' ? [s1] : src === 'second' ? [s2] : src === 'none' ? [] : [s2 || s1]).filter(Boolean);
   const subt = on('subtitle') ? subs[0] || '' : '', subt2 = on('subtitle') ? subs[1] || '' : '';
   const titleLines = (cv.title_lines && cv.title_lines.length) ? cv.title_lines : [cfg.title || 'Untitled'];
   let style = BK.coverStyle(cfg);
@@ -245,7 +251,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   };
   // one centred text block at a given distance from the top (in % of the cover height), narrowed to the arch at that height
   const archBlock = (txt, o, yPct, sizePct, maxHmm, minSz) => {
-    const topMM = H * yPct / 100, wmm = topMM >= ay + ah ? W - 16 : Math.max(30, Math.min(aw - 14, chord(topMM) - 14));
+    const topMM = H * yPct / 100, wmm = (cv.arch_wide === true || topMM < ay - .5 || topMM >= ay + ah) ? W - 16 : Math.max(30, Math.min(aw - 14, chord(topMM) - 14));
     const oo = fitText(txt, Object.assign({ width: X(wmm) }, o, { size: o.size * sizePct / 100 }), X(maxHmm), minSz);
     const h = measureTxt(txt, oo).h / ppm;
     T(txt, Object.assign({ top: X(topMM), color: inkAt(topMM, topMM + h) }, oo));
@@ -343,7 +349,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const scratch = canvasOf(8, 8).getContext('2d'), panelOn = !isArch && cv.back_shade !== false;
     // arch style: own text positions, text narrowed to the arch at that height
     const yq = isArch ? num('arch_back_quote_y', 17) : (cv.back_quote_y ?? 10.5), ys = isArch ? num('arch_back_sub_y', 25) : (cv.back_subtitle_y ?? 22), yb = isArch ? num('arch_back_blurb_y', 30) : (cv.back_blurb_y ?? 33);
-    const bwMM = isArch ? Math.max(40, aw - 26) : W - 32, wAt = yMM => isArch ? Math.max(30, Math.min(bwMM, chord(yMM) - 14)) : W - 32;
+    const bwMM = isArch ? Math.max(40, aw - 26) : W - 32, wAt = yMM => isArch ? ((cv.arch_wide === true || yMM < ay - .5 || yMM >= ay + ah) ? W - 32 : Math.max(30, Math.min(bwMM, chord(yMM) - 14))) : W - 32;
     // a panel behind text that does not sit wholly on a plain area of the right colour
     const panel = (x, y, w, h, col, alpha) => {
       const pd = X(4), r = X(2); c.save(); c.globalAlpha = alpha; c.fillStyle = col; c.beginPath();
@@ -361,7 +367,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     }
     // subtitles of the book, if the author wants them on the back as well
     const bsrc = cv.back_subtitle_source || 'none';
-    const bsubs = (bsrc === 'both' ? [s1, s2] : bsrc === 'first' ? [s1] : bsrc === 'second' ? [s2] : bsrc === 'auto' ? [s2 || s1] : []).filter(Boolean);
+    const bsubs = (bsrc === 'none' ? [] : own.length ? own : bsrc === 'both' ? [s1, s2] : bsrc === 'first' ? [s1] : bsrc === 'second' ? [s2] : bsrc === 'auto' ? [s2 || s1] : []).filter(Boolean);
     if (bsubs.length && on('subtitle')) {
       const top0 = X(H * ys / 100);
       let top = top0;
