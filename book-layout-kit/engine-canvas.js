@@ -283,7 +283,10 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   const num = (k, d) => { const v = +cv[k]; return Number.isFinite(v) && cv[k] !== '' && cv[k] != null ? v : d; };
   const aw = W * Math.max(30, Math.min(100, num('arch_w', 82))) / 100, ah = H * Math.max(25, Math.min(100, num('arch_h', 84))) / 100;
   const ay = H * Math.max(0, Math.min(40, num('arch_y', 6))) / 100, ar = Math.min(aw / 2, ah);
-  const archFill = cv.arch_fill !== false || !!(cv.arch_image && (side === 'front' || cv.arch_images_back !== false) && BK.findAsset(assets, cv.arch_image));
+  // pictures on the back: the same as the front, their own, or none (older files: the two "use on the back" ticks)
+  const pmode = side === 'front' ? 'same' : (cv.pics_back || ((isArch ? cv.arch_images_back : cv.bands_images_back) === false ? 'none' : 'same'));
+  const pk = k => (pmode === 'own' ? 'bk_' + k : k), pAsset = k => pmode !== 'none' && cv[pk(k)] ? BK.findAsset(assets, cv[pk(k)]) : null;
+  const archFill = cv.arch_fill !== false || !!pAsset('arch_image');
   const chord = y => { const cy = ay + ar; if (y >= cy) return aw; const d = cy - y; return d >= ar ? 0 : aw * Math.sqrt(1 - (d / ar) * (d / ar)); };
   const inArch = (y0, y1) => archFill && y0 >= ay - .01 && y1 <= ay + ah + .01;
   const inkAt = (y0, y1) => inArch(y0, y1) ? cv.ink : cv.band_ink;
@@ -294,23 +297,44 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     c.lineTo(X(x1), X(ay + ah - inset)); c.closePath();
   };
   // optional pictures: one instead of the arch colour (inside), one instead of the page colour (outside)
-  const picsOn = side === 'front' || cv.arch_images_back !== false;
-  const inAsset = picsOn && cv.arch_image ? BK.findAsset(assets, cv.arch_image) : null, bgAsset = picsOn && cv.arch_bg_image ? BK.findAsset(assets, cv.arch_bg_image) : null;
+  const inAsset = pAsset('arch_image'), bgAsset = pAsset('arch_bg_image');
   const tint = (col, pct, x, y, w, h) => { if (pct > 0) { c.save(); c.globalAlpha = Math.min(.95, pct / 100); c.fillStyle = col; c.fillRect(x, y, w, h); c.restore(); } };
   // pictures for the classic bands: one behind the top and bottom band, one in the middle band
-  const outerA = style === 'classic' && cv.band_image && (side === 'front' || cv.bands_images_back !== false) ? BK.findAsset(assets, cv.band_image) : null;
-  const midA = style === 'classic' && cv.band_mid_image && (side === 'front' || cv.bands_images_back !== false) ? BK.findAsset(assets, cv.band_mid_image) : null;
+  const outerA = style === 'classic' ? pAsset('band_image') : null, midA = style === 'classic' ? pAsset('band_mid_image') : null;
+  const midOp = pct('band_mid_opacity', 100), pageOp = pct('arch_page_opacity', 100);
   const bandPic = async (asset, key, x, y, w, h, col) => {
-    const im = await BK.loadImg(asset.dataURL);
+    const im = await BK.loadImg(asset.dataURL); key = pk(key);
     drawCoverFit(c, im, x, y, w, h, num(key + '_x', 50), num(key + '_y', 50), num(key + '_zoom', 100));
     tint(col, num(key + '_tint', 25), x, y, w, h);
   };
+  // classic bands with pictures. A picture in one place runs through the other bands, which get an opacity (band_opacity for the outer ones, band_mid_opacity for the middle)
+  const classicBands = async (topH, midH, botH) => {
+    const FR = [left, -X(bd.t), fullW, X(H + bd.t + bd.b)], mid = [left, X(topH), fullW, X(midH) + 1];
+    const clipMid = async (fn) => { c.save(); c.beginPath(); c.rect(...mid); c.clip(); await fn(); c.restore(); };
+    if (outerA) {
+      await bandPic(outerA, 'band_image', ...FR, cv.band);
+      if (midA) await clipMid(() => bandPic(midA, 'band_mid_image', ...mid, cv.mid));
+      else band(topH, midH, cv.mid, midOp);
+    } else if (midA) {
+      // the middle picture runs behind the top and bottom band too
+      const im = await BK.loadImg(midA.dataURL), k = pk('band_mid_image');
+      drawCoverFit(c, im, ...FR, num(k + '_x', 50), num(k + '_y', 50), num(k + '_zoom', 100));
+      tint(cv.mid, num(k + '_tint', 25), ...mid);
+      if (topH > 0) band(0, topH, cv.band, bandOp); if (botH > 0) band(H - botH, botH + 1, cv.band, bandOp);
+    } else { if (topH > 0) band(0, topH, cv.band); if (botH > 0) band(H - botH, botH + 1, cv.band); band(topH, midH, cv.mid); }
+  };
   const drawArch = async () => {
-    band(0, H, cv.band);
+    // a picture only inside the arch can also run through the page around it: then the page colour gets an opacity
+    const runThrough = inAsset && !bgAsset && pageOp < 1, FR = [left, -X(bd.t), fullW, X(H + bd.t + bd.b)];
+    if (runThrough) {
+      const im = await BK.loadImg(inAsset.dataURL);
+      drawCoverFit(c, im, ...FR, num(pk('arch_image') + '_x', 50), num(pk('arch_image') + '_y', 50), num(pk('arch_image') + '_zoom', 100));
+      c.save(); c.globalAlpha = pageOp; c.fillStyle = cv.band; c.fillRect(...FR); c.restore();
+    } else band(0, H, cv.band);
     if (bgAsset) {
-      const im = await BK.loadImg(bgAsset.dataURL);
-      drawCoverFit(c, im, left, -X(bd.t), fullW, X(H + bd.t + bd.b), num('arch_bg_image_x', 50), num('arch_bg_image_y', 50), num('arch_bg_image_zoom', 100));
-      tint(cv.band, num('arch_bg_tint', 25), left, -X(bd.t), fullW, X(H + bd.t + bd.b));
+      const im = await BK.loadImg(bgAsset.dataURL), bk = pk('arch_bg_image');
+      drawCoverFit(c, im, ...FR, num(bk + '_x', 50), num(bk + '_y', 50), num(bk + '_zoom', 100));
+      tint(cv.band, num(bk + '_tint', 25), ...FR);
     }
     if (archFill) {
       archPath(0);
@@ -318,8 +342,10 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       if (inAsset) {
         const im = await BK.loadImg(inAsset.dataURL), x0 = (W - aw) / 2;
         c.save(); c.clip();
-        drawCoverFit(c, im, X(x0), X(ay), X(aw), X(ah), num('arch_image_x', 50), num('arch_image_y', 50), num('arch_image_zoom', 100));
-        tint(cv.mid, num('arch_image_tint', 25), X(x0), X(ay), X(aw), X(ah));
+        const ik = pk('arch_image');
+        if (runThrough) drawCoverFit(c, im, ...FR, num(ik + '_x', 50), num(ik + '_y', 50), num(ik + '_zoom', 100));
+        else drawCoverFit(c, im, X(x0), X(ay), X(aw), X(ah), num(ik + '_x', 50), num(ik + '_y', 50), num(ik + '_zoom', 100));
+        tint(cv.mid, num(ik + '_tint', 25), X(x0), X(ay), X(aw), X(ah));
         c.restore();
       } else { c.fillStyle = cv.mid; c.fill(); }
       c.restore();
@@ -405,10 +431,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       // the top and bottom band can each be made thicker or thinner (100 = the classic proportions); the middle band takes what is left
       const tb = Math.max(0, Math.min(150, num('top_band', 100))) / 100, bb = Math.max(0, Math.min(150, num('bottom_band', 100))) / 100;
       const topH = H * .295 * tb, botH = H * .295 * bb, midH = H - topH - botH, dy = (topH - botH) / 2;
-      if (outerA) await bandPic(outerA, 'band_image', left, -X(bd.t), fullW, X(H + bd.t + bd.b), cv.band);
-      else { if (topH > 0) band(0, topH, cv.band); if (botH > 0) band(H - botH, botH + 1, cv.band); }
-      if (midA) { c.save(); c.beginPath(); c.rect(left, X(topH), fullW, X(midH) + 1); c.clip(); await bandPic(midA, 'band_mid_image', left, X(topH), fullW, X(midH) + 1, cv.mid); c.restore(); }
-      else band(topH, midH, cv.mid);
+      await classicBands(topH, midH, botH);
       if (cv.label && on('label') && topH > 12) T(cv.label, { top: lblTop(X(topH * .39)), size: 9, spacing: .45, upper: true, color: cv.band_ink });
       if (on('title')) T(titleLines, Object.assign({ top: X(H * .37 + dy), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(Math.min(H * .135, midH * .33)), 12)));
       if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525 + dy), X(24), Math.max(1, .7 * pxpt)); }
@@ -422,18 +445,13 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, bbh = isArch ? 0 : H * .295 * bbs;
     const bimg = !isArch && cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
     if (isArch) await drawArch();
-    else if (outerA && !bimg && bbh > 0) {
-      await bandPic(outerA, 'band_image', left, -X(bd.t), fullW, X(H + bd.t + bd.b), cv.band);
-      if (midA) { c.save(); c.beginPath(); c.rect(left, X(bbh), fullW, X(H - 2 * bbh) + 1); c.clip(); await bandPic(midA, 'band_mid_image', left, X(bbh), fullW, X(H - 2 * bbh) + 1, cv.mid); c.restore(); }
-      else band(bbh, H - 2 * bbh + 1, cv.mid);
-    } else if (midA && !bimg) {
-      c.save(); c.beginPath(); c.rect(left, X(bbh), fullW, X(H - 2 * bbh) + 1); c.clip(); await bandPic(midA, 'band_mid_image', left, X(bbh), fullW, X(H - 2 * bbh) + 1, cv.mid); c.restore();
-    } else if (bimg) {
+    else if ((outerA || midA) && !bimg) await classicBands(bbh, H - 2 * bbh, bbh);
+    else if (bimg) {
       const im = await BK.loadImg(bimg.dataURL), see = bbh > 0 && bandOp < 1;
       const y0 = bbh > 0 && !see ? X(bbh) : -X(bd.t), y1 = bbh > 0 && !see ? X(H - bbh) : X(H + bd.b);
       drawCoverFit(c, im, left, y0, fullW, y1 - y0, cv.back_image_x ?? 50, cv.back_image_y ?? 50, num('back_image_zoom', 100));
     } else band(bbh, H - 2 * bbh + 1, cv.mid);
-    if (bbh > 0 && !(outerA && !bimg)) { const a = bimg ? bandOp : 1; band(0, bbh, cv.band, a); band(H - bbh, bbh + 1, cv.band, a); }
+    if (bbh > 0 && !((outerA || midA) && !bimg)) { const a = bimg ? bandOp : 1; band(0, bbh, cv.band, a); band(H - bbh, bbh + 1, cv.band, a); }
     const scratch = canvasOf(8, 8).getContext('2d'), panelOn = !isArch && cv.back_shade !== false;
     // arch style: own text positions, text narrowed to the arch at that height
     const yq = isArch ? num('arch_back_quote_y', 17) : (cv.back_quote_y ?? 10.5), ys = isArch ? num('arch_back_sub_y', 25) : (cv.back_subtitle_y ?? 22), yb = isArch ? num('arch_back_blurb_y', 30) : (cv.back_blurb_y ?? 33);

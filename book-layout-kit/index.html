@@ -654,6 +654,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Top band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="top_band" aria-label="Top band height"><output></output></div></div>
           <div class="field"><span class="lab">Bottom band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="bottom_band" aria-label="Bottom band height"><output></output></div></div>
           <h3 class="subh" style="margin:14px 0 0;font:600 12px var(--f-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Pictures</h3>
+                    <div class="field"><span class="lab">Middle band opacity (when only the outer bands have a picture, it runs through here)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_mid_opacity" aria-label="Middle band opacity (when only the outer bands have a picture, it runs through here)"><output></output></div></div>
+          <div class="field"><span class="lab">Outer bands opacity (when only the middle band has a picture, it runs through here)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_opacity" aria-label="Outer bands opacity (when only the middle band has a picture, it runs through here)"><output></output></div></div>
           <p class="hint">A picture can replace the colour of the outer bands (top and bottom) and/or of the middle band. The colour then only tints the picture, which keeps the text readable.</p>
           <div class="coverimg" style="margin-top:10px">
             <div class="thumb" id="bandOutThumb"></div>
@@ -681,12 +683,13 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_mid_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="band_mid_image_zoom" aria-label="Picture size"><output></output></div></div>
           <div class="field"><span class="lab">Middle band colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_mid_image_tint" aria-label="Tint"><output></output></div></div>
-          <label class="check"><input type="checkbox" data-cb="bands_images_back"> Use these pictures on the back cover too</label>
+          <div class="field"><label for="c-picsback">Pictures on the back cover</label><select id="c-picsback" data-cs="pics_back"><option value="">The same as the front</option><option value="own">Their own pictures (choose below)</option><option value="none">No pictures on the back</option></select></div>
         </div>
         <div class="sect" id="coverArchSect">
           <h2>Arch</h2>
           <p class="hint">Colours for this style: Band is the page, Middle band is the arch, Text on middle is the text inside the arch, Text on band is the text outside it. Every position is the distance from the top of the cover; every size is a percentage of the normal size.</p>
           <div class="field"><span class="lab">Arch opacity (lower lets the page colour or picture show through)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_opacity" aria-label="Arch opacity (lower lets the page colour or picture show through)"><output></output></div></div>
+          <div class="field"><span class="lab">Page opacity (when the picture is only inside the arch, it runs through the page too)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_page_opacity" aria-label="Page opacity (when the picture is only inside the arch, it runs through the page too)"><output></output></div></div>
           <div class="field"><span class="lab">Arch width (% of the cover width)</span><div class="range"><input type="range" min="30" max="100" step="1" data-pos="arch_w" aria-label="Arch width (% of the cover width)"><output></output></div></div>
           <div class="field"><span class="lab">Arch height (% of the cover height)</span><div class="range"><input type="range" min="25" max="100" step="1" data-pos="arch_h" aria-label="Arch height (% of the cover height)"><output></output></div></div>
           <div class="field"><span class="lab">Arch: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Arch: distance from the top"><output></output></div></div>
@@ -721,7 +724,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="arch_bg_image_zoom" aria-label="Picture size"><output></output></div></div>
           <div class="field"><span class="lab">Colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_bg_tint" aria-label="Colour opacity over the picture (0% = picture only)"><output></output></div></div>
-          <label class="check"><input type="checkbox" data-cb="arch_images_back"> Use the pictures on the back cover too</label>
+          <div class="field"><label for="c-picsback2">Pictures on the back cover</label><select id="c-picsback2" data-cs="pics_back"><option value="">The same as the front</option><option value="own">Their own pictures (choose below)</option><option value="none">No pictures on the back</option></select></div>
           <details class="grp"><summary>Front: text position</summary>
           <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
           <div class="field"><span class="lab">Title</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_title_y" aria-label="Title"><output></output></div></div>
@@ -790,6 +793,65 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           </div>
           <div class="field"><label for="c-sub1">Subtitle on the cover (optional, Enter = new line; replaces the book's subtitle on the cover)</label><textarea id="c-sub1" data-ck="subtitle_text" rows="2"></textarea></div>
           <div class="field"><label for="c-sub2">Second subtitle on the cover (optional, Enter = new line)</label><textarea id="c-sub2" data-ck="subtitle2_text" rows="2"></textarea></div>
+        </div>
+        <div class="sect" id="backOwnSect">
+          <h2>Back cover pictures</h2>
+          <div id="backOwnBands">
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="bkBandOutThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Outer bands (top and bottom)</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="bkBandOutIn">Choose picture</label><button class="btn small ghost" id="bkBandOutClear" type="button">Remove</button></div>
+              <input type="file" id="bkBandOutIn" hidden accept="image/*">
+              <p class="hint"></p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="bk_band_image_zoom" aria-label="Picture size"><output></output></div></div>
+          <div class="field"><span class="lab">Band colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_image_tint" aria-label="Band colour opacity over the picture (0% = picture only)"><output></output></div></div>
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="bkBandMidThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Middle band</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="bkBandMidIn">Choose picture</label><button class="btn small ghost" id="bkBandMidClear" type="button">Remove</button></div>
+              <input type="file" id="bkBandMidIn" hidden accept="image/*">
+              <p class="hint"></p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_mid_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_mid_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="bk_band_mid_image_zoom" aria-label="Picture size"><output></output></div></div>
+          <div class="field"><span class="lab">Middle band colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_band_mid_image_tint" aria-label="Middle band colour opacity over the picture (0% = picture only)"><output></output></div></div>
+          </div>
+          <div id="backOwnArch">
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="bkArchThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Inside the arch</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="bkArchIn">Choose picture</label><button class="btn small ghost" id="bkArchClear" type="button">Remove</button></div>
+              <input type="file" id="bkArchIn" hidden accept="image/*">
+              <p class="hint"></p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="bk_arch_image_zoom" aria-label="Picture size"><output></output></div></div>
+          <div class="field"><span class="lab">Colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_image_tint" aria-label="Colour opacity over the picture (0% = picture only)"><output></output></div></div>
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="bkArchBgThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Outside the arch (the page)</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="bkArchBgIn">Choose picture</label><button class="btn small ghost" id="bkArchBgClear" type="button">Remove</button></div>
+              <input type="file" id="bkArchBgIn" hidden accept="image/*">
+              <p class="hint"></p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_bg_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_bg_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="bk_arch_bg_image_zoom" aria-label="Picture size"><output></output></div></div>
+          <div class="field"><span class="lab">Colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="bk_arch_bg_image_tint" aria-label="Colour opacity over the picture (0% = picture only)"><output></output></div></div>
+          </div>
         </div>
         <div class="sect" id="backPhotoSect">
           <h2>Back cover picture and bands</h2>

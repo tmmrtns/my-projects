@@ -192,7 +192,7 @@ BK.defaults = () => ({
   bw_maps: false, hyphenate: true, include_covers: true, description: '',
   kdp: { on: false, paper: 'white', pages: 0, spine_text: true, barcode: true, barcode_image: '' },
   cover: { style: 'classic', band: '#2f4858', mid: '#f4efe6', ink: '#1a1a1a', band_ink: '#ffffff', label: '', footer: '',
-    title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '', qr_pos: 'right', qr_text_rotate: false, band_opacity: 100, image_zoom: 100, back_image_zoom: 100, band_image: '', band_image_x: 50, band_image_y: 50, band_image_zoom: 100, band_image_tint: 25, band_mid_image: '', band_mid_image_x: 50, band_mid_image_y: 50, band_mid_image_zoom: 100, band_mid_image_tint: 25, bands_images_back: true, qr_scheme: 'classic', qr_fg: '#000000', qr_bg: '#ffffff',
+    title_lines: [], image: '', image_x: 50, image_y: 50, band_size: 100, band_shade: true, subtitle_source: 'auto', back_subtitle_source: 'none', back_subtitle_y: 22, back_image: '', back_image_x: 50, back_image_y: 50, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_shade: true, hide: {}, quote: '', blurb: [], qr: '', qr_text: '', qr_pos: 'right', qr_text_rotate: false, band_opacity: 100, band_mid_opacity: 100, arch_page_opacity: 100, pics_back: '', bk_band_image: '', bk_band_image_x: 50, bk_band_image_y: 50, bk_band_image_zoom: 100, bk_band_image_tint: 25, bk_band_mid_image: '', bk_band_mid_image_x: 50, bk_band_mid_image_y: 50, bk_band_mid_image_zoom: 100, bk_band_mid_image_tint: 25, bk_arch_image: '', bk_arch_image_x: 50, bk_arch_image_y: 50, bk_arch_image_zoom: 100, bk_arch_image_tint: 25, bk_arch_bg_image: '', bk_arch_bg_image_x: 50, bk_arch_bg_image_y: 50, bk_arch_bg_image_zoom: 100, bk_arch_bg_image_tint: 25,  image_zoom: 100, back_image_zoom: 100, band_image: '', band_image_x: 50, band_image_y: 50, band_image_zoom: 100, band_image_tint: 25, band_mid_image: '', band_mid_image_x: 50, band_mid_image_y: 50, band_mid_image_zoom: 100, band_mid_image_tint: 25, bands_images_back: true, qr_scheme: 'classic', qr_fg: '#000000', qr_bg: '#ffffff',
     top_band: 100, bottom_band: 100,
     arch_w: 82, arch_opacity: 100, arch_h: 84, arch_y: 6, arch_fill: true, arch_line: true,
     arch_label_y: 14, arch_title_y: 30, arch_sub_y: 47, arch_author_y: 72, arch_footer_y: 94,
@@ -602,6 +602,7 @@ BK.referencedImages = function (model, cfg) {
   if (cfg.cover && cfg.cover.logo) add(cfg.cover.logo, 'cover');
   if (cfg.cover && cfg.cover.arch_image) add(cfg.cover.arch_image, 'cover');
   if (cfg.cover && cfg.cover.band_image) add(cfg.cover.band_image, 'cover');
+  for (const k of ['bk_band_image', 'bk_band_mid_image', 'bk_arch_image', 'bk_arch_bg_image']) if (cfg.cover && cfg.cover[k]) add(cfg.cover[k], 'cover');
   if (cfg.cover && cfg.cover.band_mid_image) add(cfg.cover.band_mid_image, 'cover');
   if (cfg.cover && cfg.cover.arch_bg_image) add(cfg.cover.arch_bg_image, 'cover');
   return out;
