@@ -778,6 +778,7 @@ function fillForm() {
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
   const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
+  for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image']]) { const pa = c.cover[key] ? BK.findAsset(S.assets, c.cover[key]) : null; $('#' + id + 'Thumb').style.backgroundImage = pa ? `url("${pa.dataURL}")` : 'none'; }
   $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
   logoStatus();
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
@@ -1595,6 +1596,17 @@ $('#logoTree').addEventListener('click', async () => {
     const a = await addImage('tree-of-life.png', blob); if (a) useLogo('tree-of-life.png');
   } catch (err) { console.error(err); toast('The tree logo could not be loaded (' + (err && err.message || err) + '). Use Choose logo instead.'); }
 });
+// pictures for the arch cover: inside the arch (arch_image) and outside it (arch_bg_image)
+for (const [id, key] of [['arch', 'arch_image'], ['archBg', 'arch_bg_image']]) {
+  $('#' + id + 'In').addEventListener('change', async e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    const a = await addImage(f.name, f);
+    if (!a) return;
+    S.cfg.cover[key] = f.name; fillForm(); renderAssets(); changed(); setView('cover');
+  });
+  $('#' + id + 'Clear').addEventListener('click', () => { S.cfg.cover[key] = ''; fillForm(); changed(); });
+}
 $('#logoClear').addEventListener('click', () => { S.cfg.cover.logo = ''; fillForm(); changed(); });
 // a logo that is chosen but not placed anywhere shows nothing, so the first time it goes at the bottom of the front
 function useLogo(name) {

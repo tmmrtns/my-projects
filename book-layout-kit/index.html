@@ -660,6 +660,33 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <label class="check"><input type="checkbox" data-cb="arch_fill"> Fill the arch (off: outline only)</label>
           <label class="check"><input type="checkbox" data-cb="arch_line"> Thin line inside the arch</label>
           <label class="check"><input type="checkbox" data-cb="arch_wide"> Let text run wider than the arch (text above or below the arch always may)</label>
+          <h3 class="subh" style="margin:14px 0 0;font:600 12px var(--f-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Pictures</h3>
+          <p class="hint">A picture can replace the colour inside the arch and/or the colour of the page around it. Colours are then only used for the text and as a tint over the picture.</p>
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="archThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Inside the arch</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="archIn">Choose picture</label><button class="btn small ghost" id="archClear" type="button">Remove</button></div>
+              <input type="file" id="archIn" hidden accept="image/*">
+              <p class="hint">Replaces the arch colour. Portrait pictures fit best.</p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Tint with the colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="arch_image_tint" aria-label="Tint with the colour (readability of the text)"><output></output></div></div>
+          <div class="coverimg" style="margin-top:10px">
+            <div class="thumb" id="archBgThumb"></div>
+            <div style="display:grid;gap:8px">
+              <strong style="font-size:13px">Outside the arch (the page)</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="archBgIn">Choose picture</label><button class="btn small ghost" id="archBgClear" type="button">Remove</button></div>
+              <input type="file" id="archBgIn" hidden accept="image/*">
+              <p class="hint">Replaces the page colour around the arch.</p>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_x" aria-label="Crop left–right"><output></output></div></div>
+          <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_y" aria-label="Crop top–bottom"><output></output></div></div>
+          <div class="field"><span class="lab">Tint with the colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="arch_bg_tint" aria-label="Tint with the colour (readability of the text)"><output></output></div></div>
+          <label class="check"><input type="checkbox" data-cb="arch_images_back"> Use the pictures on the back cover too</label>
           <details class="grp"><summary>Front: text position</summary>
           <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
           <div class="field"><span class="lab">Title</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_title_y" aria-label="Title"><output></output></div></div>
@@ -710,6 +737,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         </div>
         <div class="sect">
           <h2>Front</h2>
+          <div class="field"><label for="c-lines">Title broken over lines (optional: one line of the title per row)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
           <div class="field"><label for="c-subsrc">Subtitles from the book on the cover</label>
             <select id="c-subsrc" data-cs="subtitle_source">
               <option value="auto">Second subtitle if there is one, else the subtitle</option>
@@ -725,7 +753,6 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           </div>
           <div class="field"><label for="c-sub1">Subtitle on the cover (optional, Enter = new line; replaces the book's subtitle on the cover)</label><textarea id="c-sub1" data-ck="subtitle_text" rows="2"></textarea></div>
           <div class="field"><label for="c-sub2">Second subtitle on the cover (optional, Enter = new line)</label><textarea id="c-sub2" data-ck="subtitle2_text" rows="2"></textarea></div>
-          <div class="field"><label for="c-lines">Title broken over lines (optional: one line of the title per row)</label><textarea id="c-lines" data-clines="title_lines" rows="2"></textarea></div>
         </div>
         <div class="sect" id="backPhotoSect">
           <h2>Back cover picture and bands</h2>

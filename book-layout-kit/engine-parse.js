@@ -198,6 +198,7 @@ BK.defaults = () => ({
     arch_label_y: 14, arch_title_y: 30, arch_sub_y: 47, arch_author_y: 72, arch_footer_y: 94,
     arch_label_size: 100, arch_title_size: 100, arch_sub_size: 100, arch_author_size: 100, arch_footer_size: 100,
     arch_back_quote_y: 17, arch_back_sub_y: 25, arch_back_blurb_y: 30, arch_back_quote_size: 100, arch_back_blurb_size: 100, arch_wide: false, subtitle_text: '', subtitle2_text: '',
+    arch_image: '', arch_image_x: 50, arch_image_y: 50, arch_image_tint: 25, arch_bg_image: '', arch_bg_image_x: 50, arch_bg_image_y: 50, arch_bg_tint: 25, arch_images_back: true,
     logo: '', logo_front_top: false, logo_front_bottom: false, logo_back_top: false, logo_back_bottom: false, logo_size: 16, logo_margin: 10, logo_color: 'text', logo_invert: false },
   roles: {},
   part_intro_off: {},
@@ -599,6 +600,8 @@ BK.referencedImages = function (model, cfg) {
   if (cfg.cover && cfg.cover.image) add(cfg.cover.image, 'cover');
   if (cfg.cover && cfg.cover.back_image) add(cfg.cover.back_image, 'cover');
   if (cfg.cover && cfg.cover.logo) add(cfg.cover.logo, 'cover');
+  if (cfg.cover && cfg.cover.arch_image) add(cfg.cover.arch_image, 'cover');
+  if (cfg.cover && cfg.cover.arch_bg_image) add(cfg.cover.arch_bg_image, 'cover');
   return out;
 };
 })(typeof window !== 'undefined' ? window : globalThis);

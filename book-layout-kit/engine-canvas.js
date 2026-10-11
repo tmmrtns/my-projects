@@ -231,7 +231,8 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   const isArch = style === 'arch';
   const num = (k, d) => { const v = +cv[k]; return Number.isFinite(v) && cv[k] !== '' && cv[k] != null ? v : d; };
   const aw = W * Math.max(30, Math.min(100, num('arch_w', 82))) / 100, ah = H * Math.max(25, Math.min(100, num('arch_h', 84))) / 100;
-  const ay = H * Math.max(0, Math.min(40, num('arch_y', 6))) / 100, ar = Math.min(aw / 2, ah), archFill = cv.arch_fill !== false;
+  const ay = H * Math.max(0, Math.min(40, num('arch_y', 6))) / 100, ar = Math.min(aw / 2, ah);
+  const archFill = cv.arch_fill !== false || !!(cv.arch_image && (side === 'front' || cv.arch_images_back !== false) && BK.findAsset(assets, cv.arch_image));
   const chord = y => { const cy = ay + ar; if (y >= cy) return aw; const d = cy - y; return d >= ar ? 0 : aw * Math.sqrt(1 - (d / ar) * (d / ar)); };
   const inArch = (y0, y1) => archFill && y0 >= ay - .01 && y1 <= ay + ah + .01;
   const inkAt = (y0, y1) => inArch(y0, y1) ? cv.ink : cv.band_ink;
@@ -241,10 +242,27 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     c.ellipse(X(W / 2), X(ay + ar), X(aw / 2 - inset), X(r), 0, Math.PI, 2 * Math.PI);
     c.lineTo(X(x1), X(ay + ah - inset)); c.closePath();
   };
-  const drawArch = () => {
+  // optional pictures: one instead of the arch colour (inside), one instead of the page colour (outside)
+  const picsOn = side === 'front' || cv.arch_images_back !== false;
+  const inAsset = picsOn && cv.arch_image ? BK.findAsset(assets, cv.arch_image) : null, bgAsset = picsOn && cv.arch_bg_image ? BK.findAsset(assets, cv.arch_bg_image) : null;
+  const tint = (col, pct, x, y, w, h) => { if (pct > 0) { c.save(); c.globalAlpha = Math.min(.95, pct / 100); c.fillStyle = col; c.fillRect(x, y, w, h); c.restore(); } };
+  const drawArch = async () => {
     band(0, H, cv.band);
-    if (archFill) { archPath(0); c.fillStyle = cv.mid; c.fill(); }
-    else { archPath(0); c.strokeStyle = cv.band_ink; c.lineWidth = Math.max(1, .8 * pxpt); c.globalAlpha = .85; c.stroke(); c.globalAlpha = 1; }
+    if (bgAsset) {
+      const im = await BK.loadImg(bgAsset.dataURL);
+      drawCoverFit(c, im, left, -X(bd.t), fullW, X(H + bd.t + bd.b), num('arch_bg_image_x', 50), num('arch_bg_image_y', 50));
+      tint(cv.band, num('arch_bg_tint', 25), left, -X(bd.t), fullW, X(H + bd.t + bd.b));
+    }
+    if (archFill) {
+      archPath(0);
+      if (inAsset) {
+        const im = await BK.loadImg(inAsset.dataURL), x0 = (W - aw) / 2;
+        c.save(); c.clip();
+        drawCoverFit(c, im, X(x0), X(ay), X(aw), X(ah), num('arch_image_x', 50), num('arch_image_y', 50));
+        tint(cv.mid, num('arch_image_tint', 25), X(x0), X(ay), X(aw), X(ah));
+        c.restore();
+      } else { c.fillStyle = cv.mid; c.fill(); }
+    } else { archPath(0); c.strokeStyle = cv.band_ink; c.lineWidth = Math.max(1, .8 * pxpt); c.globalAlpha = .85; c.stroke(); c.globalAlpha = 1; }
     if (cv.arch_line !== false) {
       archPath(archFill ? 5.5 : 3.5); c.strokeStyle = archFill ? cv.ink : cv.band_ink; c.lineWidth = Math.max(1, .6 * pxpt); c.globalAlpha = archFill ? .55 : .45; c.stroke(); c.globalAlpha = 1;
     }
@@ -277,7 +295,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
   const lblTop = t => Math.max(t, lt ? X(lt + 4) : 0), ftrTop = (t, fh) => Math.min(t, lb < H ? X(lb - 4) - fh : 1e9);
   if (side === 'front') {
     if (isArch) {
-      drawArch();
+      await drawArch();
       const sz = k => num(k, 100);
       if (cv.label && on('label')) archBlock(cv.label, { size: 8, spacing: .4, upper: true, lh: 1.3 }, num('arch_label_y', 14), sz('arch_label_size'), H * .1, 4);
       if (on('title')) archBlock(titleLines, { size: 25, lh: 1.15, spacing: .06, upper: true }, num('arch_title_y', 24), sz('arch_title_size'), H * .3, 8);
@@ -339,7 +357,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     // back: bands above and below (thinner or none), the middle in colour or a picture, text that can be moved
     const bbs = Math.max(0, Math.min(100, cv.back_band_size ?? 100)) / 100, bbh = isArch ? 0 : H * .295 * bbs;
     const bimg = !isArch && cv.back_image ? BK.findAsset(assets, cv.back_image) : null;
-    if (isArch) drawArch();
+    if (isArch) await drawArch();
     else if (bimg) {
       const im = await BK.loadImg(bimg.dataURL);
       const y0 = bbh > 0 ? X(bbh) : -X(bd.t), y1 = bbh > 0 ? X(H - bbh) : X(H + bd.b);
