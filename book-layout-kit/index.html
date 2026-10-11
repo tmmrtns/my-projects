@@ -379,6 +379,8 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
   .bar .status { display: none; }
 }
 .ol-part .pintro{margin-top:4px;font-size:12px;font-weight:400;display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.grp { margin: 8px 0; border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 4px 12px 8px; }
+.grp summary { cursor: pointer; font: 500 11px var(--f-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 6px 0; }
 </style>
 
 <div class="app">
@@ -602,7 +604,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         <div class="sect">
           <h2>Style</h2>
           <div class="seg" data-seg="cover.style">
-            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="photo">Photo</button><button type="button" data-v="auto">Automatic</button></div>
+            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch</button><button type="button" data-v="photo">Photo</button><button type="button" data-v="auto">Automatic</button></div>
           <p class="hint" id="coverStyleHint"></p>
         </div>
         <div class="sect">
@@ -614,6 +616,42 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <label class="color"><input type="color" data-col="mid" aria-label="Middle band"> Middle band <input type="text" class="hex" data-hex="mid" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Middle band colour code"></label>
             <label class="color"><input type="color" data-col="ink" aria-label="Text on middle"> Text on middle <input type="text" class="hex" data-hex="ink" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Text on middle colour code"></label>
           </div>
+        </div>
+        <div class="sect" id="coverBandsSect">
+          <h2>Bands</h2>
+          <p class="hint">Make the top and the bottom band thicker or thinner. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>
+          <div class="field"><span class="lab">Top band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="top_band" aria-label="Top band height"><output></output></div></div>
+          <div class="field"><span class="lab">Bottom band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="bottom_band" aria-label="Bottom band height"><output></output></div></div>
+        </div>
+        <div class="sect" id="coverArchSect">
+          <h2>Arch</h2>
+          <p class="hint">Colours for this style: Band is the page, Middle band is the arch, Text on middle is the text inside the arch, Text on band is the text outside it. Every position is the distance from the top of the cover; every size is a percentage of the normal size.</p>
+          <div class="field"><span class="lab">Arch width (% of the cover width)</span><div class="range"><input type="range" min="30" max="100" step="1" data-pos="arch_w" aria-label="Arch width (% of the cover width)"><output></output></div></div>
+          <div class="field"><span class="lab">Arch height (% of the cover height)</span><div class="range"><input type="range" min="25" max="100" step="1" data-pos="arch_h" aria-label="Arch height (% of the cover height)"><output></output></div></div>
+          <div class="field"><span class="lab">Arch: distance from the top</span><div class="range"><input type="range" min="0" max="40" step="1" data-pos="arch_y" aria-label="Arch: distance from the top"><output></output></div></div>
+          <label class="check"><input type="checkbox" data-cb="arch_fill"> Fill the arch (off: outline only)</label>
+          <label class="check"><input type="checkbox" data-cb="arch_line"> Thin line inside the arch</label>
+          <details class="grp"><summary>Front: text position</summary>
+          <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
+          <div class="field"><span class="lab">Title</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_title_y" aria-label="Title"><output></output></div></div>
+          <div class="field"><span class="lab">Subtitles</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_sub_y" aria-label="Subtitles"><output></output></div></div>
+          <div class="field"><span class="lab">Author</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_author_y" aria-label="Author"><output></output></div></div>
+          <div class="field"><span class="lab">Footer line</span><div class="range"><input type="range" min="0" max="98" step="1" data-pos="arch_footer_y" aria-label="Footer line"><output></output></div></div>
+          </details>
+          <details class="grp"><summary>Front: text size</summary>
+          <div class="field"><span class="lab">Label size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_label_size" aria-label="Label size"><output></output></div></div>
+          <div class="field"><span class="lab">Title size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_title_size" aria-label="Title size"><output></output></div></div>
+          <div class="field"><span class="lab">Subtitle size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_sub_size" aria-label="Subtitle size"><output></output></div></div>
+          <div class="field"><span class="lab">Author size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_author_size" aria-label="Author size"><output></output></div></div>
+          <div class="field"><span class="lab">Footer size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_footer_size" aria-label="Footer size"><output></output></div></div>
+          </details>
+          <details class="grp"><summary>Back: text position and size</summary>
+          <div class="field"><span class="lab">Quote: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_quote_y" aria-label="Quote: distance from the top"><output></output></div></div>
+          <div class="field"><span class="lab">Subtitles: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_sub_y" aria-label="Subtitles: distance from the top"><output></output></div></div>
+          <div class="field"><span class="lab">Blurb: distance from the top</span><div class="range"><input type="range" min="0" max="90" step="1" data-pos="arch_back_blurb_y" aria-label="Blurb: distance from the top"><output></output></div></div>
+          <div class="field"><span class="lab">Quote size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_back_quote_size" aria-label="Quote size"><output></output></div></div>
+          <div class="field"><span class="lab">Blurb size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="arch_back_blurb_size" aria-label="Blurb size"><output></output></div></div>
+          </details>
         </div>
         <div class="sect" id="coverPhotoSect">
           <h2>Cover photo</h2>
