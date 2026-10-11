@@ -53,6 +53,11 @@ header.bar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; 
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
 .btn.primary:hover { filter: brightness(1.08); }
 .btn:disabled { opacity: .55; cursor: default; }
+.btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+#coverLogoSect .check:has(input:checked) { color: var(--accent); font-weight: 600; }
+.logostate { margin: 2px 0 8px; padding: 7px 10px; border-radius: 6px; font-size: 13px; border: 1px solid var(--line); }
+.logostate.on { border-color: var(--accent); background: var(--accent-soft, rgba(47,72,88,.1)); font-weight: 600; }
+.logostate.warn { border-color: var(--copper); }
 .btn.small { padding: 4px 9px; font-size: 12.5px; }
 .btn.ghost { background: transparent; }
 
@@ -619,10 +624,11 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         </div>
         <div class="sect" id="coverLogoSect">
           <h2>Logo</h2>
+          <div class="logostate" id="logoState" role="status"></div>
           <div class="coverimg">
             <div class="thumb" id="logoThumb" style="background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#1a1a1a"></div>
             <div style="display:grid;gap:8px">
-              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="logoIn">Choose logo</label><button class="btn small" id="logoTree" type="button">Use the tree logo</button><button class="btn small ghost" id="logoClear" type="button">Remove</button></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn small" for="logoIn" id="logoOwn">Choose logo</label><button class="btn small" id="logoTree" type="button" aria-pressed="false">Use the tree logo</button><button class="btn small ghost" id="logoClear" type="button">Remove</button></div>
               <input type="file" id="logoIn" hidden accept="image/*">
               <p class="hint">A small logo, centred. A white drawing on a black ground (or the other way round, see Invert) takes the text colour of the place where it sits.</p>
             </div>

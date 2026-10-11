@@ -778,7 +778,8 @@ function fillForm() {
   const a = c.cover.image ? BK.findAsset(S.assets, c.cover.image) : null;
   $('#coverThumb').style.backgroundImage = a ? `url("${a.dataURL}")` : 'none';
   const la = c.cover.logo ? BK.findAsset(S.assets, c.cover.logo) : null;
-  $('#logoThumb').style.backgroundImage = la ? `url("${la.dataURL}")` : 'none';
+  $('#logoThumb').style.backgroundImage = la ? `url(\"${la.dataURL}\")` : 'none';
+  logoStatus();
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   const st = BK.coverStyle(c);
@@ -792,9 +793,22 @@ function fillForm() {
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }
 
+function logoStatus() {
+  const c = S.cfg;
+  // which logo is in use, and where: shown on the buttons and in one line, so it is clear at a glance whether a logo is on
+  const isTree = !!c.cover.logo && /^tree-of-life\.png$/i.test(c.cover.logo), isOwn = !!c.cover.logo && !isTree;
+  $('#logoTree').setAttribute('aria-pressed', String(isTree));
+  $('#logoOwn').setAttribute('aria-pressed', String(isOwn));
+  const where = [c.cover.logo_front_top && 'front top', c.cover.logo_front_bottom && 'front bottom', c.cover.logo_back_top && 'back top', c.cover.logo_back_bottom && 'back bottom'].filter(Boolean);
+  const ls = $('#logoState');
+  if (!c.cover.logo) { ls.className = 'logostate'; ls.textContent = 'Logo off: no logo chosen'; }
+  else if (!where.length) { ls.className = 'logostate warn'; ls.textContent = `Logo not shown: ${isTree ? 'tree logo' : c.cover.logo} is chosen, but no place is ticked`; }
+  else { ls.className = 'logostate on'; ls.textContent = `Logo on: ${isTree ? 'tree logo' : c.cover.logo} · ${where.join(', ')}`; }
+}
 // ---------------------------------------------------------------- change tracking
 function changed(needParse) {
   S.stale = true;
+  logoStatus();
   save();
   coverSoon();
   renderWordInfo();
