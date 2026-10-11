@@ -662,7 +662,14 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <select id="c-logocol" data-cs="logo_color"><option value="text">Same as the text next to it</option><option value="original">Original colours</option></select></div>
           <label class="check"><input type="checkbox" data-cb="logo_invert"> Invert (for a dark drawing on a light ground)</label>
         </div>
-        <div class="sect" id="coverBandsSect">
+                <div class="sect" id="coverDividerSect">
+          <h2>Divider between title and subtitle</h2>
+          <div class="field"><label for="c-div">Divider or ornament</label><select id="c-div" data-cs="divider"><option value="auto">Automatic (short line on the bands, none on the arch)</option><option value="none">None</option><option value="line">Short line</option><option value="long">Long line</option><option value="double">Double line</option><option value="dotline">Line with a dot</option><option value="dots">Three dots</option><option value="diamond">Lines with a diamond</option><option value="star">Lines with a star</option><option value="fleuron">Fleuron ❦</option></select></div>
+          <div class="field"><span class="lab">Size</span><div class="range"><input type="range" min="40" max="250" step="5" data-pos="divider_size" aria-label="Divider size"><output></output></div></div>
+          <div class="field"><span class="lab">Nudge up or down (mm)</span><div class="range"><input type="range" min="-15" max="15" step="1" data-pos="divider_y" data-unit=" mm" aria-label="Divider nudge"><output></output></div></div>
+          <p class="hint">It is centred between the title and the subtitle and takes the text colour. On the front cover only.</p>
+        </div>
+<div class="sect" id="coverBandsSect">
           <h2>Bands</h2>
           <p class="hint">Make the top and the bottom band thicker or thinner, and use pictures in the bands. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>
           <div class="field"><span class="lab">Top band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="top_band" aria-label="Top band height"><output></output></div></div>

@@ -494,7 +494,7 @@ function fromKitJson(j) {
 // layout settings: the back cover has its own copy (prefix bk_) when "same layout" is off and the back is being edited
 const CK = k => (S.cfg.cover.back_same_layout === false && S.coverEdit === 'back' && BK.layoutKey(k)) ? 'bk_' + k : k;
 const CV = k => { const c = S.cfg.cover, kk = CK(k); return c[kk] !== undefined ? c[kk] : c[k]; };
-const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|mid_opacity|back_same_layout)/.test(k)) o[k] = d[k]; return o; };
+const ARCH_DEF = () => { const d = BK.defaults().cover, o = {}; for (const k of Object.keys(d)) if (/^(arch_|top_band|bottom_band|logo_|band_image|band_mid_image|mid_opacity|back_same_layout|divider|qr_size)/.test(k)) o[k] = d[k]; return o; };
 function toKitJson(files, cfgIn) {
   const c = cfgIn || S.cfg, j = {};
   for (const k of ['title', 'subtitle', 'subtitle2', 'author', 'lang']) if (c[k]) j[k] = c[k];
@@ -804,6 +804,7 @@ function fillForm() {
   const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn on the side being edited
   // the older "Photo" and "Automatic" choices only show while they are in use: the classic bands now take pictures themselves
   $('#segPhoto').hidden = sideStyle !== 'photo'; $('#segAuto').hidden = sideStyle !== 'auto';
+  $('#coverDividerSect').hidden = editBack || !(eff === 'classic' || eff === 'arch') || st === 'photo';
   $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
   $('#coverPhotoSect').hidden = editBack || !(st === 'photo' || c.cover.style === 'photo');
   const backStyle = BK.coverStyle({ cover: Object.assign({}, c.cover, { style: same || c.cover.bk_style === undefined ? c.cover.style : c.cover.bk_style }) });

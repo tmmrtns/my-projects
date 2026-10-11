@@ -372,6 +372,25 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     T(txt, Object.assign({ top: X(topMM), color: inkAt(topMM, topMM + h) }, oo));
     return topMM + h;
   };
+  // divider between title and subtitle, centred on yMM (mm from the top); the classic bands have a short line by default, the arch none
+  const dividerKind = cv.divider && cv.divider !== 'auto' ? cv.divider : (isArch ? 'none' : 'line');
+  const drawDivider = (yMM, col) => {
+    const kind = dividerKind; if (kind === 'none') return;
+    const k = Math.max(.3, Math.min(3, num('divider_size', 100) / 100)), cx = X(W / 2), cy = X(yMM + num('divider_y', 0)), lw = Math.max(1, .7 * pxpt);
+    c.save(); c.fillStyle = col; c.strokeStyle = col; c.lineWidth = lw; c.lineCap = 'round';
+    const hline = (len, dy = 0) => { c.fillRect(cx - X(len) / 2, cy + X(dy) - lw / 2, X(len), lw); };
+    const diamond = (r) => { c.beginPath(); c.moveTo(cx, cy - X(r)); c.lineTo(cx + X(r), cy); c.lineTo(cx, cy + X(r)); c.lineTo(cx - X(r), cy); c.closePath(); c.fill(); };
+    const star = (r) => { c.beginPath(); for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + i * Math.PI / 4, rr = i % 2 ? r * .32 : r; c.lineTo(cx + Math.cos(a) * X(rr), cy + Math.sin(a) * X(rr)); } c.closePath(); c.fill(); };
+    if (kind === 'line') hline(24 * k);
+    else if (kind === 'long') hline(60 * k);
+    else if (kind === 'double') { hline(26 * k, -.8); hline(26 * k, .8); }
+    else if (kind === 'dots') { for (const dx of [-5, 0, 5]) { c.beginPath(); c.arc(cx + X(dx * k), cy, Math.max(1.2, X(.8 * k)), 0, 2 * Math.PI); c.fill(); } }
+    else if (kind === 'diamond') { const g = 3.2 * k, L = 15 * k; c.fillRect(cx - X(g + L), cy - lw / 2, X(L), lw); c.fillRect(cx + X(g), cy - lw / 2, X(L), lw); diamond(1.9 * k); }
+    else if (kind === 'star') { const g = 4.2 * k, L = 15 * k; c.fillRect(cx - X(g + L), cy - lw / 2, X(L), lw); c.fillRect(cx + X(g), cy - lw / 2, X(L), lw); star(2.6 * k); }
+    else if (kind === 'dotline') { c.fillRect(cx - X(18 * k), cy - lw / 2, X(36 * k), lw); c.beginPath(); c.arc(cx, cy, Math.max(1.6, X(1.3 * k)), 0, 2 * Math.PI); c.fill(); }
+    else if (kind === 'fleuron') { c.font = `${X(24 * k * 25.4 / 72)}px ${fam}, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('\u2766', cx, cy); }
+    c.restore();
+  };
   // small logo: where it goes on this side, and how much room it takes (the label and the footer line make way for it)
   const lAsset = cv.logo ? BK.findAsset(assets, cv.logo) : null;
   const logoSlots = lAsset ? (side === 'front' ? [cv.logo_front_top && 'top', cv.logo_front_bottom && 'bottom'] : [cv.logo_back_top && 'top', cv.logo_back_bottom && 'bottom']).filter(Boolean) : [];
@@ -395,8 +414,10 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       await drawArch();
       const sz = k => num(k, 100);
       if (cv.label && on('label')) archBlock(cv.label, { size: 8, spacing: .4, upper: true, lh: 1.3 }, num('arch_label_y', 14), sz('arch_label_size'), H * .1, 4);
-      if (on('title')) archBlock(titleLines, { size: 25, lh: 1.15, spacing: .06, upper: true }, num('arch_title_y', 24), sz('arch_title_size'), H * .3, 8);
+      let titleBottom = null;
+      if (on('title')) titleBottom = archBlock(titleLines, { size: 25, lh: 1.15, spacing: .06, upper: true }, num('arch_title_y', 24), sz('arch_title_size'), H * .3, 8);
       let ey = H * num('arch_sub_y', 42) / 100;
+      if (titleBottom != null && subt) { const dy = (titleBottom + ey) / 2; drawDivider(dy, inkAt(dy, dy)); }
       [[subt, { size: 11.5, italic: true, lh: 1.3 }], [subt2, { size: 9.5, lh: 1.3 }]].forEach(([t, o]) => {
         if (!t) return; ey = archBlock(t, o, ey / H * 100, sz('arch_sub_size'), H * .2, 5) + 1.5;
       });
@@ -444,7 +465,7 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       await paintRegions(classicRegs(topH, midH, botH));
       if (cv.label && on('label') && topH > 12) T(cv.label, { top: lblTop(X(topH * .39)), size: 9, spacing: .45, upper: true, color: cv.band_ink });
       if (on('title')) T(titleLines, Object.assign({ top: X(H * .37 + dy), color: cv.ink }, fitText(titleLines, { size: 23, lh: 1.2, spacing: .08, upper: true }, X(Math.min(H * .135, midH * .33)), 12)));
-      if (on('title')) { c.fillStyle = cv.ink; c.fillRect(X(W / 2 - 12), X(H * .525 + dy), X(24), Math.max(1, .7 * pxpt)); }
+      if (on('title')) drawDivider(H * .525 + dy, cv.ink);
       flowBelow([subt && { t: subt, o: { size: 11.5, italic: true } }, subt2 && { t: subt2, o: { size: 9.5 } },
         cfg.author && on('author') && { t: cfg.author, author: true, o: { size: 11, spacing: .3, upper: true } }].filter(Boolean),
         X(H * (subt2 ? .543 : .553) + dy), X(H - botH) - X(6), X(H * (subt2 ? .65 : .63) + dy), cv.ink, X(4));
