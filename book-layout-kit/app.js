@@ -737,9 +737,11 @@ function renderPhoto() {
     const list = document.createElement('div'); list.className = 'pblist';
     for (const nm of pg.photos) {
       const gi = pb.items.indexOf(nm), row = document.createElement('div'); row.className = 'pbitem'; row.draggable = true;
-      row.innerHTML = `<span class="pbn"></span><span class="pbno">${gi + 1}</span><button type="button" title="Earlier">◀</button><button type="button" title="Later">▶</button><button type="button" title="Remove from the book">✕</button>`;
+      row.innerHTML = `<span class="pbn"></span><span class="pbno">${gi + 1}</span><button type="button" title="Rotate 90° clockwise">↻</button><button type="button" title="Earlier">◀</button><button type="button" title="Later">▶</button><button type="button" title="Remove from the book">✕</button>`;
       row.querySelector('.pbn').textContent = nm; row.querySelector('.pbn').title = nm;
-      const [bl, br, bx] = row.querySelectorAll('button');
+      const [brot, bl, br, bx] = row.querySelectorAll('button');
+      brot.addEventListener('click', () => { pb.rot = pb.rot || {}; const v = ((pb.rot[nm] || 0) + 90) % 360; if (v) pb.rot[nm] = v; else delete pb.rot[nm]; changed(); renderPhoto(); });
+      if ((pb.rot || {})[nm]) row.querySelector('.pbn').textContent = nm + '  ↻' + pb.rot[nm] + '°';
       bl.addEventListener('click', () => pbMove(gi, gi - 1)); br.addEventListener('click', () => pbMove(gi, gi + 1));
       bx.addEventListener('click', () => { pb.items.splice(gi, 1); changed(); renderPhoto(); });
       row.addEventListener('dragstart', e => { pbDrag = gi; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', nm); } catch (x) { /* ignore */ } row.classList.add('drag'); });

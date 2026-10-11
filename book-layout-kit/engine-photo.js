@@ -23,7 +23,7 @@ BK.PB_LAYOUTS = [
 const CAP = Object.fromEntries(BK.PB_LAYOUTS.map(l => [l[0], l[2]]));
 BK.PB_NAME = n => String(n).replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim();
 
-BK.pbDefaults = () => ({ items: [], layout: 'auto', pageLayouts: {}, margin: 10, gap: 4, bg: '#ffffff', fit: 'fill', captions: false, caption_size: 8, numbers: false, focus: {} });
+BK.pbDefaults = () => ({ items: [], layout: 'auto', pageLayouts: {}, margin: 10, gap: 4, bg: '#ffffff', fit: 'fill', captions: false, caption_size: 8, numbers: false, focus: {}, rot: {} });
 BK.pbCfg = cfg => Object.assign(BK.pbDefaults(), cfg.photobook || {});
 
 // natural order of file names: IMG_2 before IMG_10
@@ -53,7 +53,7 @@ BK.pbBoxes = function (layout, W, H, margin, gap, capH) {
 BK.pbPages = function (cfg, assets) {
   const pb = BK.pbCfg(cfg), G = BK.geom(cfg), pageAsp = G.W / G.H;
   const items = pb.items.filter(n => BK.findAsset(assets, n));
-  const asp = n => { const a = BK.findAsset(assets, n); return a ? a.w / a.h : 1; };
+  const asp = n => { const a = BK.findAsset(assets, n); if (!a) return 1; const q = ((pb.rot || {})[n] || 0) % 180; return q ? a.h / a.w : a.w / a.h; };
   const shape = n => { const r = asp(n); return r >= 1.1 ? 'L' : r <= 1 / 1.1 ? 'P' : 'S'; };
   const pages = []; let i = 0;
   while (i < items.length) {
@@ -90,10 +90,16 @@ BK.drawPhotoPage = async function (page, cfg, assets, ppm, opt) {
   const inkOn = bg => { const r = BK.hexRgb(bg) || [255, 255, 255]; return (r[0] * .299 + r[1] * .587 + r[2] * .114) > 140 ? '#222' : '#eee'; };
   for (let k = 0; k < page.photos.length && k < boxes.length; k++) {
     const name = page.photos[k], a = BK.findAsset(assets, name); if (!a) continue;
-    const im = await BK.loadImg(opt.thumb && a.thumb ? a.thumb : a.dataURL), [bx, by, bw, bh] = boxes[k], f = (pb.focus || {})[name] || {};
+    let im = await BK.loadImg(opt.thumb && a.thumb ? a.thumb : a.dataURL);
+    const rot = (((pb.rot || {})[name] || 0) % 360 + 360) % 360;
+    if (rot) {
+      const w0 = im.naturalWidth, h0 = im.naturalHeight, odd = rot % 180, rc = BK.canvasOf(odd ? h0 : w0, odd ? w0 : h0), rx = rc.getContext('2d');
+      rx.translate(rc.width / 2, rc.height / 2); rx.rotate(rot * Math.PI / 180); rx.drawImage(im, -w0 / 2, -h0 / 2); im = rc;
+    }
+    const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, [bx, by, bw, bh] = boxes[k], f = (pb.focus || {})[name] || {};
     const fx = f.x ?? 50, fy = f.y ?? 50;
     if (pb.fit === 'fit' && !full) {
-      const s = Math.min(X(bw) / im.naturalWidth, X(bh) / im.naturalHeight), dw = im.naturalWidth * s, dh = im.naturalHeight * s;
+      const s = Math.min(X(bw) / iw, X(bh) / ih), dw = iw * s, dh = ih * s;
       c.imageSmoothingQuality = 'high'; c.drawImage(im, X(bx) + (X(bw) - dw) / 2, X(by) + (X(bh) - dh) / 2, dw, dh);
     } else { c.imageSmoothingQuality = 'high'; BK.drawCoverFit(c, im, X(bx), X(by), X(bw), X(bh), fx, fy, 100); }
     if (pb.captions) {
