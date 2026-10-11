@@ -1041,6 +1041,14 @@ body.pbmode .bookonly { display: none !important; }
               <label class="check"><input type="checkbox" data-kdp="spine_text"> Title and author on the spine</label>
               <label class="check"><input type="checkbox" data-kdp="barcode"> Keep the barcode corner free</label>
             </div>
+            <div class="colors" style="margin-top:10px">
+              <label class="color"><input type="color" data-col="spine_color" aria-label="Spine colour"> Spine colour <input type="text" class="hex" data-hex="spine_color" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="Spine colour code"></label>
+              <div><button class="btn small ghost" id="spineSame" type="button">Same as the band colour</button></div>
+            </div>
+            <p class="hint" id="spineColHint"></p>
+            <div class="field"><label for="c-logospine">Logo on the spine</label>
+              <select id="c-logospine" data-cs="logo_spine"><option value="none">No logo</option><option value="top">At the top of the spine</option><option value="bottom">At the bottom of the spine</option></select>
+              <span class="hint">Uses the logo chosen on the Cover tab (Logo). The title and author make room for it. It needs a spine of at least 5 mm.</span></div>
             <div class="field"><label for="kdp-bar">Your barcode image (optional)</label><select id="kdp-bar" data-kdp="barcode_image"></select></div>
             <div class="kbtns">
               <button class="btn" type="button" data-goto="cover">Design the cover</button>

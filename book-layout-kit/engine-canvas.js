@@ -640,19 +640,51 @@ BK.drawWrap = async function (cfg, assets, ppm, opt) {
     BK.drawCover('back', cfg, assets, ppm, { bleed: { l: m, r: 0, t: m, b: m }, barcode: bopt.barcode, barcodeImage: bopt.barcodeImage, barcodePos: bpos }),
     BK.drawCover('front', cfg, assets, ppm, { bleed: { l: 0, r: m, t: m, b: m } })]);
   const canvas = canvasOf(pad(g.w), pad(g.h)), c = canvas.getContext('2d');
-  c.fillStyle = cv.band; c.fillRect(0, 0, canvas.width, canvas.height);   // the spine is the band colour
+  c.fillStyle = cv.spine_color || cv.band; c.fillRect(0, 0, canvas.width, canvas.height);   // the spine: its own colour, else the band colour
   c.drawImage(back, 0, 0);
   const xf = pad(m + g.W + g.sz);
   c.drawImage(front, xf, 0);
-  if (g.spineText) await drawSpine(c, cfg, g, ppm);
+  await drawSpine(c, cfg, g, ppm, { assets });
   if (opt.guides) BK.drawWrapGuides(c, g, ppm, bopt.barcode);
   return canvas;
 };
-// title and author along the spine, reading top to bottom
-async function drawSpine(c, cfg, g, ppm) {
+// readable text colour on a given background
+function inkOnBg(hex, dark, light) { const r = String(hexRgb(hex) || '0,0,0').split(',').map(Number); return (r[0] * .299 + r[1] * .587 + r[2] * .114) > 150 ? dark : light; }
+// the logo as a small drawing in one colour (a white-on-black drawing takes the colour; "original" keeps the picture as it is)
+function logoCanvas(im, px, py, col, cv) {
+  let src = im, sw = im.naturalWidth, sh = im.naturalHeight;
+  while (sw / 2 > px && sh / 2 > py) { const t = canvasOf(Math.round(sw / 2), Math.round(sh / 2)), tg = t.getContext('2d'); tg.imageSmoothingQuality = 'high'; tg.drawImage(src, 0, 0, t.width, t.height); src = t; sw = t.width; sh = t.height; }
+  const lc = canvasOf(px, py), g = lc.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, px, py);
+  if (cv.logo_color !== 'original') {
+    const [r, gg, bl] = hexRgb(col).split(',').map(Number), d = g.getImageData(0, 0, px, py), a = d.data;
+    for (let i = 0; i < a.length; i += 4) {
+      const lum = (.299 * a[i] + .587 * a[i + 1] + .114 * a[i + 2]) / 255, al = Math.min(1, Math.max(0, ((cv.logo_invert ? 1 - lum : lum) - .08) * 1.15)) * (a[i + 3] / 255);
+      a[i] = r; a[i + 1] = gg; a[i + 2] = bl; a[i + 3] = Math.round(al * 255);
+    }
+    g.putImageData(d, 0, 0);
+  }
+  return lc;
+}
+// the spine: its colour, the logo at the top or bottom, and the title and author along it, reading top to bottom
+async function drawSpine(c, cfg, g, ppm, opt) {
+  opt = opt || {};
   const cv = Object.assign(BK.defaults().cover, cfg.cover || {});
+  const ink = cv.spine_color ? inkOnBg(cv.spine_color, '#1a1a1a', '#ffffff') : cv.band_ink;
+  const K = BK.KDP, thick = g.spine * ppm, x0 = Math.round((g.m + g.W + (g.sz - g.spine) / 2) * ppm);
+  let top = (g.m + 12) * ppm, len = (g.H - 2 * 12) * ppm;   // the type sits across the printed spine, in the middle of the spine panel
+  // logo on the spine (top or bottom), upright, as wide as the spine allows
+  const lAsset = cv.logo && cv.logo_spine && cv.logo_spine !== 'none' ? BK.findAsset(opt.assets, cv.logo) : null;
+  if (lAsset && g.spine >= 5) {
+    const im = await BK.loadImg(lAsset.dataURL), ratio = im.naturalWidth / im.naturalHeight;
+    const dw = Math.min(g.spine * .7, Math.max(4, +cv.logo_size || 16)), dh = dw / ratio, px = Math.max(8, Math.round(dw * ppm)), py = Math.max(8, Math.round(dh * ppm));
+    const lc = logoCanvas(im, px, py, ink, cv), gap = 4 * ppm;
+    const y = cv.logo_spine === 'top' ? top : top + len - dh * ppm;
+    c.drawImage(lc, Math.round(x0 + (thick - dw * ppm) / 2), Math.round(y), Math.round(dw * ppm), Math.round(dh * ppm));
+    if (cv.logo_spine === 'top') { top += dh * ppm + gap; len -= dh * ppm + gap; } else len -= dh * ppm + gap;
+  }
+  if (!g.spineText) return;
   await BK.loadFont(cfg.font);
-  const K = BK.KDP, fam = BK.fam(cfg.font), len = (g.H - 2 * 12) * ppm, thick = g.spine * ppm;   // the type sits across the printed spine, in the middle of the spine panel
+  const fam = BK.fam(cfg.font);
   const tmp = canvasOf(Math.max(1, Math.round(len)), Math.max(1, Math.round(thick))), t = tmp.getContext('2d');
   const pxpt = 25.4 / 72 * ppm;
   const title = (cfg.title || '').toUpperCase(), author = (cfg.author || '').toUpperCase();
@@ -664,10 +696,10 @@ async function drawSpine(c, cfg, g, ppm) {
   while (tw + (aw ? aw + gap : 0) > len && size > 5.5) { size -= .5; aSize = Math.min(aSize, size * .75); tw = measure(title, size, .12); aw = author ? measure(author, aSize, .25) : 0; }
   const showAuthor = author && tw + aw + gap <= len;
   const mid = sz => (thick - sz * pxpt * 1.2) / 2;                   // the line box centred across the spine
-  if (title && tw <= len) textBlock(t, title, { pxpt, fam, color: cv.band_ink, size, spacing: .12, align: 'left', x: 0, top: mid(size), lh: 1.2 });
-  if (showAuthor) textBlock(t, author, { pxpt, fam, color: cv.band_ink, size: aSize, spacing: .25, align: 'right', x: len, top: mid(aSize), lh: 1.2 });
+  if (title && tw <= len) textBlock(t, title, { pxpt, fam, color: ink, size, spacing: .12, align: 'left', x: 0, top: mid(size), lh: 1.2 });
+  if (showAuthor) textBlock(t, author, { pxpt, fam, color: ink, size: aSize, spacing: .25, align: 'right', x: len, top: mid(aSize), lh: 1.2 });
   c.save();
-  c.translate(Math.round((g.m + g.W + (g.sz - g.spine) / 2) * ppm + thick), Math.round((g.m + 12) * ppm));
+  c.translate(x0 + thick, Math.round(top));
   c.rotate(Math.PI / 2);
   c.drawImage(tmp, 0, 0);
   c.restore();

@@ -1063,6 +1063,7 @@ function initForm() {
   $$('[data-ck]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.ck] = el.value; changed(); }));
   $$('[data-clines]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.clines] = el.value.split('\n').map(s => s.trim()).filter(Boolean); changed(); }));
   $$('[data-cparas]').forEach(el => el.addEventListener('input', () => { S.cfg.cover[el.dataset.cparas] = el.value.split(/\n\s*\n/).map(s => s.split('\n').map(x => x.trim()).filter(Boolean).join('\n')).filter(Boolean); changed(); }));
+  $('#spineSame').addEventListener('click', () => { S.cfg.cover.spine_color = ''; fillForm(); changed(); });
   $$('[data-cs]').forEach(el => el.addEventListener('change', () => { S.cfg.cover[CK(el.dataset.cs)] = el.value; changed(); }));
   $$('[data-hide]').forEach(el => el.addEventListener('change', () => { const h = S.cfg.cover.hide = Object.assign({}, S.cfg.cover.hide); if (el.checked) delete h[el.dataset.hide]; else h[el.dataset.hide] = true; changed(); }));
   $$('[data-cb]').forEach(el => el.addEventListener('change', () => {
@@ -1090,10 +1091,11 @@ function fillForm() {
   $('#pageInfo').textContent = `${G.W} × ${G.H} mm · text block ${G.TW.toFixed(0)} × ${G.TH.toFixed(0)} mm · margins inner ${G.inner}, outer ${G.outer}, top ${G.top}, bottom ${G.bottom} mm`;
   $$('[data-photo]').forEach(el => { el.value = c.photos[el.dataset.photo] || el.min; el.nextElementSibling.value = el.value + ' mm'; });
   $$('[data-col]').forEach(el => { el.value = CV(el.dataset.col) || '#000000'; const hx = el.parentElement.querySelector('.hex'); if (document.activeElement !== hx) hx.value = el.value; });
+  { const sc = $('[data-col="spine_color"]'); if (sc) { const v = c.cover.spine_color || c.cover.band; sc.value = v; const hx = sc.parentElement.querySelector('.hex'); if (document.activeElement !== hx) hx.value = v; $('#spineColHint').textContent = c.cover.spine_color ? 'The spine has its own colour.' : 'The spine uses the band colour of the cover.'; } }
   $$('[data-ck]').forEach(el => { if (document.activeElement !== el) el.value = c.cover[el.dataset.ck] || ''; });
   $$('[data-clines]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.clines] || []).join('\n'); });
   $$('[data-cparas]').forEach(el => { if (document.activeElement !== el) el.value = (c.cover[el.dataset.cparas] || []).join('\n\n'); });
-  $$('[data-cs]').forEach(el => { el.value = CV(el.dataset.cs) || (el.dataset.cs === 'back_subtitle_source' ? 'none' : el.dataset.cs === 'logo_color' ? 'text' : 'auto'); });
+  $$('[data-cs]').forEach(el => { el.value = CV(el.dataset.cs) || (el.dataset.cs === 'back_subtitle_source' || el.dataset.cs === 'logo_spine' ? 'none' : el.dataset.cs === 'logo_color' ? 'text' : 'auto'); });
   $$('[data-hide]').forEach(el => { el.checked = !(c.cover.hide || {})[el.dataset.hide]; });
   $$('[data-cb]').forEach(el => { const v = CV(el.dataset.cb); el.checked = el.dataset.off ? v === true : v !== false; });
   $$('[data-pos]').forEach(el => { el.value = CV(el.dataset.pos) ?? ({ band_size: 100, back_band_size: 100, back_quote_y: 10.5, back_blurb_y: 33, back_subtitle_y: 22 }[el.dataset.pos] ?? BK.defaults().cover[el.dataset.pos] ?? 50); el.nextElementSibling.value = el.value + (el.dataset.unit || '%'); });
@@ -1209,6 +1211,7 @@ function logoStatus() {
 // ---------------------------------------------------------------- change tracking
 function changed(needParse) {
   S.stale = true;
+  { const sh = $('#spineColHint'); if (sh) sh.textContent = S.cfg.cover.spine_color ? 'The spine has its own colour.' : 'The spine uses the band colour of the cover.'; }
   logoStatus();
   qrStatus();
   opStatus();
