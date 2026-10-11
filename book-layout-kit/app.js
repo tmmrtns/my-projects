@@ -801,11 +801,17 @@ function initPhoto() {
 // The newest export has the whole book as one markdown file; cover.png and back-cover.png sit next to it.
 function findBookyai(flat) {
   let best = null;
+  const names = new Set(flat.map(e => e.name));
   for (const e of flat) {
-    const m = /^(.*\/)?exports_(\d+)\/([^/]+\.md)$/i.exec(e.name);
-    if (!m || /book_metadata_stats\.md$/i.test(e.name)) continue;
-    const ts = m[2], prefix = m[1] || '';
-    if (!best || ts > best.ts || (ts === best.ts && prefix === best.prefix && e.size > best.e.size)) best = { e, ts, prefix };
+    if (!/\.md$/i.test(e.name) || /book_metadata_stats\.md$/i.test(e.name)) continue;
+    // an export folder is "exports_<timestamp>", or any folder that has Bookyai's book_metadata_stats.md next to the book
+    const m = /^(?:(.*)\/)?([^/]+)\/([^/]+\.md)$/.exec(e.name);
+    if (!m) continue;
+    const dir = (m[1] ? m[1] + '/' : '') + m[2] + '/';
+    const isExp = /^exports_\d+$/i.test(m[2]);
+    if (!isExp && !names.has(dir + 'book_metadata_stats.md')) continue;
+    const ts = (/^exports_(\d+)$/i.exec(m[2]) || [])[1] || '0', prefix = m[1] ? m[1] + '/' : '';
+    if (!best || ts > best.ts || (ts === best.ts && dir === best.dir && e.size > best.e.size)) best = { e, ts, prefix, dir };
   }
   if (!best) return null;
   const bj = flat.find(e => e.name === best.prefix + 'book.json');
@@ -1963,12 +1969,29 @@ $('#clearBtn').addEventListener('click', () => {
   $('#clearBtn').dataset.armed = '1'; $('#clearBtn').textContent = 'Click again to clear text and settings';
   setTimeout(() => { if ($('#clearBtn').dataset.armed) { delete $('#clearBtn').dataset.armed; $('#clearBtn').textContent = 'Clear'; } }, 4000);
 });
+
+// dropped folders: the browser gives them as directory entries that have to be walked
+async function filesFromDrop(dt) {
+  const items = [...(dt.items || [])].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (!items.length || !items.some(en => en.isDirectory)) return [...(dt.files || [])].map(fileEntry);
+  const out = [];
+  const walk = async (en, path) => {
+    if (en.isFile) { const f = await new Promise((res, rej) => en.file(res, rej)); out.push(Object.assign(fileEntry(f), { name: path + f.name })); }
+    else if (en.isDirectory) {
+      const rd = en.createReader(); let batch;
+      do { batch = await new Promise((res, rej) => rd.readEntries(res, rej)); for (const c of batch) await walk(c, path + en.name + '/'); } while (batch.length);
+    }
+  };
+  upStart('Reading the folder…');
+  for (const en of items) await walk(en, '');
+  return out;
+}
 const drop = $('#drop');
 ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop', e => { const fs = [...(e.dataTransfer.files || [])]; if (fs.length) importEntries(fs.map(fileEntry)); });
+drop.addEventListener('drop', async e => { const fs = await filesFromDrop(e.dataTransfer); if (fs.length) importEntries(fs); else upEnd(); });
 document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => { if (!drop.contains(e.target)) { e.preventDefault(); const fs = [...(e.dataTransfer.files || [])]; if (fs.length) importEntries(fs.map(fileEntry)); } });
+document.addEventListener('drop', async e => { if (!drop.contains(e.target)) { e.preventDefault(); const fs = await filesFromDrop(e.dataTransfer); if (fs.length) importEntries(fs); else upEnd(); } });
 ['#fileIn', '#dirIn', '#zipIn', '#jsonIn', '#textIn', '#imgIn2'].forEach(id => $(id).addEventListener('change', e => {
   const fs = [...e.target.files]; e.target.value = '';
   if (fs.length) importEntries(fs.map(f => Object.assign(fileEntry(f), { name: f.webkitRelativePath || f.name })));
