@@ -785,12 +785,14 @@ function fillForm() {
   const ba = c.cover.back_image ? BK.findAsset(S.assets, c.cover.back_image) : null;
   $('#backThumb').style.backgroundImage = ba ? `url("${ba.dataURL}")` : 'none';
   const st = BK.coverStyle(c);
-  $('#coverStyleHint').textContent = c.cover.style === 'photo' && !a ? 'Photo style needs a cover photo; until you add one the classic bands are used.'
-    : (c.cover.style === 'auto' ? `Automatic picks ${a ? 'the photo style because a photo is set' : 'classic bands because no photo is set'}.` : '');
-  $('#coverPhotoSect').style.opacity = st === 'photo' || c.cover.style !== 'classic' ? 1 : .6;
+  $('#coverStyleHint').textContent = c.cover.style === 'photo' ? 'This book uses the older Photo style. Choose Classic bands to put pictures in the outer or middle band instead.'
+    : (c.cover.style === 'auto' ? `Automatic picks ${a ? 'the older photo style because a photo is set' : 'classic bands because no photo is set'}. Choose Classic bands to use pictures in the bands.` : '');
   const eff = st === 'photo' && !a ? 'classic' : st;      // the style that is really drawn
+  // the older "Photo" and "Automatic" choices only show while they are in use: the classic bands now take pictures themselves
+  $('#segPhoto').hidden = c.cover.style !== 'photo'; $('#segAuto').hidden = c.cover.style !== 'auto';
   $('#coverBandsSect').hidden = eff !== 'classic'; $('#coverArchSect').hidden = eff !== 'arch';
-  $('#coverPhotoSect').hidden = eff === 'arch'; $('#backPhotoSect').hidden = eff === 'arch';
+  $('#coverPhotoSect').hidden = !(st === 'photo' || c.cover.style === 'photo');
+  $('#backPhotoSect').hidden = eff === 'arch' || !(st === 'photo' || c.cover.style === 'photo' || c.cover.back_image);
   renderKdp();
 }
 function sampleTag() { $('#sampleTag').hidden = !S.isSample; }

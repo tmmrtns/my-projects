@@ -2,7 +2,9 @@
 <script src="../login.js"></script>
 <meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Book Layout Kit</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon.png?v=3">
+<link rel="apple-touch-icon" href="favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital@0;1&family=Cormorant+Garamond:ital@0;1&family=Libre+Baskerville:ital@0;1&family=Lora:ital@0;1&family=Source+Serif+4:ital@0;1&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -610,7 +612,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         <div class="sect">
           <h2>Style</h2>
           <div class="seg" data-seg="cover.style">
-            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch</button><button type="button" data-v="photo">Photo</button><button type="button" data-v="auto">Automatic</button></div>
+            <button type="button" data-v="classic">Classic bands</button><button type="button" data-v="arch">Arch</button><button type="button" data-v="photo" id="segPhoto">Photo (older)</button><button type="button" data-v="auto" id="segAuto">Automatic</button></div>
           <p class="hint" id="coverStyleHint"></p>
         </div>
         <div class="sect">
@@ -648,7 +650,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
         </div>
         <div class="sect" id="coverBandsSect">
           <h2>Bands</h2>
-          <p class="hint">Make the top and the bottom band thicker or thinner. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>
+          <p class="hint">Make the top and the bottom band thicker or thinner, and use pictures in the bands. The middle band takes the rest, and its text moves with it. 100% is the classic proportion.</p>
           <div class="field"><span class="lab">Top band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="top_band" aria-label="Top band height"><output></output></div></div>
           <div class="field"><span class="lab">Bottom band height</span><div class="range"><input type="range" min="0" max="150" step="5" data-pos="bottom_band" aria-label="Bottom band height"><output></output></div></div>
           <h3 class="subh" style="margin:14px 0 0;font:600 12px var(--f-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Pictures</h3>
@@ -665,7 +667,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_image_x" aria-label="Crop left–right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="band_image_zoom" aria-label="Picture size"><output></output></div></div>
-          <div class="field"><span class="lab">Tint with the band colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="band_image_tint" aria-label="Tint"><output></output></div></div>
+          <div class="field"><span class="lab">Band colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_image_tint" aria-label="Tint"><output></output></div></div>
           <div class="coverimg" style="margin-top:10px">
             <div class="thumb" id="bandMidThumb"></div>
             <div style="display:grid;gap:8px">
@@ -678,7 +680,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_mid_image_x" aria-label="Crop left–right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="band_mid_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="band_mid_image_zoom" aria-label="Picture size"><output></output></div></div>
-          <div class="field"><span class="lab">Tint with the middle colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="band_mid_image_tint" aria-label="Tint"><output></output></div></div>
+          <div class="field"><span class="lab">Middle band colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="band_mid_image_tint" aria-label="Tint"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="bands_images_back"> Use these pictures on the back cover too</label>
         </div>
         <div class="sect" id="coverArchSect">
@@ -705,7 +707,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_image_x" aria-label="Crop left–right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="arch_image_zoom" aria-label="Picture size"><output></output></div></div>
-          <div class="field"><span class="lab">Tint with the colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="arch_image_tint" aria-label="Tint with the colour (readability of the text)"><output></output></div></div>
+          <div class="field"><span class="lab">Colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_image_tint" aria-label="Colour opacity over the picture (0% = picture only)"><output></output></div></div>
           <div class="coverimg" style="margin-top:10px">
             <div class="thumb" id="archBgThumb"></div>
             <div style="display:grid;gap:8px">
@@ -718,7 +720,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
           <div class="field"><span class="lab">Crop left–right</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_x" aria-label="Crop left–right"><output></output></div></div>
           <div class="field"><span class="lab">Crop top–bottom</span><div class="range"><input type="range" min="0" max="100" step="1" data-pos="arch_bg_image_y" aria-label="Crop top–bottom"><output></output></div></div>
           <div class="field"><span class="lab">Picture size (100% fills the area, more zooms in)</span><div class="range"><input type="range" min="100" max="300" step="5" data-pos="arch_bg_image_zoom" aria-label="Picture size"><output></output></div></div>
-          <div class="field"><span class="lab">Tint with the colour (readability of the text)</span><div class="range"><input type="range" min="0" max="90" step="5" data-pos="arch_bg_tint" aria-label="Tint with the colour (readability of the text)"><output></output></div></div>
+          <div class="field"><span class="lab">Colour opacity over the picture (0% = picture only)</span><div class="range"><input type="range" min="0" max="100" step="5" data-pos="arch_bg_tint" aria-label="Colour opacity over the picture (0% = picture only)"><output></output></div></div>
           <label class="check"><input type="checkbox" data-cb="arch_images_back"> Use the pictures on the back cover too</label>
           <details class="grp"><summary>Front: text position</summary>
           <div class="field"><span class="lab">Label</span><div class="range"><input type="range" min="0" max="95" step="1" data-pos="arch_label_y" aria-label="Label"><output></output></div></div>
@@ -830,6 +832,7 @@ table.ref code { font: 11.5px var(--f-mono); background: var(--surface); padding
             <div class="field"><label for="c-qr">QR code link</label><input type="text" id="c-qr" data-ck="qr" placeholder="https://… or www.… or an image file" autocomplete="off" spellcheck="false"><span class="hint" id="qrState" role="status"></span></div>
             <div class="field"><label for="c-qrt">Text with the QR code</label><input type="text" id="c-qrt" data-ck="qr_text"></div>
             <div class="field"><label for="c-qrpos">Text position</label><select id="c-qrpos" data-cs="qr_pos"><option value="right">Beside the QR code</option><option value="above">Above the QR code</option><option value="below">Below the QR code</option></select></div>
+            <label class="check"><input type="checkbox" data-cb="qr_text_rotate"> Turn the text 90° (only when it sits beside the code)</label>
             <div class="field"><label for="c-qrsch">QR code colours</label><select id="c-qrsch" data-cs="qr_scheme"><option value="classic">Black on white (safest)</option><option value="text">Same colour as the text, no box</option><option value="custom">My own colours</option></select><span class="hint" id="qrColState" role="status"></span></div>
             <div class="colors" id="qrCustomCols">
               <label class="color"><input type="color" data-col="qr_fg" aria-label="QR code colour"> QR code <input type="text" class="hex" data-hex="qr_fg" maxlength="7" spellcheck="false" autocomplete="off" placeholder="#rrggbb" aria-label="QR code colour code"></label>

@@ -470,19 +470,25 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
     // where the QR code and its text go: text to the right (default), above or below the code
     const qrGeom = () => {
       const qs = X(30), box = qs + X(4), pos = cv.qr_pos === 'above' || cv.qr_pos === 'below' ? cv.qr_pos : 'right';
-      const barW = opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0, fullW = X(W - 32) - barW, gap = X(2.5);
-      const base = X(H) - X(12);                                    // bottom edge of the whole block
-      let qx = X(16), qy, ty = 0, o = null;
-      if (pos === 'right') {
-        qy = base - box;
-        if (cv.qr_text) { const tw = X(W - 32) - box - X(5) - barW; o = { x: qx + box + X(5), width: tw, align: 'left', size: 7.5, lh: 1.35 }; ty = qy + X(9); }
-      } else {
-        o = cv.qr_text ? { x: qx, width: fullW, align: 'left', size: 7.5, lh: 1.35 } : null;
-        const th = o ? blockH(cv.qr_text, Object.assign({}, o, { x: 0 })) : 0;
-        if (pos === 'below') { qy = base - th - (th ? gap : 0) - box; ty = qy + box + gap; }
-        else { qy = base - box; ty = qy - gap - th; }
+      const barW = opt && opt.barcode ? X(BK.KDP.barcode[0] - 8) : 0, fullW = X(W - 32) - barW, gap = X(2), base = X(H) - X(12);   // base = bottom edge of the whole block
+      const qx = X(16), txt = cv.qr_text, mh = o => blockH(txt, Object.assign({}, o, { x: 0 }));
+      // natural width of the longest line, so short text hugs the code instead of floating in a wide box
+      const natW = () => { mh({ width: 1e6, size: 7.5, lh: 1.35 }); let m = 0; for (const p of (Array.isArray(txt) ? txt : String(txt).split('\n'))) m = Math.max(m, scratch.measureText(p).width); return m + X(2); };
+      let qy = base - box, ty = 0, o = null, rot = false, h = 0, top = qy, strip = null;
+      if (txt && pos === 'right' && cv.qr_text_rotate) {
+        // turned 90 degrees (reads from the bottom up), in a strip right next to the code, as high as the code
+        rot = true; o = { x: box / 2, width: box - X(1), align: 'center', size: 7.5, lh: 1.35 }; h = mh(o);
+        strip = { x: qx + box + gap, y: qy, w: h, h: box };
+      } else if (txt && pos === 'right') {
+        const tw = Math.min(X(W - 32) - box - gap - barW, X(48), natW()); o = { x: qx + box + gap + tw / 2, width: tw, align: 'center', size: 7.5, lh: 1.35 };
+        h = mh(o); ty = qy + (box - h) / 2; strip = { x: qx + box + gap, y: ty, w: tw, h };
+      } else if (txt) {
+        const w = Math.min(fullW, Math.max(box, natW())), cx = Math.max(qx + box / 2, X(10) + w / 2);
+        o = { x: cx, width: w, align: 'center', size: 7.5, lh: 1.35 }; h = mh(o);
+        if (pos === 'below') { qy = base - h - gap - box; ty = qy + box + gap; } else { qy = base - box; ty = qy - gap - h; }
+        strip = { x: cx - w / 2, y: ty, w, h }; top = pos === 'above' ? ty : qy;
       }
-      return { qx, qy, qs, ty, o, top: pos === 'above' && o ? ty : qy };
+      return { qx, qy, qs, ty, o, rot, h, strip, top: Math.min(top, qy) };
     };
     const qrTopLimit = () => qrGeom().top - X(4);
     const blurb = (cv.blurb || []).filter(Boolean);
@@ -507,10 +513,11 @@ BK.drawCover = async function (side, cfg, assets, ppm, opt) {
       if (qsrc) {
         const im = await BK.loadImg(qsrc);
         c.imageSmoothingEnabled = false; if (qc.bg) c.drawImage(im, g.qx, g.qy, g.qs + X(4), g.qs + X(4)); else c.drawImage(im, g.qx + X(2), g.qy + X(2), g.qs, g.qs); c.imageSmoothingEnabled = true;
-        if (cv.qr_text) {
-          const o = g.o;
-          if (!inBand && panelOn && !isArch) { const h = blockH(cv.qr_text, Object.assign({}, o, { x: 0 })); panel(o.x, g.ty, o.width, h, '#ffffff', .88); }
-          T(cv.qr_text, Object.assign({ top: g.ty, color: textCol }, o));
+        if (cv.qr_text && g.o) {
+          const o = g.o, st = g.strip;
+          if (!inBand && panelOn && !isArch) panel(st.x, st.y, st.w, st.h, '#ffffff', .88);
+          if (g.rot) { c.save(); c.translate(st.x, st.y + st.h); c.rotate(-Math.PI / 2); T(cv.qr_text, Object.assign({ top: 0, color: textCol }, o)); c.restore(); }
+          else T(cv.qr_text, Object.assign({ top: g.ty, color: textCol }, o));
         }
       }
     }
