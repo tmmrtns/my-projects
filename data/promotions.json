@@ -1,33 +1,5 @@
 [
  {
-  "shop": "Aldi NL",
-  "item": "Primitivo Susumaniello",
-  "discount": "4,99",
-  "category": null,
-  "startDate": "2026-10-05",
-  "endDate": "2026-10-11",
-  "notes": null,
-  "imageKey": "3c673e4f-79d0-44b9-8481-b6c27a53b857.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "ac81f788-698c-4c4e-92c2-5f905c7d96e8",
-  "createdAt": 1791113831284
- },
- {
-  "shop": "Aldi NL",
-  "item": "Salsiccia",
-  "discount": "2,49 voor 300g",
-  "category": null,
-  "startDate": "2026-10-05",
-  "endDate": "2026-10-11",
-  "notes": null,
-  "imageKey": "25f327ae-94a0-46a2-adea-6a9520500933.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "fe3a73ec-4ee8-4f18-ae9b-07ae9ce12d8c",
-  "createdAt": 1791113785957
- },
- {
   "shop": "Aronde",
   "item": "Hazenfillet",
   "discount": "24,70 per kg",
@@ -82,20 +54,6 @@
   "rank": 3,
   "id": "3e92b7db-c583-4264-89a6-0ed7cad19400",
   "createdAt": 1791112049710
- },
- {
-  "shop": "AH BE",
-  "item": "Gehakt",
-  "discount": "3,75 per kg",
-  "category": null,
-  "startDate": "2026-10-05",
-  "endDate": "2026-10-11",
-  "notes": null,
-  "imageKey": "46af703a-1e39-4975-9c29-138c19153c82.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "5184bc08-bf83-4432-bffe-1d6171901ee3",
-  "createdAt": 1791111920207
  },
  {
   "shop": "Lidl Online",
