@@ -17,8 +17,10 @@ function hyphenator(R) {
     if (h == null) {
       try { h = fn(w, { hyphenChar: ZW, minWordLength: 6 }); } catch (e) { h = w; }
       const p = h.split(ZW);
-      while (p.length > 1 && p[0].length < 2) p.splice(0, 2, p[0] + p[1]);
-      while (p.length > 1 && p[p.length - 1].length < 3) p.splice(p.length - 2, 2, p[p.length - 2] + p[p.length - 1]);
+      // no stub fragments: at least 3 letters before a hyphen, 3 in between (so "gath-er-ing" never becomes "Gath-ering"), 4 after it (no "Insist-ent")
+      while (p.length > 1 && p[0].length < 3) p.splice(0, 2, p[0] + p[1]);
+      for (let i = 1; i < p.length - 1;) { if (p[i].length < 3) p.splice(i - 1, 2, p[i - 1] + p[i]); else i++; }
+      while (p.length > 1 && p[p.length - 1].length < 4) p.splice(p.length - 2, 2, p[p.length - 2] + p[p.length - 1]);
       h = p.join(ZW);
       cache.set(w, h);
     }
