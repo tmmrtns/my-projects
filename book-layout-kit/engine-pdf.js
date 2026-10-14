@@ -36,9 +36,11 @@ function toInl(runs, R, o) {
     if (r.br) { out.push({ text: '\n' }); continue; }
     if (!r.t) continue;
     let text = r.t;
+    if (r.gl) text = '*';
     if (o.upper) text = text.toUpperCase();
     if (o.hy && !r.code && !r.link && !r.sup) text = R.hy(text);
     const it = { text, italics: !!r.i !== !!o.italic };
+    if (r.gl) it.gl = r.fn;
     if (r.b) it.bold = true;
     if (r.sup) it.sup = true;
     if (r.link && /^(https?:|mailto:)/i.test(r.link)) it.link = r.link;
@@ -368,7 +370,8 @@ function spreadNodes(f, R, ctx, hasMore) {
 }
 
 function notesNodes(notes, R, ctx) {
-  if (!notes || !notes.length) return [];
+  notes = (notes || []).filter(n => !n.gl);
+  if (!notes.length) return [];
   return [
     { canvas: [{ type: 'line', x1: 0, y1: 0, x2: ctx.width, y2: 0, lineWidth: .4, lineColor: '#999999' }], margin: [0, mm(6), 0, mm(2)] },
     { ol: notes.map(n => ({ text: toInl(n.runs, R, {}), alignment: 'left', margin: [0, 0, 0, mm(1)] })), fontSize: 8, lineHeight: R.lh(1.3) }
@@ -637,10 +640,10 @@ function shiftItem(it, dx) {
 
 function decorate(pages, R) {
   const G = R.G, cfg = R.cfg;
-  let FR = null, proto = null;
+  let FR = null, FI = null, proto = null;
   for (const pg of pages) for (const it of pg.items) if (it.type === 'line') {
     proto = proto || Object.getPrototypeOf(it.item);
-    for (const x of it.item.inlines) if (x.fk === 'R') FR = x.font;
+    for (const x of it.item.inlines) { if (x.fk === 'R') FR = x.font; else if (x.fk === 'I') FI = x.font; }
   }
   const scan = scanPages(pages);
   R.finalIds = scan.ids;
@@ -720,6 +723,39 @@ function decorate(pages, R) {
     if (inf.cover || inf.plate) return;
     const left = folio % 2 === 0;
     if (left) pg.items.forEach(it => shiftItem(it, dx));
+    // word notes at the foot of the page: the glossed words on this page, in reading order, run together in small type
+    if (FR && proto && Object.keys(R.gloss).length) {
+      const ids = [];
+      for (const it of pg.items) if (it.type === 'line') for (const x of it.item.inlines) if (x.gl && !ids.includes(x.gl)) ids.push(x.gl);
+      if (ids.length) {
+        const gx = left ? mm(G.outer) : mm(G.inner), yTop = mm(G.H) - mm(G.bottom) + mm(1.1);
+        const folioTop = mm(G.H) - mm(G.bottom) / 2 - 7;
+        const place = size => {
+          const step = size * 1.2, out = []; let x = 0, y = yTop, lines = 1;
+          for (const id of ids) {
+            const txt = (R.gloss[id] || []).map(r => r.t || '').join('').replace(/\s+/g, ' ').trim();
+            const c = txt.indexOf(':');
+            const parts = c > 0 ? [[txt.slice(0, c + 1), FI || FR], [txt.slice(c + 1), FR]] : [[txt, FR]];
+            const words = [];
+            parts.forEach(([t, f]) => t.split(/(\s+)/).forEach(w => { if (w) words.push([w, f]); }));
+            words.push(['   ', FR]);
+            for (const [w, f] of words) {
+              const wd = f.widthOfString(w, size);
+              if (x + wd > TW && w.trim()) { x = 0; y += step; lines++; }
+              if (w.trim() || x > 0) out.push({ w, f, x, y, size });
+              x += wd;
+            }
+          }
+          return { out, lines, step, bottom: yTop + lines * step };
+        };
+        let size = 6.8, pl = place(size);
+        while (pl.bottom > folioTop && size > 5.6) { size -= .4; pl = place(size); }
+        for (const o of pl.out) {
+          const iv = mkInline(o.f, o.w, o.size, { color: '#444444' });
+          pg.items.push({ type: 'line', item: cloneLine(proto, { maxWidth: iv.width, inlineWidths: iv.width, inlines: [iv], x: gx + o.x, y: o.y }) });
+        }
+      }
+    }
     const showFolio = !inf.blank && !(inf.owner && inf.owner.fm) && folio >= 1;
     if (!showFolio || !FR || !proto) return;
     const x0 = left ? mm(G.outer) : mm(G.inner);
@@ -770,6 +806,9 @@ BK.buildPdf = async function (model, cfg, assets, progress) {
   const R = { cfg, G, F, L: BK.labels(cfg), FS: G.FS, TWpt: mm(G.TW), assets, images: {}, imgKeys: new Map(), missing: new Set(),
     pass: 1, reqs: [], blanks: new Set(), folio: {}, ixPages: {}, coverOff: cfg.include_covers === false ? 0 : 1,
     plates: new Map(), spreads: new Map(), secTitle: {}, plateIds: new Set() };
+  R.gloss = {};
+  { const gs = sec => (sec.notes || []).forEach(n => { if (n.gl) R.gloss[n.id] = n.runs; });
+    model.front.concat(model.back, BK.chaptersOf(model)).forEach(gs); model.parts.forEach(p => p.introParsed && gs(p.introParsed)); }
   R.lh = css => css / F.ratio;
   R.hy = cfg.hyphenate === false ? (s => s) : hyphenator(R);
   progress('Loading fonts…');

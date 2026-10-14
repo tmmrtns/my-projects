@@ -80,6 +80,8 @@ const G = [
     { k: 'Footnotes', d: 'Put [^1] in the text and the note anywhere in the same chapter. Notes are numbered per chapter and printed at the end of the chapter, below a short line.',
       code: 'kept the accounts in an exercise book.[^1]\n\n[^1]: The exercise book survives.',
       ex: () => page(p('Mathilde spun and kept the accounts in a school exercise book.<sup>1</sup> ' + T) + p(T2) + '<div class="fn"><div>1. The exercise book survives. Its first page lists the price of flax.</div></div>', { rh: 'THE WEAVER’S HOUSE', fo: 15 }) },
+    { k: 'Word notes', d: 'For explaining a hard word or phrase right where it is read. Name the note gl1, gl2, gl3 … instead of 1, 2, 3. In the PDF the word gets a small star and the explanation is printed in small type at the foot of that same page, the notes of a page run together on up to three lines. In the EPUB they are ordinary numbered notes.',
+      code: 'It turned out well.[^gl1]\n\n[^gl1]: *turned out*: ended up, was in the end' },
     { k: 'Note numbers', d: 'Superscript digits typed straight into the text (¹ ² ³) become proper small raised numbers, for a numbered source list at the back.',
       code: 'the census of 1846²,¹⁴',
       ex: () => page(p('According to the census of 1846<sup>2, 14</sup> the street had eleven looms. ' + T) + p(T2), { fo: 31 }) },

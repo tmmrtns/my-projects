@@ -399,14 +399,16 @@ function walkRuns(blocks, fn, info) {
 }
 BK.walkRuns = walkRuns;
 
+// word notes: a note whose name is gl1, gl2 … is printed at the foot of the page (PDF) instead of at the end of the chapter
+const GLOSS_ID = /^gl\d+$/;
 function parseSectionBody(body) {
   const ctx = { defs: {} };
   const blocks = parseBlocks(body, ctx);
   const num = {}; let k = 0;
   const notes = [];
-  walkRuns(blocks, runs => { for (const r of runs) if (r.fn) { if (!num[r.fn]) num[r.fn] = ++k; r.t = String(num[r.fn]); } });
+  walkRuns(blocks, runs => { for (const r of runs) if (r.fn) { if (!num[r.fn]) num[r.fn] = ++k; r.t = String(num[r.fn]); if (GLOSS_ID.test(r.fn)) r.gl = true; } });
   Object.keys(num).sort((a, b) => num[a] - num[b]).forEach(id => {
-    notes.push({ n: num[id], id, runs: ctx.defs[id] != null ? BK.inlineMd(ctx.defs[id]) : [{ t: '?' }] });
+    notes.push({ n: num[id], id, gl: GLOSS_ID.test(id), runs: ctx.defs[id] != null ? BK.inlineMd(ctx.defs[id]) : [{ t: '?' }] });
   });
   return { blocks, notes };
 }
