@@ -164,5 +164,14 @@
    "path": "data/books/6478af33-e810-4812-ab12-ba60c157ac64/cover/muyih24c.jpg",
    "at": 1791401963900
   }
+ },
+ {
+  "id": "f9c7b704-69da-4fc0-bc24-743803900d01",
+  "files": {},
+  "createdAt": 1792243413688,
+  "updatedAt": 1792243413688,
+  "title": "De Archieven van Loenhout",
+  "author": "Tom Mertens",
+  "notes": null
  }
 ]
