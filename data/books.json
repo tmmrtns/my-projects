@@ -179,6 +179,10 @@
   "updatedAt": 1792243424939,
   "title": "De Archieven van Loenhout",
   "author": "Tom Mertens",
-  "notes": null
+  "notes": null,
+  "cover": {
+   "path": "data/books/f9c7b704-69da-4fc0-bc24-743803900d01/cover/mvcfgpfj.jpg",
+   "at": 1792243434098
+  }
  }
 ]
