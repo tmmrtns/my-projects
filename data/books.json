@@ -185,10 +185,16 @@
     "name": "De Archieven van Loenhout.zip",
     "size": 983508,
     "at": 1792243916622
+   },
+   "source": {
+    "path": "data/books/f9c7b704-69da-4fc0-bc24-743803900d01/source/mvcgik1x-De_archieven_van_Loenhout_manuscript.zip",
+    "name": "De_archieven_van_Loenhout_manuscript.zip",
+    "size": 148872,
+    "at": 1792245200465
    }
   },
   "createdAt": 1792243413688,
-  "updatedAt": 1792243916976,
+  "updatedAt": 1792245200811,
   "title": "De Archieven van Loenhout",
   "author": "Tom Mertens",
   "notes": null,
