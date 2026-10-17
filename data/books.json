@@ -179,10 +179,16 @@
     "name": "De_archieven_van_Loenhout.epub",
     "size": 201290,
     "at": 1792243783048
+   },
+   "kdp": {
+    "path": "data/books/f9c7b704-69da-4fc0-bc24-743803900d01/kdp/mvcfr1ce-De Archieven van Loenhout.zip",
+    "name": "De Archieven van Loenhout.zip",
+    "size": 983508,
+    "at": 1792243916622
    }
   },
   "createdAt": 1792243413688,
-  "updatedAt": 1792243783398,
+  "updatedAt": 1792243916976,
   "title": "De Archieven van Loenhout",
   "author": "Tom Mertens",
   "notes": null,
