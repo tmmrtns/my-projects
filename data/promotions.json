@@ -166,5 +166,19 @@
   "rank": 4,
   "id": "882988fd-7714-42bc-9f93-8ae26ce4190b",
   "createdAt": 1792352360622
+ },
+ {
+  "shop": "Naanhof",
+  "item": "Fazantborstfilet",
+  "discount": "12,99 per kg",
+  "category": null,
+  "startDate": "2026-10-18",
+  "endDate": "2026-10-24",
+  "notes": null,
+  "imageKey": "7ba8ca7d-122f-46e3-a973-863ed1f53311.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "bb9faac2-94c5-4b08-8364-4577eb7d61d7",
+  "createdAt": 1792352446438
  }
 ]
