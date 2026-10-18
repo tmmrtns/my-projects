@@ -194,5 +194,19 @@
   "rank": 3,
   "id": "981e1ad8-4124-4d67-8ac9-59323cd1b5e3",
   "createdAt": 1792352918906
+ },
+ {
+  "shop": "Aldi BE",
+  "item": "Kalkoenlapjes",
+  "discount": "7,99 per kg",
+  "category": null,
+  "startDate": "2026-10-26",
+  "endDate": "2026-10-31",
+  "notes": null,
+  "imageKey": "366774c5-ca1f-4f63-9feb-1992d80bb751.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "0c970039-6f4e-470b-ac6c-ad1f778c45ff",
+  "createdAt": 1792353003260
  }
 ]
