@@ -152,5 +152,19 @@
   "rank": 4,
   "id": "c1faf5a0-f1a1-4d05-be26-8a1011bc8352",
   "createdAt": 1792352330447
+ },
+ {
+  "shop": "Naanhof",
+  "item": "Paardenpoelet",
+  "discount": "8,99 per kg",
+  "category": null,
+  "startDate": "2026-10-18",
+  "endDate": "2026-10-24",
+  "notes": null,
+  "imageKey": "405599fc-c44f-46ef-8fa9-6f13ec4223f4.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "882988fd-7714-42bc-9f93-8ae26ce4190b",
+  "createdAt": 1792352360622
  }
 ]
