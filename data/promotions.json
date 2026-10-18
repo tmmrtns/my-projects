@@ -208,5 +208,19 @@
   "rank": 3,
   "id": "0c970039-6f4e-470b-ac6c-ad1f778c45ff",
   "createdAt": 1792353003260
+ },
+ {
+  "shop": "Lidl DE",
+  "item": "Kalkoenbout",
+  "discount": "4,99 per kg",
+  "category": null,
+  "startDate": "2026-10-22",
+  "endDate": "2026-10-24",
+  "notes": null,
+  "imageKey": "fc5fa594-0aa5-480f-b8d5-7c73e24d036e.png",
+  "redeemed": false,
+  "rank": 5,
+  "id": "a724397d-2e9c-4857-b357-ebec42854bf7",
+  "createdAt": 1792353420185
  }
 ]
