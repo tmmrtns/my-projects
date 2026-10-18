@@ -68,5 +68,19 @@
   "rank": 3,
   "id": "259b85d5-1ea5-41df-8a37-097e962b8797",
   "createdAt": 1791111653615
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Kippenworst",
+  "discount": "6,69 per kg",
+  "category": null,
+  "startDate": "2026-10-19",
+  "endDate": "2026-10-24",
+  "notes": null,
+  "imageKey": "16783dfc-5703-45e0-8859-b44adbe8a656.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "00139675-d976-4520-8c8d-8f1687da9f1b",
+  "createdAt": 1792351449300
  }
 ]
