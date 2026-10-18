@@ -82,5 +82,19 @@
   "rank": 3,
   "id": "00139675-d976-4520-8c8d-8f1687da9f1b",
   "createdAt": 1792351449300
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Brood",
+  "discount": "0,99 per brood",
+  "category": null,
+  "startDate": "2026-10-19",
+  "endDate": "2026-10-24",
+  "notes": null,
+  "imageKey": "35ab3911-970e-4108-9b08-d0149b5ce15e.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "2b2aeb6f-680f-445c-93ca-55811c603c60",
+  "createdAt": 1792351503291
  }
 ]
