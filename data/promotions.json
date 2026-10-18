@@ -124,5 +124,19 @@
   "rank": 3,
   "id": "ed9192a0-39b9-4439-831d-d76fa47d8d85",
   "createdAt": 1792352058422
+ },
+ {
+  "shop": "Delhaize",
+  "item": "Pepsi Max",
+  "discount": "0,87 per L",
+  "category": null,
+  "startDate": "2026-10-15",
+  "endDate": "2026-10-21",
+  "notes": null,
+  "imageKey": "d55e023c-c0bb-468b-a2e7-a46898bfd853.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "6a99f578-5aae-43ee-bb5a-ed3336f4f637",
+  "createdAt": 1792352221409
  }
 ]
