@@ -1,0 +1,1817 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2316261D%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%769%27 fill=%27%23E8A93D%27/%3E%3C/svg%3E">
+<style>html{padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Cookbook creator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Work+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+/* Layout: same family as The Cheapskate Cheat Sheet. A dotted board (tan in light, forest green in dark)
+   with cream paper cards that carry a colored left edge. Alfa Slab One titles, Work Sans for the rest, amber pill buttons. */
+:root{
+  --bg:#E9DFC8; --bg2:#DED2B4; --dot:rgba(43,35,24,.06); --bink:#2B2318; --bsoft:rgba(43,35,24,.62); --bline:rgba(43,35,24,.2); --bchip:rgba(43,35,24,.07); --panel:rgba(43,35,24,.12);
+  --card:#FBF6EA; --paper:#FBF6EA; --ink:#2B2318; --ink-2:#6B6151; --ink-3:#8C8370;
+  --line:rgba(43,35,24,.14); --rule:rgba(43,35,24,.12); --tint:rgba(43,35,24,.06);
+  --accent:#B8710E; --accent-ink:#8A5409; --on-accent:#FBF6EA; --active:#2F6B41; --warn:#C13B23; --upcoming:#2F5E7A; --danger:#C13B23;
+  --shadow:rgba(43,35,24,.2); --focus:#2F5E7A;
+  --font-slab:'Alfa Slab One',Georgia,serif;
+  --font-display:'Work Sans',system-ui,-apple-system,sans-serif;
+  --font-text:'Work Sans',system-ui,-apple-system,sans-serif;
+  --font-label:'Work Sans',system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16261D; --bg2:#1D3226; --dot:rgba(255,255,255,.05); --bink:#F3EEDF; --bsoft:rgba(243,238,223,.66); --bline:rgba(243,238,223,.22); --bchip:rgba(127,127,127,.12); --panel:rgba(243,238,223,.2);
+  --card:#F7F1DE; --paper:#F7F1DE; --accent:#E8A93D; --on-accent:#2B2318; --shadow:rgba(0,0,0,.5); --focus:#E8A93D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16261D; --bg2:#1D3226; --dot:rgba(255,255,255,.05); --bink:#F3EEDF; --bsoft:rgba(243,238,223,.66); --bline:rgba(243,238,223,.22); --bchip:rgba(127,127,127,.12); --panel:rgba(243,238,223,.2);
+  --card:#F7F1DE; --paper:#F7F1DE; --accent:#E8A93D; --on-accent:#2B2318; --shadow:rgba(0,0,0,.5); --focus:#E8A93D; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--bg);
+  background-image:radial-gradient(circle,var(--dot) 1px,transparent 1px),radial-gradient(ellipse at top,var(--bg2),transparent 60%);
+  background-size:26px 26px,100% 100%;color:var(--bink);font:400 16px/1.5 var(--font-text);-webkit-font-smoothing:antialiased;min-height:100%;
+  padding-block:0 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:400}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.ic{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.fill{fill:currentColor}
+.lbl{font:700 11.5px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.muted{color:var(--ink-2)}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 20px;padding:24px 0 14px}
+.titleblock{margin-right:auto;min-width:0;flex:1 1 320px}
+.site-title{font:400 clamp(28px,5.2vw,41.6px)/1.1 var(--font-slab);color:var(--bink);text-shadow:0 2px 0 rgba(0,0,0,.18);letter-spacing:.005em}
+.tagline{margin:8px 0 0;color:var(--bsoft);font-size:15px}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:6px}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
+.stat{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--bchip);border:1px solid var(--bline);font-size:13.76px;color:var(--bsoft)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+
+/* buttons: amber pill is the primary, outlined pills are the rest */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 20px;border-radius:999px;border:1px solid var(--bline);background:transparent;font:500 14.5px/1 var(--font-display);cursor:pointer;color:var(--bink)}
+.btn:hover{border-color:var(--bink)}
+.btn.primary{background:var(--accent);border-color:transparent;color:var(--on-accent);font-weight:600;font-size:15.2px;box-shadow:0 8px 18px var(--shadow)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.quiet{background:transparent;border-color:transparent}
+.btn.danger{color:var(--danger)}
+.btn.sm{min-height:34px;padding:0 14px;font-size:13.5px}
+.btn[aria-pressed="true"]{background:var(--bink);color:var(--bg);border-color:var(--bink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.icon-btn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%;border:0;background:transparent;cursor:pointer}
+.icon-btn:hover{background:var(--tint)}
+/* buttons that sit on cream paper */
+.card-ui .btn,dialog .btn{color:var(--ink);border-color:var(--line)}
+dialog .btn:hover{border-color:var(--ink)}
+dialog .btn.primary{color:var(--on-accent);border-color:transparent}
+dialog .btn.danger{color:var(--danger)}
+dialog .btn[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+
+/* tabs / filters */
+.app{display:block}
+.rail{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:2px 0 16px}
+.rail .rail-h{display:none}
+.rail button{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--bline);border-radius:999px;background:transparent;font:500 13.92px/1.2 var(--font-display);cursor:pointer;color:var(--bsoft);white-space:nowrap}
+.rail button:hover{color:var(--bink);border-color:var(--bink)}
+.rail button[aria-current="true"]{background:var(--bink);color:var(--bg);border-color:var(--bink)}
+.rail .n{opacity:.65;font-size:12.5px}
+.rail .dot{width:9px;height:9px}
+.rail .sep{width:1px;height:22px;background:var(--bline);margin:0 4px}
+.panel{display:grid;grid-template-columns:2fr 1fr;gap:14px 16px;padding:16px 18px 18px;border-radius:14px;background:var(--panel);margin-bottom:22px}
+.panel .fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.panel .lbl{color:var(--bink);opacity:.8}
+.panel input,.panel select{width:100%;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);padding:0 12px;font-size:13.92px}
+@media (max-width:720px){.panel{grid-template-columns:1fr}}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
+.toolbar h2{font:400 clamp(22px,3.6vw,28px)/1.1 var(--font-slab);color:var(--bink)}
+.toolbar .count{font:500 13.5px/1 var(--font-label);color:var(--bsoft)}
+.toolbar .btn{margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;background:var(--tint);font:500 12.5px/1.3 var(--font-label);color:var(--ink-2)}
+button.chip{cursor:pointer;border:0}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font:500 13px/1.2 var(--font-display)}
+.pill.ok{background:rgba(47,107,65,.14);color:#2F6B41}
+.pill.amber{background:rgba(184,113,14,.16);color:#8A5409}
+.pill .ic{width:12px;height:12px}
+.banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;border-radius:14px;margin-bottom:20px;background:var(--bchip);border:1px dashed var(--bline);font-size:15px;color:var(--bink)}
+.banner .btn{margin-left:auto}
+
+/* recipe cards: cream paper on the board */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;align-items:start}
+.rc{position:relative;background:var(--card);color:var(--ink);border-radius:14px;overflow:hidden;box-shadow:0 10px 24px var(--shadow);border:1px solid var(--line)}
+.rc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--edge,var(--active));z-index:2}
+.rc-main{all:unset;display:block;width:100%;cursor:pointer;box-sizing:border-box}
+.rc-main:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.rc-img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tint)}
+.rc-body{display:flex;flex-direction:column;gap:9px;padding:15px 16px 14px 20px}
+.rc-cat{font:700 11.5px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.selecting .rc-cat{margin-left:30px}
+.rc-title{font:400 21.6px/1.15 var(--font-slab);color:var(--ink);overflow-wrap:anywhere}
+.rc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rc-foot{display:flex;align-items:center;gap:10px;margin:0 16px 0 20px;padding:10px 0 12px;border-top:1px dashed var(--line);font-size:13.5px;color:var(--ink-2)}
+.rc-fav{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;padding:2px 0;cursor:pointer;color:var(--ink-2);font:500 13.5px/1.2 var(--font-display)}
+.rc-fav[aria-pressed="true"]{color:var(--warn)}
+.rc-check{display:none;position:absolute;top:12px;left:16px;width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:var(--card);place-items:center;color:transparent;pointer-events:none;z-index:3}
+.selecting .rc-check{display:grid}
+.selecting .rc-foot{display:none}
+.rc.sel{box-shadow:0 0 0 3px var(--accent),0 10px 24px var(--shadow)}
+.rc.sel .rc-check{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.empty{border-radius:14px;padding:44px 24px;text-align:center;background:var(--card);color:var(--ink);box-shadow:0 10px 24px var(--shadow)}
+.empty h2{font:400 26px/1.15 var(--font-slab);margin-bottom:8px}
+.empty p{max-width:46ch;margin:0 auto 18px;color:var(--ink-2)}
+.empty .btn{color:var(--ink);border-color:var(--line)}
+.empty .btn.primary{color:var(--on-accent);border-color:transparent}
+
+/* selection bar */
+.selbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;pointer-events:none;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.selbar .bar{pointer-events:auto;background:var(--bink);color:var(--bg);border-radius:999px;padding:8px 10px 8px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;box-shadow:0 14px 34px var(--shadow)}
+.selbar .btn{background:transparent;border-color:color-mix(in srgb,var(--bg) 40%,transparent);color:var(--bg);min-height:38px}
+.selbar .btn.primary{background:var(--accent);border-color:transparent;color:var(--on-accent);box-shadow:none}
+.selbar b{font:700 14px/1 var(--font-display)}
+
+/* dialogs: cream paper */
+dialog.dlg{padding:0;border:0;border-radius:14px;background:var(--card);color:var(--ink);width:min(940px,100%);max-width:none;max-height:calc(100dvh - 32px);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+dialog.dlg.narrow{width:min(720px,100%)}
+dialog.dlg[open]{display:flex;flex-direction:column}
+dialog.dlg::backdrop{background:rgba(10,18,13,.65)}
+.dlg-head{display:flex;align-items:center;gap:12px;padding:14px 14px 10px 26px;flex:none}
+.dlg-head h2{font:400 24px/1.1 var(--font-slab);margin-right:auto}
+.dlg-body{overflow:auto;flex:1;min-height:0}
+.dlg-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:14px 26px;border-top:1px dashed var(--line);flex:none;background:var(--card)}
+.dlg-foot .sp{margin-right:auto}
+@media (max-width:720px){
+  dialog.dlg,dialog.dlg.narrow{width:100%;height:100%;max-height:100%;border-radius:0}
+  .dlg-head{padding-top:max(12px,env(safe-area-inset-top,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+  .dlg-foot{padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+
+/* recipe detail */
+.hd{margin:6px 26px 0;padding:2px 0 4px 18px;border-left:6px solid var(--tile,var(--active));border-radius:3px}
+.cat-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.card-title{font:400 clamp(30px,5.4vw,44px)/1.08 var(--font-slab);margin:10px 0 8px;overflow-wrap:anywhere}
+.lede{margin:0;max-width:60ch;font-size:16.5px;color:var(--ink-2)}
+.facts{display:flex;flex-wrap:wrap;gap:8px;padding:18px 26px 0}
+.fact{background:var(--tint);border-radius:12px;padding:9px 15px;min-width:92px}
+.fact .v{font:600 17px/1.3 var(--font-display);margin-top:2px}
+.hero{display:block;width:calc(100% - 52px);margin:18px 26px 0;max-height:360px;object-fit:cover;border-radius:14px;background:var(--tint)}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap;padding:16px 26px 0}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px;padding:24px 26px 28px;align-items:start}
+.cols h3{font:400 21.6px/1.1 var(--font-slab);margin-bottom:12px}
+.cols section:first-child{background:var(--tint);border-radius:14px;padding:18px 20px 10px}
+.ings,.steps{list-style:none;margin:0;padding:0}
+.ings li{padding:8px 0;line-height:1.4;border-bottom:1px dashed var(--line)}
+.ings li:last-child{border-bottom:0}
+.ings li.grp{font:700 12px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding-top:16px;border-bottom:0}
+.ings label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.ings input{margin-top:4px;accent-color:var(--active);flex:none;width:17px;height:17px}
+.ings input:checked+span{text-decoration:line-through;color:var(--ink-3)}
+.steps{counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:42px minmax(0,1fr);padding:0 0 16px;font-size:16.5px;line-height:1.55}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:700 14px/1 var(--font-display)}
+.extra{padding:0 26px 26px;display:grid;gap:16px}
+.extra p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.rate{display:inline-flex;gap:2px;margin-left:-3px}
+.rate button{border:0;background:transparent;padding:3px;cursor:pointer;color:var(--ink-3);border-radius:4px}
+.rate button[aria-pressed="true"]{color:var(--accent)}
+.rate .ic{width:20px;height:20px}
+@media (max-width:760px){.hd{margin:4px 16px 0}.facts{padding:14px 16px 0}.hero{width:calc(100% - 32px);margin:14px 16px 0}.tagrow{padding:14px 16px 0}.cols{grid-template-columns:1fr;gap:22px;padding:20px 16px 24px}.extra{padding:0 16px 24px}}
+
+/* forms */
+.form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px 16px;padding:8px 26px 24px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f2{grid-column:span 2}.f3{grid-column:span 3}.f4{grid-column:span 4}.f6{grid-column:span 6}
+dialog .fld>label,dialog .fld>.lbl{font:700 11.5px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+dialog input[type=text],dialog input[type=password],dialog input[type=number],dialog input[type=search],dialog input[type=url],dialog select,dialog textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#FFFDF6;color:var(--ink);padding:10px 12px;min-height:42px;font-size:15px}
+textarea{resize:vertical;line-height:1.5}
+.hint{font-size:13.5px;color:var(--ink-2);margin:0}
+@media (max-width:720px){.form{grid-template-columns:1fr;padding:8px 16px 20px}.f2,.f3,.f4,.f6{grid-column:auto}}
+.imgbox{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.imgbox img{width:132px;aspect-ratio:4/3;object-fit:cover;border-radius:10px}
+.imgbox .none{width:132px;aspect-ratio:4/3;border-radius:10px;background:var(--tint);display:grid;place-items:center;color:var(--ink-3);font:500 12.5px/1 var(--font-label)}
+.scans{display:flex;gap:10px;overflow-x:auto;padding:8px 0}
+.scans img{height:220px;width:auto;border-radius:8px}
+details.scanbox{grid-column:1/-1;border-radius:12px;padding:12px 16px;background:var(--tint)}
+details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
+.note{padding:12px 16px;border-radius:12px;background:var(--tint);font-size:15px;grid-column:1/-1}
+
+/* import */
+.tabs{display:flex;gap:6px;padding:4px 22px 12px;overflow-x:auto;flex:none}
+.tabs button{border:1px solid var(--line);background:transparent;padding:9px 16px;font:500 13.92px/1 var(--font-display);color:var(--ink-2);cursor:pointer;border-radius:99px;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.pane{padding:12px 26px 20px;display:grid;gap:14px}
+.drop{border:2px dashed var(--ink-3);border-radius:14px;padding:30px 18px;text-align:center;display:grid;gap:10px;justify-items:center;background:var(--tint)}
+.drop.over{border-color:var(--accent);background:rgba(184,113,14,.12)}
+.thumbs{display:flex;flex-wrap:wrap;gap:10px}
+.thumb{position:relative}
+.thumb img{height:110px;width:auto;border-radius:8px;display:block}
+.thumb button{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:var(--ink);color:var(--card);cursor:pointer;display:grid;place-items:center}
+.status{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;background:rgba(47,107,65,.12);color:var(--ink)}
+.status.err{box-shadow:inset 0 0 0 1.5px var(--danger);color:var(--danger);background:transparent}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--rule);border-top-color:var(--accent);animation:sp .9s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+/* export */
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatches label{cursor:pointer}
+.swatches input{position:absolute;opacity:0;pointer-events:none}
+.swatches span{display:block;width:38px;height:38px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.swatches input:checked+span{border-color:var(--ink);outline:3px solid var(--card);outline-offset:-6px}
+.swatches input:focus-visible+span{outline:2px solid var(--focus);outline-offset:2px}
+.checks{display:flex;flex-wrap:wrap;gap:8px 20px}
+.checks label{display:flex;gap:8px;align-items:center;font-size:15px}
+.checks input{accent-color:var(--active);width:18px;height:18px}
+.layouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.layouts label{cursor:pointer;display:block}
+.layouts input{position:absolute;opacity:0;pointer-events:none}
+.layouts .lt{display:flex;flex-direction:column;gap:3px;height:100%;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--tint)}
+.layouts .lt svg{width:54px;height:72px;margin-bottom:6px}
+.layouts .lt b{font:600 14px/1.2 var(--font-display)}
+.layouts .lt small{font-size:12.5px;line-height:1.35;color:var(--ink-2)}
+.layouts .pg{fill:#FFFDF6;stroke:var(--ink-3);stroke-width:1}
+.layouts .ac{fill:var(--accent)}.layouts .ac2{fill:rgba(184,113,14,.2)}.layouts .ln{fill:var(--ink-3);opacity:.55}
+.layouts input:checked+.lt{border-color:var(--accent);background:rgba(184,113,14,.1)}
+.layouts input:focus-visible+.lt{outline:2px solid var(--focus);outline-offset:2px}
+@media (max-width:560px){.layouts{grid-template-columns:1fr}.layouts .lt{flex-direction:row;flex-wrap:wrap;align-items:center}.layouts .lt svg{margin:0 8px 0 0}}
+.xl{list-style:none;margin:0;padding:6px;border-radius:12px;background:var(--tint);max-height:320px;overflow:auto}
+.xl li{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:4px 6px 4px 12px;border-radius:10px}
+.xl li:hover{background:var(--card)}
+.xl .n{font:600 12.5px/1 var(--font-label);color:var(--ink-3)}
+.xl .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+#toast{position:fixed;inset:auto auto calc(20px + env(safe-area-inset-bottom,0px)) 50%;transform:translateX(-50%);margin:0;border:0;padding:12px 20px;border-radius:999px;background:#2B2318;color:#F3EEDF;font:500 14.5px/1.35 var(--font-display);max-width:min(92vw,520px);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#toast.err{background:#C13B23;color:#fff}
+
+@media (max-width:900px){
+  .rail{flex-wrap:nowrap;overflow-x:auto;padding-bottom:14px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+}
+.regtools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.regtools button{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:transparent;cursor:pointer;font:500 13.5px/1 var(--font-display);color:var(--ink)}
+.regtools button[aria-pressed="true"]{border-color:var(--ink);background:var(--tint);font-weight:600}
+.regstage{border-radius:10px;overflow:hidden;background:var(--tint);line-height:0}
+#reg-cv{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+#reg-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
+#reg-list li{display:flex;align-items:center;gap:8px;font-size:14px}
+#reg-list li span:nth-child(2){margin-right:auto}
+.thumb img{cursor:pointer}.thumb img[aria-current="true"]{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+<symbol id="i-page" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h7"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19zM14 7l3 3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></symbol>
+<symbol id="i-dn" viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></symbol>
+</defs></svg>
+
+<div class="wrap" id="root">
+  <header class="top">
+    <div class="titleblock">
+      <h1 class="site-title">Cookbook creator</h1>
+      <p class="tagline">Scan it, save it, cook it. Veni, Vidi, Cucinavi.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btn-lib">Library</button>
+      <button class="btn" id="btn-select" aria-pressed="false">Select</button>
+      <button class="btn primary" id="btn-add"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg>Add recipe</button>
+    </div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div class="panel">
+    <div class="fld"><label class="lbl" for="q">Search</label>
+      <input id="q" type="search" placeholder="Titles, ingredients, tags" autocomplete="off"></div>
+    <div class="fld"><label class="lbl" for="sort">Sort</label>
+      <select id="sort">
+        <option value="new">Newest first</option>
+        <option value="az">A to Z</option>
+        <option value="rating">Highest rated</option>
+        <option value="quick">Quickest</option>
+      </select></div>
+  </div>
+  <div class="app" id="app">
+    <nav class="rail" id="rail" aria-label="Browse recipes"></nav>
+    <main>
+      <div class="toolbar">
+        <h2 id="view-title">All recipes</h2>
+        <span class="count" id="count"></span>
+        <span id="tagchip"></span>
+        </div>
+      <div id="banner"></div>
+      <div id="grid" class="grid"></div>
+    </main>
+  </div>
+</div>
+
+<div class="selbar" id="selbar" hidden><div class="bar">
+  <b id="sel-n">0 selected</b>
+  <button class="btn" id="sel-all">Select all shown</button>
+  <button class="btn" id="sel-none">Clear</button>
+  <button class="btn primary" id="sel-book"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>Make cookbook</button>
+  <button class="icon-btn" id="sel-done" aria-label="Leave selection mode" style="color:inherit"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
+</div></div>
+
+
+<dialog class="dlg narrow" id="dlg-lib" aria-label="Library backup and sync">
+  <div class="dlg-head"><h2>Library</h2>
+    <button class="icon-btn" data-l="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="dlg-body"><div class="form">
+    <div class="fld f6"><span class="lbl">Backup file</span>
+      <p class="hint">Recipes live in this browser. Export them to a JSON file to keep a copy or move them to another device, and import such a file to merge it in.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="lib-export">Export all recipes</button>
+        <label class="btn" for="lib-import">Import backup</label><input type="file" id="lib-import" accept=".json,application/json" hidden></div></div>
+    <div class="fld f6"><span class="lbl">GitHub repository</span>
+      <p class="hint">Sync saves all recipes to a JSON file in your repository, and the published site loads that file for every visitor. You need a fine-grained personal access token limited to this one repository with Contents: read and write. The token stays in this browser only.</p></div>
+    <div class="fld f3"><label for="gh-owner">Owner</label><input type="text" id="gh-owner" autocomplete="off"></div>
+    <div class="fld f3"><label for="gh-repo">Repository</label><input type="text" id="gh-repo" autocomplete="off"></div>
+    <div class="fld f3"><label for="gh-branch">Branch</label><input type="text" id="gh-branch" autocomplete="off"></div>
+    <div class="fld f3"><label for="gh-path">File</label><input type="text" id="gh-path" autocomplete="off"></div>
+    <div class="fld f6"><label for="gh-token">Access token</label><input type="password" id="gh-token" autocomplete="off" spellcheck="false" placeholder="github_pat_..."></div>
+    <div class="f6" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" id="gh-save">Sync (load, merge, save)</button><button class="btn" type="button" id="gh-load">Load only</button></div>
+    <div class="status f6" id="lib-status" hidden style="grid-column:1/-1"></div>
+  </div></div>
+</dialog>
+
+<datalist id="cat-list"></datalist>
+<div id="toast" popover="manual" role="status" aria-live="polite"></div>
+
+<!-- recipe detail -->
+<dialog class="dlg" id="dlg-detail" aria-label="Recipe">
+  <div class="dlg-head"><span class="lbl">Recipe</span><span style="margin-right:auto"></span>
+    <button class="icon-btn" data-d="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="dlg-body" id="detail-body"></div>
+  <div class="dlg-foot" id="detail-foot"></div>
+</dialog>
+
+<!-- editor -->
+<dialog class="dlg" id="dlg-edit" aria-label="Edit recipe">
+  <div class="dlg-head"><h2 id="ed-head">Edit recipe</h2>
+    <button class="icon-btn" data-e="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="dlg-body"><div class="form">
+    <div class="note" id="ed-note" hidden></div>
+    <details class="scanbox" id="ed-scanbox" hidden open><summary>Check against the original scan</summary><div class="scans" id="ed-scans"></div></details>
+    <div class="fld f4"><label for="ed-title">Title</label><input type="text" id="ed-title" autocomplete="off"></div>
+    <div class="fld f2"><label for="ed-cat">Category</label><input type="text" id="ed-cat" list="cat-list" autocomplete="off" placeholder="Mains"></div>
+    <div class="fld f6"><label for="ed-desc">Short description</label><textarea id="ed-desc" rows="2"></textarea></div>
+    <div class="fld f2"><label for="ed-servings">Yield</label><input type="text" id="ed-servings" placeholder="4 servings"></div>
+    <div class="fld f2"><label for="ed-cuisine">Cuisine</label><input type="text" id="ed-cuisine" autocomplete="off"></div>
+    <div class="fld f2"><label for="ed-tags">Tags</label><input type="text" id="ed-tags" placeholder="vegetarian, one-pot" autocomplete="off"></div>
+    <div class="fld f2"><label for="ed-prep">Prep (min)</label><input type="number" id="ed-prep" min="0" inputmode="numeric"></div>
+    <div class="fld f2"><label for="ed-cook">Cook (min)</label><input type="number" id="ed-cook" min="0" inputmode="numeric"></div>
+    <div class="fld f2"><label for="ed-total">Total (min)</label><input type="number" id="ed-total" min="0" inputmode="numeric"><p class="hint">Leave empty to add prep and cook.</p></div>
+    <div class="fld f3"><label for="ed-ing">Ingredients</label><textarea id="ed-ing" rows="12" spellcheck="false"></textarea><p class="hint">One per line. Start a line with # for a group heading, like # For the sauce.</p></div>
+    <div class="fld f3"><label for="ed-steps">Method</label><textarea id="ed-steps" rows="12"></textarea><p class="hint">One step per line. Numbers are added for you.</p></div>
+    <div class="fld f6"><label for="ed-notes">Notes</label><textarea id="ed-notes" rows="3"></textarea></div>
+    <div class="fld f4"><label for="ed-source">Source</label><input type="text" id="ed-source" placeholder="Web address, book, or person" autocomplete="off"></div>
+    <div class="fld f2"><span class="lbl">Rating</span><span class="rate" id="ed-rate" role="group" aria-label="Rating"></span></div>
+    <div class="fld f6"><span class="lbl">Picture</span>
+      <div class="imgbox"><div id="ed-imgprev"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label class="btn sm" for="ed-file"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-camera"/></svg>Choose photo</label>
+          <input type="file" id="ed-file" accept="image/*" hidden>
+          <button class="btn sm" type="button" id="ed-usescan" hidden>Use the scan as picture</button>
+          <button class="btn sm quiet danger" type="button" id="ed-rmimg" hidden>Remove</button>
+        </div></div></div>
+  </div></div>
+  <div class="dlg-foot"><span class="status err sp" id="ed-err" hidden></span>
+    <button class="btn" data-e="close">Cancel</button><button class="btn primary" id="ed-save">Save recipe</button></div>
+</dialog>
+
+<!-- import -->
+<dialog class="dlg narrow" id="dlg-import" aria-label="Add a recipe">
+  <div class="dlg-head"><h2>Add a recipe</h2>
+    <button class="icon-btn" data-i="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="tabs" role="tablist" id="imp-tabs">
+    <button role="tab" data-tab="photo" aria-selected="true">Photo or scan</button>
+    <button role="tab" data-tab="web" aria-selected="false">Webpage or text</button>
+    <button role="tab" data-tab="manual" aria-selected="false">Type it in</button>
+  </div>
+  <div class="dlg-body">
+    <div class="pane" data-pane="photo">
+      <div class="drop" id="drop-photo">
+        <svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px" aria-hidden="true"><use href="#i-camera"/></svg>
+        <div><b>Drop scans or photos here</b><br><span class="muted">JPG, PNG or WebP. Add several pages in order if the recipe runs over.</span></div>
+        <label class="btn" for="imp-files">Choose images</label>
+        <input type="file" id="imp-files" accept="image/*" multiple hidden>
+      </div>
+      <div class="thumbs" id="imp-thumbs"></div>
+      <div id="reg" hidden>
+        <p class="hint" style="margin:0 0 8px"><b>Mark what is where.</b> Pick a type, then drag a box over that part of the page. Only the text inside the boxes is read, and a Picture box is saved as the recipe photo.</p>
+        <div class="regtools" id="reg-tools" role="group" aria-label="What are you marking?">
+          <button type="button" data-rt="ing" aria-pressed="true"><span class="dot" style="background:#2F9E5B"></span>Ingredients</button>
+          <button type="button" data-rt="steps" aria-pressed="false"><span class="dot" style="background:#2F6B9A"></span>Steps</button>
+          <button type="button" data-rt="info" aria-pressed="false"><span class="dot" style="background:#8A6BBE"></span>Title and info</button>
+          <button type="button" data-rt="pic" aria-pressed="false"><span class="dot" style="background:#C8553D"></span>Picture</button>
+          <button type="button" data-rt="notes" aria-pressed="false"><span class="dot" style="background:#B8710E"></span>Notes</button>
+        </div>
+        <div class="regstage"><canvas id="reg-cv" aria-label="Scan. Drag to mark an area."></canvas></div>
+        <ul id="reg-list"></ul>
+        <p class="hint" id="reg-empty">No boxes yet. Without boxes the whole page is read and sorted automatically, which works less well.</p>
+      </div>
+      <div class="fld"><label for="imp-lang">Language of the recipe</label>
+        <select id="imp-lang"><option value="eng">English</option><option value="nld">Nederlands</option><option value="fra">Français</option><option value="deu">Deutsch</option><option value="ita">Italiano</option><option value="spa">Español</option><option value="nld+eng">Nederlands + English</option><option value="fra+eng">Français + English</option></select></div>
+      <p class="hint" id="imp-photo-hint">Text is read on your device with Tesseract. The first scan downloads the language data (a few MB). Printed text works well; handwriting does not.</p>
+    </div>
+    <div class="pane" data-pane="web" hidden>
+      <p class="hint" style="margin:0">Enter the web address and press Fetch page. This goes through a free public relay, so it can fail and the relay sees the address. If it does, save the page from your browser (File, Save Page As, "Webpage, HTML only") and drop the file, or paste the text below.</p>
+      <div class="drop" id="drop-web">
+        <svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px" aria-hidden="true"><use href="#i-page"/></svg>
+        <label class="btn" for="imp-html">Choose saved page</label>
+        <input type="file" id="imp-html" accept=".html,.htm,.txt,.md,text/html,text/plain" hidden>
+        <span class="muted" id="imp-htmlname">No file chosen</span>
+      </div>
+      <div class="fld"><label for="imp-paste">Or paste page text or source</label><textarea id="imp-paste" rows="6" placeholder="Paste here"></textarea></div>
+      <div class="fld"><label for="imp-url">Web address (kept as the source)</label><div style="display:flex;gap:8px"><input type="url" id="imp-url" placeholder="https://" autocomplete="off" style="flex:1"><button class="btn" type="button" id="imp-fetch">Fetch page</button></div></div>
+      <div class="fld"><label for="imp-photo">Dish photo (optional)</label><input type="file" id="imp-photo" accept="image/*">
+        <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead.</p></div>
+    </div>
+    <div class="pane" data-pane="manual" hidden>
+      <p style="margin:0">Start with a blank card and type or paste the recipe yourself.</p>
+    </div>
+    <div class="pane" style="padding-top:0" id="imp-statuswrap" hidden><div class="status" id="imp-status" role="status" aria-live="polite"></div></div>
+  </div>
+  <div class="dlg-foot"><span class="sp"></span>
+    <button class="btn" id="imp-stop" hidden>Stop</button>
+    <button class="btn" data-i="close">Cancel</button>
+    <button class="btn primary" id="imp-go">Read recipe</button></div>
+</dialog>
+
+<!-- export -->
+<dialog class="dlg narrow" id="dlg-export" aria-label="Export PDF">
+  <div class="dlg-head"><h2 id="ex-head">Export PDF</h2>
+    <button class="icon-btn" data-x="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="dlg-body"><div class="form">
+    <div class="fld f6" data-book><label for="ex-title">Cookbook title</label><input type="text" id="ex-title" value="My Cookbook" autocomplete="off"></div>
+    <div class="fld f3" data-book><label for="ex-sub">Subtitle</label><input type="text" id="ex-sub" placeholder="Optional" autocomplete="off"></div>
+    <div class="fld f3" data-book><label for="ex-author">Compiled by</label><input type="text" id="ex-author" placeholder="Optional" autocomplete="off"></div>
+    <div class="fld f3"><label for="ex-paper">Paper</label><select id="ex-paper"><option value="a4">A4</option><option value="letter">US Letter</option></select></div>
+    <div class="fld f3" data-book><span class="lbl">Cover color</span>
+      <div class="swatches" id="ex-cover">
+        <label><input type="radio" name="cover" value="basil" checked><span style="background:#16261D" title="Forest"></span></label>
+        <label><input type="radio" name="cover" value="sun"><span style="background:#E8A93D" title="Sunny"></span></label>
+        <label><input type="radio" name="cover" value="tomato"><span style="background:#C13B23" title="Tomato"></span></label>
+        <label><input type="radio" name="cover" value="plum"><span style="background:#563058" title="Plum"></span></label>
+        <label><input type="radio" name="cover" value="ink"><span style="background:#2B2318" title="Charcoal"></span></label>
+      </div></div>
+    <div class="fld f6"><span class="lbl">Page layout</span>
+      <div class="layouts" id="ex-layout">
+        <label><input type="radio" name="layout" value="classic" checked><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="16" rx="3" class="ac"/><rect x="6" y="27" width="42" height="9" rx="1.5" class="ln"/><rect x="6" y="40" width="19" height="3" class="ln"/><rect x="29" y="40" width="19" height="3" class="ln"/><rect x="6" y="46" width="19" height="3" class="ln"/><rect x="29" y="46" width="19" height="3" class="ln"/><rect x="6" y="56" width="42" height="3" class="ln"/><rect x="6" y="62" width="42" height="3" class="ln"/></svg><b>Classic</b><small>Colour title band, photo, ingredients, then method</small></span></label>
+        <label><input type="radio" name="layout" value="side"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="3" class="ac"/><rect x="6" y="13" width="30" height="5" class="ln"/><rect x="6" y="24" width="18" height="40" rx="2" class="ac2"/><rect x="9" y="28" width="12" height="3" class="ln"/><rect x="9" y="34" width="12" height="3" class="ln"/><rect x="9" y="40" width="12" height="3" class="ln"/><rect x="28" y="26" width="20" height="3" class="ln"/><rect x="28" y="33" width="20" height="3" class="ln"/><rect x="28" y="40" width="20" height="3" class="ln"/><rect x="28" y="47" width="20" height="3" class="ln"/></svg><b>Side by side</b><small>Ingredients in a column, method next to it</small></span></label>
+        <label><input type="radio" name="layout" value="compact"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="26" height="4" class="ln"/><rect x="38" y="6" width="10" height="9" class="ac2"/><rect x="6" y="17" width="19" height="2" class="ln"/><rect x="29" y="17" width="19" height="2" class="ln"/><rect x="6" y="22" width="42" height="2" class="ln"/><rect x="6" y="27" width="42" height="1" class="ac"/><rect x="6" y="34" width="26" height="4" class="ln"/><rect x="6" y="44" width="19" height="2" class="ln"/><rect x="29" y="44" width="19" height="2" class="ln"/><rect x="6" y="49" width="42" height="2" class="ln"/><rect x="6" y="54" width="42" height="2" class="ln"/></svg><b>Compact</b><small>Small type, recipes share pages. Fewer sheets</small></span></label>
+      </div></div>
+    <div class="fld f6"><span class="lbl">Include</span>
+      <div class="checks">
+        <label data-book><input type="checkbox" id="ex-toc" checked>Contents page</label>
+        <label><input type="checkbox" id="ex-photos" checked>Photos</label>
+        <label><input type="checkbox" id="ex-notes" checked>Notes</label>
+      </div></div>
+    <div class="fld f6" data-book>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="lbl" style="margin-right:auto">Recipes in order</span>
+        <button class="btn sm" type="button" id="ex-az">Sort A to Z</button>
+        <button class="btn sm" type="button" id="ex-bycat">Sort by category</button></div>
+      <ul class="xl" id="ex-list"></ul></div>
+    <div class="status f6" id="ex-status" hidden style="grid-column:1/-1"></div>
+  </div></div>
+  <div class="dlg-foot"><span class="sp"></span><button class="btn" data-x="close">Cancel</button>
+    <button class="btn primary" id="ex-go"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-down"/></svg><span id="ex-golbl">Create PDF</span></button></div>
+</dialog>
+
+
+<script>
+(function(){
+'use strict';
+const $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+//#PARSE-START
+const DEFAULT_CATS=['Breakfast','Starters','Soups & Salads','Mains','Sides','Baking','Desserts','Drinks','Sauces & Preserves','Snacks'];
+const CAT_RULES=[
+ [/soup|salad|soep|salade|soupe/i,'Soups & Salads'],
+ [/breakfast|brunch|ontbijt|petit[- ]d[eé]j/i,'Breakfast'],
+ [/starter|appetizer|appetiser|voorgerecht|hors d/i,'Starters'],
+ [/dessert|pudding|nagerecht|ice cream|sweet treat/i,'Desserts'],
+ [/\bbak(e|ing|ed)\b|bread|cake|cookie|biscuit|pastry|\bpie\b|tart|brood|taart|koek|g[aâ]teau/i,'Baking'],
+ [/drink|beverage|cocktail|smoothie|drank|boisson/i,'Drinks'],
+ [/sauce|dressing|condiment|\bjam\b|preserve|pickle|saus|confituur|\bdip\b/i,'Sauces & Preserves'],
+ [/snack|finger food|borrel/i,'Snacks'],
+ [/\bside\b|bijgerecht|accompagnement|garnish/i,'Sides'],
+ [/main|dinner|lunch|supper|entr[ée]e|hoofdgerecht|\bplat\b|casserole|pasta|curry|stew/i,'Mains']
+];
+function mapCategory(s){
+  s=String(s||'').trim(); if(!s) return '';
+  for(const [re,name] of CAT_RULES) if(re.test(s)) return name;
+  return s.length>32 ? s.slice(0,32) : s.charAt(0).toUpperCase()+s.slice(1);
+}
+function blankDraft(){
+  return {title:'',description:'',ingredients:[],steps:[],servings:'',prepMin:null,cookMin:null,totalMin:null,
+    category:'',cuisine:'',tags:[],notes:'',source:'',rating:0,favorite:false,image:'',imageW:0,imageH:0,origin:'manual'};
+}
+function clean(s){
+  s=String(s==null?'':s);
+  if(/[<&]/.test(s)){ try{ const d=new DOMParser().parseFromString('<!doctype html><body>'+s,'text/html'); s=d.body.textContent||''; }catch(e){} }
+  return s.replace(/[   ]/g,' ').replace(/[ \t]+/g,' ').trim();
+}
+function stripBullet(s){ return String(s).replace(/^[\s•·▪◦*\-–—‣]+/,'').trim(); }
+function stripStepNo(s){ return String(s).replace(/^\s*(?:step\s*)?\d+\s*[.):\-]\s*/i,'').trim(); }
+function minutesFromISO(v){
+  if(typeof v!=='string') return null;
+  const m=v.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i);
+  if(!m) return null;
+  const mins=(+m[1]||0)*1440+(+m[2]||0)*60+(+m[3]||0)+Math.round((+m[4]||0)/60);
+  return mins>0?mins:null;
+}
+function normYield(v){
+  if(Array.isArray(v)) v=v.find(x=>/\d/.test(String(x)))!=null?v.find(x=>/\d/.test(String(x))):v[0];
+  if(v==null) return '';
+  if(typeof v==='number') return v+' servings';
+  v=clean(v);
+  if(/^\d+$/.test(v)) return v+' servings';
+  return v.slice(0,60);
+}
+function flattenInstructions(v){
+  const out=[];
+  const walk=n=>{
+    if(n==null) return;
+    if(typeof n==='string'){
+      String(n).replace(/<\/(p|li|div)>|<br\s*\/?>/gi,'\n').split(/\r?\n/).map(clean).filter(Boolean).forEach(x=>out.push(x));
+    } else if(Array.isArray(n)) n.forEach(walk);
+    else if(typeof n==='object'){
+      if(n.itemListElement && !n.text) walk(n.itemListElement);
+      else if(n.text) walk(n.text);
+      else if(n.name) walk(n.name);
+    }
+  };
+  walk(v); return out;
+}
+function personName(a){
+  if(!a) return '';
+  if(Array.isArray(a)) a=a[0];
+  if(typeof a==='string') return clean(a);
+  return clean(a.name||'');
+}
+function recipeFromJsonLd(node,srcUrl){
+  const d=blankDraft();
+  const ing=[].concat(node.recipeIngredient||node.ingredients||[]).map(clean).filter(Boolean);
+  d.title=clean(node.name||node.headline||'').slice(0,160);
+  d.description=clean(node.description||'').slice(0,300);
+  d.ingredients=ing;
+  d.steps=flattenInstructions(node.recipeInstructions).map(stripStepNo);
+  d.servings=normYield(node.recipeYield);
+  d.prepMin=minutesFromISO(node.prepTime); d.cookMin=minutesFromISO(node.cookTime); d.totalMin=minutesFromISO(node.totalTime);
+  if(d.prepMin&&d.cookMin&&d.totalMin===d.prepMin+d.cookMin) d.totalMin=null;
+  d.category=mapCategory([].concat(node.recipeCategory||[]).join(', '));
+  d.cuisine=clean([].concat(node.recipeCuisine||[])[0]||'');
+  let kw=node.keywords; if(typeof kw==='string') kw=kw.split(/[,;]/); kw=[].concat(kw||[]);
+  const seen=new Set();
+  d.tags=kw.map(k=>clean(k).toLowerCase()).filter(k=>k.length>1&&k.length<29&&!seen.has(k)&&seen.add(k)).slice(0,6);
+  d.source=srcUrl||personName(node.author);
+  { let im=node.image; if(Array.isArray(im)) im=im[0]; if(im&&typeof im==='object') im=im.url||im.contentUrl; d.imageUrl=typeof im==='string'?im:''; }
+  d.origin='web';
+  return d;
+}
+function findJsonLdRecipe(doc){
+  const isRecipe=n=>n&&typeof n==='object'&&[].concat(n['@type']||[]).some(t=>String(t).toLowerCase()==='recipe');
+  for(const s of doc.querySelectorAll('script[type="application/ld+json"]')){
+    let j; const txt=(s.textContent||'').replace(/^\s*<!--|-->\s*$/g,'');
+    try{ j=JSON.parse(txt); }catch(e){ try{ j=JSON.parse(txt.replace(/,\s*([}\]])/g,'$1')); }catch(e2){ continue; } }
+    const stack=[j];
+    while(stack.length){
+      const n=stack.pop();
+      if(!n||typeof n!=='object') continue;
+      if(Array.isArray(n)){ stack.push(...n); continue; }
+      if(isRecipe(n)) return n;
+      if(n['@graph']) stack.push(n['@graph']);
+      if(n.mainEntity) stack.push(n.mainEntity);
+    }
+  }
+  return null;
+}
+function htmlToText(doc){
+  if(!doc.body) return '';
+  const body=doc.body.cloneNode(true);
+  body.querySelectorAll('script,style,noscript,svg,iframe,form,nav,footer,aside,button,select').forEach(n=>n.remove());
+  body.querySelectorAll('br').forEach(n=>n.replaceWith('\n'));
+  body.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,h6,tr,section,article,ul,ol').forEach(n=>n.append('\n'));
+  return body.textContent.replace(/[ \t ]+/g,' ').replace(/ ?\n ?/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function looksLikeHtml(s){ return /<\s*(html|body|head|script|div|p|article)\b/i.test(String(s).slice(0,20000)); }
+function parseRecipeText(text){
+  const L=String(text||'').split(/\r?\n/).map(s=>s.trim());
+  const reIng=/^(ingredients?|ingredi[eë]nten|zutaten|ingr[ée]dients|benodigdheden)\b/i;
+  const reMet=/^(instructions?|directions?|method|steps?|preparation|bereiding|werkwijze|zubereitung|pr[ée]paration|zo maak je het)\b/i;
+  const iI=L.findIndex(l=>l.length<40&&reIng.test(l));
+  const iM=L.findIndex((l,i)=>i>iI&&l.length<40&&reMet.test(l));
+  const d=blankDraft(); d.origin='text';
+  const first=L.find(l=>l&&!(l.length<40&&reIng.test(l)))||'';
+  d.title=clean(first).slice(0,120);
+  if(iI>=0){
+    d.ingredients=L.slice(iI+1,iM>iI?iM:L.length).map(stripBullet).filter(Boolean);
+    if(iM>=0) d.steps=L.slice(iM+1).filter(Boolean).map(stripStepNo);
+  } else {
+    d.steps=L.slice(1).filter(Boolean).map(stripStepNo);
+  }
+  return d;
+}
+function normalizeDraft(r){
+  r=r||{};
+  const arr=v=>Array.isArray(v)?v.map(x=>clean(x)).filter(Boolean):(typeof v==='string'?v.split(/\r?\n/).map(clean).filter(Boolean):[]);
+  const num=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.round(n):null;};
+  const d=blankDraft();
+  d.title=clean(r.title||'').slice(0,160);
+  d.description=clean(r.description||'').slice(0,300);
+  d.ingredients=arr(r.ingredients).map(s=>/^#/.test(s)?'# '+s.replace(/^#+\s*/,''):stripBullet(s)).filter(Boolean);
+  d.steps=arr(r.steps).map(stripStepNo).filter(Boolean);
+  d.servings=clean(r.servings||'').slice(0,60);
+  d.prepMin=num(r.prepMinutes!=null?r.prepMinutes:r.prepMin);
+  d.cookMin=num(r.cookMinutes!=null?r.cookMinutes:r.cookMin);
+  d.category=mapCategory(r.category||'');
+  d.cuisine=clean(r.cuisine||'').slice(0,40);
+  d.tags=arr(r.tags).map(t=>t.toLowerCase()).filter(t=>t.length<29).slice(0,6);
+  d.notes=clean(r.notes||'').slice(0,1500);
+  d.source=clean(r.source||'').slice(0,200);
+  return d;
+}
+function totalMin(r){ return r.totalMin||((r.prepMin||0)+(r.cookMin||0))||0; }
+function fmtMin(n){ if(!n) return ''; if(n<60) return n+' min'; const h=Math.floor(n/60),m=n%60; return h+' h'+(m?' '+m+' min':''); }
+//#PARSE-END
+//#OCR-START
+/* turn raw OCR text from a marked region into recipe fields */
+const ocrLines=t=>String(t||'').replace(/\r/g,'').split('\n').map(s=>s.replace(/\s+/g,' ').trim());
+function joinWrap(a,b){ return /[a-zà-ÿ]-$/.test(a)&&/^[a-zà-ÿ]/.test(b)?a.slice(0,-1)+b:a+' '+b; }
+function ocrIngredients(t){
+  const out=[];
+  for(const raw of ocrLines(t)){
+    if(!raw) continue;
+    let l=stripBullet(raw.replace(/^[|«»“”"'`´‘’~•·●○■□*\s]+/,'').replace(/[|\s]+$/,'')).replace(/^[-–—]\s+/,''); if(!l||l.length<2) continue;
+    if(/^(ingredients?|ingredi[eë]nten|ingr[eé]dients|zutaten|ingredienti|ingredientes)\s*:?$/i.test(l)) continue;
+    if(/^[^\p{L}\d]+$/u.test(l)) continue;
+    const head=/:$/.test(l)||(!/[a-zà-ÿ]/.test(l)&&/[A-ZÀ-Ý]{3}/.test(l)&&l.length<40);
+    if(head){ out.push('# '+l.replace(/:$/,'').trim()); continue; }
+    const prev=out[out.length-1];
+    if(prev&&!/^#/.test(prev)&&(/[,;(]$/.test(prev)||/^\)/.test(l))) out[out.length-1]=joinWrap(prev,l); else out.push(l);
+  }
+  return out;
+}
+function ocrSteps(t){
+  const lines=ocrLines(t), NUM=/^\d{1,2}\s*[.):]\s+\S/;
+  if(!lines.some(Boolean)) return [];
+  const parts=[];
+  if(lines.filter(l=>NUM.test(l)).length>=2){
+    let cur=null;
+    for(const l of lines){ if(NUM.test(l)){ if(cur!=null) parts.push(cur); cur=l.replace(/^\d{1,2}\s*[.):]\s*/,''); } else if(l) cur=cur==null?l:joinWrap(cur,l); }
+    if(cur!=null) parts.push(cur);
+  } else if(lines.some((l,i)=>!l&&i>0&&i<lines.length-1&&lines[i-1])){
+    let cur=''; for(const l of lines){ if(!l){ if(cur) parts.push(cur); cur=''; } else cur=cur?joinWrap(cur,l):l; } if(cur) parts.push(cur);
+  } else {
+    let cur=''; for(const l of lines){ if(!l) continue; cur=cur?joinWrap(cur,l):l; if(/[.!?…]["')»]?$/.test(l)){ parts.push(cur); cur=''; } } if(cur) parts.push(cur);
+  }
+  return parts.map(s=>stripStepNo(s)).filter(s=>s&&s.length>1&&!/^(method|directions?|instructions?|preparation|steps?|bereiding|bereidingswijze|werkwijze|bereidung|zubereitung|pr[eé]paration|preparaci[oó]n|procedimento)\s*:?$/i.test(s));
+}
+function minsIn(line){
+  let m=0; const h=line.match(/(\d+(?:[.,]\d+)?)\s*(?:h|u|uur|hours?|heures?|std)\b/i), mi=line.match(/(\d+)\s*(?:min\w*)/i);
+  if(h) m+=Math.round(parseFloat(h[1].replace(',','.'))*60); if(mi) m+=parseInt(mi[1],10); return m||null;
+}
+function ocrInfo(t){
+  const lines=ocrLines(t).filter(Boolean), r={title:'',description:'',servings:'',prepMin:null,cookMin:null,totalMin:null};
+  if(!lines.length) return r;
+  r.title=lines[0].replace(/^[^\p{L}\d]+|[^\p{L}\d!?.)]+$/gu,'');
+  const rest=[];
+  for(const l of lines.slice(1)){
+    let used=false;
+    const sv=l.match(/(\d+(?:\s*[-–]\s*\d+)?)\s*(personen|pers\.?|portions|porties|personnes|portionen|servings|people)/i)||l.match(/(?:serves?|servings?|makes|yield|voor|pour|für)\s*[:\-]?\s*(\d+(?:\s*[-–]\s*\d+)?)/i);
+    if(sv&&!r.servings){ const unit=/personen|pers|portions|porties|personnes|portionen/i.test(sv[2]||'')?(sv[2]||'').replace(/\.$/,''):'servings'; r.servings=sv[1].replace(/\s+/g,'')+' '+unit; used=true; }
+    const mm=minsIn(l);
+    if(mm){
+      if(/prep|voorbereid|préparation|vorbereit/i.test(l)){ r.prepMin=mm; used=true; }
+      else if(/cook|kook|bak|oven|garzeit|cuisson|gar|braad/i.test(l)){ r.cookMin=mm; used=true; }
+      else if(/total|totaal|gesamt|bereiding|tijd|time|temps|zeit/i.test(l)){ r.totalMin=mm; used=true; }
+    }
+    if(!used) rest.push(l);
+  }
+  r.description=rest.reduce((a,b)=>a?joinWrap(a,b):b,'').slice(0,300);
+  return r;
+}
+//#OCR-END
+//#PDF-START
+const PAPER={a4:[210,297],letter:[215.9,279.4]};
+const COVERS={basil:[22,38,29],sun:[232,169,61],tomato:[193,59,35],plum:[86,48,88],ink:[43,35,24]};
+const PDF_CATS={'Breakfast':'#F6C945','Starters':'#9ED8C2','Soups & Salads':'#9AD27A','Mains':'#F58A6C','Sides':'#F4A8C0','Baking':'#C9A7F2','Desserts':'#FFB48A','Drinks':'#86C5F2','Sauces & Preserves':'#DDE56E','Snacks':'#6FD0D6','Uncategorized':'#D5DAD7'};
+const PDF_EXTRA=['#F7B7D2','#B6C8F5','#F2D1A0','#A8E0B8','#E2B0F0','#C5E1A5'];
+const P_INK=[43,35,24],P_INK2=[107,97,81],P_INK3=[140,131,112],P_RULE=[226,216,194],P_ACC=[184,113,14];
+const MM=0.3528;
+function hexRgb(h){ return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16)); }
+function pdfCatColor(n){
+  n=String(n||'Uncategorized'); if(PDF_CATS[n]) return hexRgb(PDF_CATS[n]);
+  let h=0; for(const c of n) h=(h*31+c.charCodeAt(0))>>>0; return hexRgb(PDF_EXTRA[h%PDF_EXTRA.length]);
+}
+function pdfSafe(s){
+  return String(s==null?'':s).normalize('NFC')
+    .replace(/[     ]/g,' ')
+    .replace(/[‐‑‒−]/g,'-')
+    .replace(/⅓/g,'1/3').replace(/⅔/g,'2/3').replace(/⅛/g,'1/8').replace(/⅜/g,'3/8').replace(/⅝/g,'5/8').replace(/⅞/g,'7/8').replace(/⅕/g,'1/5')
+    .replace(/[^\u0009\u000a -~¡-ÿ‘’“”–—…•€]/g,'');
+}
+function slug(s){ return (String(s||'recipe').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'recipe').slice(0,60); }
+
+function buildPdf(jsPDF,recipes,o){
+  const [W,H]=PAPER[o.paper]||PAPER.a4;
+  const doc=new jsPDF({unit:'mm',format:[W,H],orientation:'portrait',compress:true});
+  const M={l:20,r:20,t:22,b:22}, CW=W-M.l-M.r, book=!!o.book;
+  const bookTitle=o.title||'Cookbook';
+  const font=(fam,style,size,c)=>{doc.setFont(fam,style);doc.setFontSize(size);doc.setTextColor(c[0],c[1],c[2]);};
+  const cs=n=>{ if(doc.setCharSpace) doc.setCharSpace(n); };
+  const lh=(size,f)=>size*(f||1.34)*MM;
+  const wrap=(t,w)=>doc.splitTextToSize(pdfSafe(t),w);
+  const mix=(c,t,a)=>c.map((v,i)=>Math.round(v+(t[i]-v)*a));
+  const st={y:M.t,rec:null};
+
+  function newPage(cont){
+    doc.addPage([W,H]); st.y=M.t;
+    if(cont&&st.rec){ font('helvetica','bold',7.5,P_INK3); cs(0.4); doc.text(pdfSafe(st.rec.title+' - continued').toUpperCase(),M.l,st.y); cs(0); st.y+=8; }
+  }
+  const ensure=h=>{ if(st.y+h>H-M.b) newPage(true); };
+
+  /* cover: full-bleed color, big serif title, two plate-like circles */
+  function drawCover(){
+    const c=COVERS[o.cover]||COVERS.basil, lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
+    const tc=lum>0.6?P_INK:[255,255,255], soft=lum>0.6?mix(c,[0,0,0],.08):mix(c,[255,255,255],.12);
+    doc.setFillColor(c[0],c[1],c[2]); doc.rect(0,0,W,H,'F');
+    doc.setFillColor(soft[0],soft[1],soft[2]); doc.circle(W-18,52,66,'F');
+    const s2=lum>0.6?mix(c,[255,255,255],.35):mix(c,[0,0,0],.14); doc.setFillColor(s2[0],s2[1],s2[2]); doc.circle(W-92,128,30,'F');
+    doc.setFillColor(c[0],c[1],c[2]); doc.circle(W-92,128,17,'F');
+    font('helvetica','bold',9,tc); cs(1.2); doc.text('COOKBOOK',24,34); cs(0);
+    const tl=wrap(bookTitle,W-48).length;
+    font('times','normal',46,tc);
+    const lines=wrap(bookTitle,W-48).slice(0,4); let y=H*0.5;
+    lines.forEach(l=>{ doc.text(l,24,y); y+=lh(46,1.0); });
+    if(o.subtitle){ font('times','italic',17,tc); y+=2; wrap(o.subtitle,W-60).slice(0,3).forEach(l=>{ doc.text(l,24,y); y+=lh(17,1.25); }); }
+    font('helvetica','bold',9,tc); cs(0.9);
+    if(o.author) doc.text(pdfSafe('COMPILED BY '+o.author).toUpperCase().slice(0,56),24,H-34);
+    doc.text(recipes.length+(recipes.length===1?' RECIPE':' RECIPES'),24,H-27); cs(0);
+  }
+
+  /* one recipe */
+  function drawRecipe(r){
+    st.rec=r;
+    const hasImg=o.photos&&typeof r.image==='string'&&r.image.indexOf('data:image/jpeg')===0;
+    const label=[r.category||'Uncategorized',r.cuisine].filter(Boolean).join('  /  ');
+    const tile=pdfCatColor(r.category||'Uncategorized');
+    /* colored title band */
+    font('times','normal',30,P_INK);
+    const tLines=wrap(r.title||'Untitled',CW-16).slice(0,4);
+    font('times','italic',11.5,P_INK);
+    const dLines=r.description?wrap(r.description,CW-16).slice(0,4):[];
+    const TL=lh(30,1.02), DL=lh(11.5,1.3);
+    const bandH=8+4.5+3+tLines.length*TL+(dLines.length?3.5+dLines.length*DL:0)+8;
+    doc.setFillColor(tile[0],tile[1],tile[2]); doc.roundedRect(M.l,st.y,CW,bandH,5,5,'F');
+    let y=st.y+8+3.2;
+    font('helvetica','bold',8,P_INK); cs(0.8); doc.text(pdfSafe(label).toUpperCase(),M.l+8,y); cs(0); y+=3;
+    font('times','normal',30,P_INK); tLines.forEach(l=>{ y+=TL; doc.text(l,M.l+8,y); });
+    if(dLines.length){ y+=3.5; font('times','italic',11.5,P_INK); dLines.forEach(l=>{ y+=DL; doc.text(l,M.l+8,y-1); }); }
+    st.y+=bandH+6;
+    /* facts */
+    const facts=[];
+    if(r.servings) facts.push(['YIELD',r.servings]);
+    if(r.prepMin) facts.push(['PREP',fmtMin(r.prepMin)]);
+    if(r.cookMin) facts.push(['COOK',fmtMin(r.cookMin)]);
+    const tot=totalMin(r); if(tot&&(r.totalMin||(r.prepMin&&r.cookMin))) facts.push(['TOTAL',fmtMin(tot)]);
+    if(r.rating) facts.push(['RATING',r.rating+' / 5']);
+    if(facts.length){
+      let x=M.l; const fh=13;
+      facts.forEach(f=>{
+        font('helvetica','bold',10.5,P_INK); const vw=doc.getTextWidth(pdfSafe(f[1])); font('helvetica','bold',6.5,P_INK3);
+        const w=Math.max(22,vw+10);
+        if(x+w>W-M.r){ x=M.l; st.y+=fh+3; }
+        doc.setFillColor(241,244,242); doc.roundedRect(x,st.y,w,fh,3,3,'F');
+        font('helvetica','bold',6.5,P_INK3); cs(0.6); doc.text(f[0],x+5,st.y+4.6); cs(0);
+        font('helvetica','bold',10.5,P_INK); doc.text(pdfSafe(f[1]),x+5,st.y+9.8);
+        x+=w+3;
+      });
+      st.y+=fh+7;
+    }
+    if(hasImg){
+      const ar=(r.imageW&&r.imageH)?r.imageW/r.imageH:4/3;
+      let w=Math.min(CW,72*ar), h=w/ar; if(h>72){h=72;w=h*ar;}
+      ensure(h+6);
+      try{ doc.addImage(r.image,'JPEG',M.l+(CW-w)/2,st.y,w,h,undefined,'FAST'); st.y+=h+7; }catch(e){}
+    }
+    const heading=t=>{ ensure(18); st.y+=4; font('times','normal',20,P_INK); doc.text(t,M.l,st.y+5); st.y+=10; };
+
+    /* ingredients */
+    const ing=(r.ingredients||[]);
+    if(ing.length){
+      heading('Ingredients');
+      const SZ=10.5, LH=lh(SZ,1.3), IND=6, GAP=8;
+      const two=ing.length>5, colW=two?(CW-GAP)/2:CW;
+      const items=ing.map(t=>{
+        const grp=/^#/.test(t), txt=t.replace(/^#+\s*/,'');
+        font('helvetica',grp?'bold':'normal',grp?8:SZ,P_INK);
+        const lines=wrap(txt,colW-(grp?0:IND));
+        return {grp,lines,h:lines.length*LH+(grp?4:2)};
+      });
+      const total=items.reduce((a,b)=>a+b.h,0);
+      const drawItem=(it,x,y)=>{
+        if(it.grp){ font('helvetica','bold',7.5,P_INK3); cs(0.7); it.lines.forEach((l,i)=>doc.text(pdfSafe(l).toUpperCase(),x,y+3+i*LH)); cs(0); return; }
+        doc.setDrawColor(...P_INK3); doc.setLineWidth(0.3); doc.circle(x+1.4,y+LH*0.62,1.35,'S');
+        font('helvetica','normal',SZ,P_INK); it.lines.forEach((l,i)=>doc.text(l,x+IND,y+LH*0.8+i*LH));
+      };
+      if(two&&total/2+4<=H-M.b-st.y){
+        let acc=0,split=items.length; for(let i=0;i<items.length;i++){ acc+=items[i].h; if(acc>=total/2){split=i+1;break;} }
+        if(split>0&&split<items.length&&items[split-1].grp) split--;
+        let y1=st.y,y2=st.y;
+        items.forEach((it,i)=>{ if(i<split){drawItem(it,M.l,y1);y1+=it.h;} else {drawItem(it,M.l+colW+GAP,y2);y2+=it.h;} });
+        st.y=Math.max(y1,y2)+2;
+      } else {
+        items.forEach(it=>{ ensure(it.h+(it.grp?4:0)); drawItem(it,M.l,st.y); st.y+=it.h; });
+      }
+    }
+    /* method */
+    const steps=(r.steps||[]);
+    if(steps.length){
+      heading('Method');
+      const SZ=10.5, LH=lh(SZ,1.4), IND=10;
+      steps.forEach((s,i)=>{
+        font('helvetica','normal',SZ,P_INK);
+        const lines=wrap(s,CW-IND), h=lines.length*LH+3.6;
+        ensure(Math.min(h,LH*4));
+        lines.forEach((l,j)=>{
+          if(st.y+LH>H-M.b) newPage(true);
+          if(j===0){
+            doc.setFillColor(...P_ACC); doc.circle(M.l+2.9,st.y+LH*0.62,2.9,'F');
+            font('helvetica','bold',8,[255,255,255]); doc.text(String(i+1),M.l+2.9,st.y+LH*0.62+1.05,{align:'center'});
+          }
+          font('helvetica','normal',SZ,P_INK); doc.text(l,M.l+IND,st.y+LH*0.8); st.y+=LH;
+        });
+        st.y+=3.6;
+      });
+    }
+    if(o.notes&&r.notes){
+      heading('Notes'); font('times','italic',11,P_INK2);
+      wrap(r.notes,CW).forEach(l=>{ ensure(lh(11)); doc.text(l,M.l,st.y+3.6); st.y+=lh(11); });
+    }
+    if(r.source){
+      ensure(12); st.y+=6; font('helvetica','normal',8,P_INK3);
+      wrap('Source: '+r.source,CW).forEach(l=>{ ensure(4); doc.text(l,M.l,st.y); st.y+=3.8; });
+    }
+  }
+
+  /* ---- shared pieces for the other layouts ---- */
+  function tail(r,SZn){
+    const sz=SZn||11;
+    if(o.notes&&r.notes){
+      ensure(18); st.y+=4; font('times','normal',sz+6,P_INK); doc.text('Notes',M.l,st.y+5); st.y+=10; font('times','italic',sz,P_INK2);
+      wrap(r.notes,CW).forEach(l=>{ ensure(lh(sz)); doc.text(l,M.l,st.y+3.6); st.y+=lh(sz); });
+    }
+    if(r.source){
+      ensure(12); st.y+=5; font('helvetica','normal',8,P_INK3);
+      wrap('Source: '+r.source,CW).forEach(l=>{ ensure(4); doc.text(l,M.l,st.y); st.y+=3.8; });
+    }
+  }
+  function factsLine(r){
+    const f=[]; if(r.servings) f.push('YIELD '+r.servings); if(r.prepMin) f.push('PREP '+fmtMin(r.prepMin)); if(r.cookMin) f.push('COOK '+fmtMin(r.cookMin));
+    const tot=totalMin(r); if(tot&&(r.totalMin||(r.prepMin&&r.cookMin))) f.push('TOTAL '+fmtMin(tot)); if(r.rating) f.push('RATING '+r.rating+'/5');
+    return f.join('   |   ');
+  }
+  function measureIng(ing,w,SZ){
+    const LH=lh(SZ,1.3), IND=6;
+    return ing.map(t=>{ const grp=/^#/.test(t), txt=t.replace(/^#+\s*/,''); font('helvetica',grp?'bold':'normal',grp?8:SZ,P_INK);
+      const lines=wrap(txt,w-(grp?0:IND)); return {grp,lines,h:lines.length*LH+(grp?4:2)}; });
+  }
+  function drawIngItem(it,x,y,SZ){
+    const LH=lh(SZ,1.3), IND=6;
+    if(it.grp){ font('helvetica','bold',7.5,P_INK3); cs(0.7); it.lines.forEach((l,i)=>doc.text(pdfSafe(l).toUpperCase(),x,y+3+i*LH)); cs(0); return; }
+    doc.setDrawColor(...P_INK3); doc.setLineWidth(0.3); doc.circle(x+1.4,y+LH*0.62,1.35,'S');
+    font('helvetica','normal',SZ,P_INK); it.lines.forEach((l,i)=>doc.text(l,x+IND,y+LH*0.8+i*LH));
+  }
+  function ingFlow(items,x,SZ){ items.forEach(it=>{ ensure(it.h+(it.grp?4:0)); drawIngItem(it,x,st.y,SZ); st.y+=it.h; }); }
+  function stepsAt(steps,from,x,w,SZ,flow,mode){
+    const LH=lh(SZ,1.4), IND=mode==='circle'?10:7, gap=mode==='circle'?3.6:2.4;
+    for(let i=from;i<steps.length;i++){
+      font('helvetica','normal',SZ,P_INK);
+      const lines=wrap(steps[i],w-IND), h=lines.length*LH+gap;
+      if(st.y+h>H-M.b){ if(!flow) return i; if(h<=H-M.t-M.b-8) newPage(true); }
+      lines.forEach((l,j)=>{
+        if(st.y+LH>H-M.b) newPage(true);
+        if(j===0){
+          if(mode==='circle'){ doc.setFillColor(...P_ACC); doc.circle(x+2.9,st.y+LH*0.62,2.9,'F'); font('helvetica','bold',8,[255,255,255]); doc.text(String(i+1),x+2.9,st.y+LH*0.62+1.05,{align:'center'}); }
+          else { font('helvetica','bold',SZ,P_ACC); doc.text(String(i+1)+'.',x,st.y+LH*0.8); }
+        }
+        font('helvetica','normal',SZ,P_INK); doc.text(l,x+IND,st.y+LH*0.8); st.y+=LH;
+      });
+      st.y+=gap;
+    }
+    return steps.length;
+  }
+  function photoOf(r){ return o.photos&&typeof r.image==='string'&&r.image.indexOf('data:image/jpeg')===0; }
+  function titleBlock(r,x,w,tsz,withDesc){
+    font('times','normal',tsz,P_INK); const tl=wrap(r.title||'Untitled',w).slice(0,4); const TL=lh(tsz,1.05);
+    tl.forEach(l=>{ st.y+=TL; doc.text(l,x,st.y); });
+    if(withDesc&&r.description){ font('times','italic',11.5,P_INK2); st.y+=1.5; wrap(r.description,w).slice(0,4).forEach(l=>{ st.y+=lh(11.5,1.3); doc.text(l,x,st.y-1); }); }
+  }
+
+  /* ---- layout: ingredients in a side column, method beside it ---- */
+  function drawRecipeSide(r){
+    st.rec=r;
+    const label=[r.category||'Uncategorized',r.cuisine].filter(Boolean).join('  /  ');
+    const tile=pdfCatColor(r.category||'Uncategorized');
+    doc.setFillColor(tile[0],tile[1],tile[2]); doc.rect(M.l,st.y,CW,2.2,'F'); st.y+=2.2+6;
+    font('helvetica','bold',8,P_ACC); cs(0.8); doc.text(pdfSafe(label).toUpperCase(),M.l,st.y); cs(0);
+    titleBlock(r,M.l,CW,28,true);
+    const fl=factsLine(r);
+    if(fl){ st.y+=6; font('helvetica','bold',8,P_INK2); cs(0.3); wrap(fl,CW).forEach(l=>{ doc.text(l,M.l,st.y); st.y+=4; }); cs(0); st.y-=4; }
+    st.y+=5; doc.setDrawColor(...P_RULE); doc.setLineWidth(0.4); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7;
+    const y0=st.y, LW=Math.round(CW*0.37), GAP=10, RX=M.l+LW+GAP, RW=CW-LW-GAP, SZ=10;
+    const ing=r.ingredients||[], items=measureIng(ing,LW-8,SZ), hasImg=photoOf(r);
+    let ph=0,pw=0;
+    if(hasImg){ const ar=(r.imageW&&r.imageH)?r.imageW/r.imageH:4/3; pw=LW-8; ph=pw/ar; if(ph>60){ph=60;pw=ph*ar;} }
+    const leftH=(hasImg?ph+6:0)+(ing.length?12+items.reduce((a,b)=>a+b.h,0):0)+4;
+    const steps=r.steps||[];
+    if(leftH+6<=H-M.b-y0){
+      doc.setFillColor(247,241,222); doc.roundedRect(M.l,y0-3,LW,leftH+3,4,4,'F');
+      let y=y0+1;
+      if(hasImg){ try{ doc.addImage(r.image,'JPEG',M.l+4+((LW-8)-pw)/2,y,pw,ph,undefined,'FAST'); }catch(e){} y+=ph+6; }
+      if(ing.length){ font('times','normal',17,P_INK); doc.text('Ingredients',M.l+4,y+4.5); y+=12; items.forEach(it=>{ drawIngItem(it,M.l+4,y,SZ); y+=it.h; }); }
+      const leftEnd=y0-3+leftH+3;
+      if(steps.length){
+        font('times','normal',17,P_INK); doc.text('Method',RX,y0+4.5); st.y=y0+12;
+        const idx=stepsAt(steps,0,RX,RW,SZ,false,'circle');
+        if(idx<steps.length){ newPage(true); stepsAt(steps,idx,M.l,CW,SZ,true,'circle'); }
+        else st.y=Math.max(st.y,leftEnd+4);
+      } else st.y=leftEnd+4;
+    } else {
+      if(hasImg){ ensure(ph+6); try{ doc.addImage(r.image,'JPEG',M.l,st.y,pw,ph,undefined,'FAST'); }catch(e){} st.y+=ph+6; }
+      if(ing.length){ ensure(18); font('times','normal',17,P_INK); doc.text('Ingredients',M.l,st.y+4.5); st.y+=11; ingFlow(measureIng(ing,CW,SZ),M.l,SZ); }
+      if(steps.length){ ensure(18); st.y+=3; font('times','normal',17,P_INK); doc.text('Method',M.l,st.y+4.5); st.y+=11; stepsAt(steps,0,M.l,CW,SZ,true,'circle'); }
+    }
+    tail(r);
+  }
+
+  /* ---- layout: compact, small type, recipes share pages ---- */
+  function drawRecipeCompact(r){
+    st.rec=r;
+    const tile=pdfCatColor(r.category||'Uncategorized'), label=[r.category||'Uncategorized',r.cuisine].filter(Boolean).join('  /  ');
+    const hasImg=photoOf(r); let tw=0,th=0;
+    if(hasImg){ const ar=(r.imageW&&r.imageH)?r.imageW/r.imageH:4/3; tw=34; th=tw/ar; if(th>26){th=26;tw=th*ar;} }
+    const top=st.y, hw=CW-(hasImg?tw+6:0);
+    doc.setFillColor(tile[0],tile[1],tile[2]); doc.circle(M.l+1.6,top+1.9,1.6,'F');
+    font('helvetica','bold',7.5,P_ACC); cs(0.7); doc.text(pdfSafe(label).toUpperCase(),M.l+5,top+3); cs(0);
+    st.y=top+3; titleBlock(r,M.l,hw,19,false);
+    const fl=factsLine(r);
+    if(fl){ st.y+=4.6; font('helvetica','bold',7.2,P_INK2); cs(0.25); wrap(fl,hw).forEach(l=>{ doc.text(l,M.l,st.y); st.y+=3.6; }); cs(0); st.y-=3.6; }
+    if(r.description){ st.y+=1.5; font('times','italic',9.5,P_INK2); wrap(r.description,hw).slice(0,3).forEach(l=>{ st.y+=lh(9.5,1.3); doc.text(l,M.l,st.y-1); }); }
+    if(hasImg){ try{ doc.addImage(r.image,'JPEG',W-M.r-tw,top,tw,th,undefined,'FAST'); }catch(e){} st.y=Math.max(st.y,top+th); }
+    st.y+=4; doc.setDrawColor(...P_RULE); doc.setLineWidth(0.3); doc.line(M.l,st.y,W-M.r,st.y); st.y+=4;
+    const SZ=9, ing=r.ingredients||[];
+    if(ing.length){
+      const GAP=8, two=ing.length>3, colW=two?(CW-GAP)/2:CW, items=measureIng(ing,colW,SZ), total=items.reduce((a,b)=>a+b.h,0);
+      if(two&&total/2+2<=H-M.b-st.y){
+        let acc=0,split=items.length; for(let i=0;i<items.length;i++){ acc+=items[i].h; if(acc>=total/2){split=i+1;break;} }
+        if(split>0&&split<items.length&&items[split-1].grp) split--;
+        let y1=st.y,y2=st.y;
+        items.forEach((it,i)=>{ if(i<split){drawIngItem(it,M.l,y1,SZ);y1+=it.h;} else {drawIngItem(it,M.l+colW+GAP,y2,SZ);y2+=it.h;} });
+        st.y=Math.max(y1,y2)+3;
+      } else { ingFlow(measureIng(ing,CW,SZ),M.l,SZ); st.y+=3; }
+    }
+    if(r.steps&&r.steps.length) stepsAt(r.steps,0,M.l,CW,SZ+0.5,true,'plain');
+    tail(r,9.5);
+  }
+
+  /* assemble */
+  const starts=[]; let tocFirst=0,tocPages=0;
+  if(book){
+    drawCover();
+    if(o.toc){
+      const cap1=Math.floor((H-M.t-M.b-26)/9), capN=Math.floor((H-M.t-M.b)/9);
+      tocPages=1+Math.ceil(Math.max(0,recipes.length-cap1)/capN);
+      tocFirst=2; for(let i=0;i<tocPages;i++) doc.addPage([W,H]);
+    }
+  }
+  const layout=o.layout||'classic';
+  const drawFn=layout==='side'?drawRecipeSide:layout==='compact'?drawRecipeCompact:drawRecipe;
+  recipes.forEach((r,i)=>{
+    if(layout==='compact'){
+      if((book&&i===0)||(i>0&&st.y>H-M.b-80)){ doc.addPage([W,H]); st.y=M.t; }
+      else if(i>0){ st.y+=5; doc.setDrawColor(...P_INK3); doc.setLineWidth(0.5); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7; }
+      else st.y=M.t;
+    } else { if(book||i>0) doc.addPage([W,H]); st.y=M.t; }
+    starts.push(doc.getNumberOfPages()); drawFn(r);
+  });
+  const total=doc.getNumberOfPages();
+  if(book&&o.toc){
+    const cap1=Math.floor((H-M.t-M.b-26)/9), capN=Math.floor((H-M.t-M.b)/9);
+    let idx=0;
+    for(let p=0;p<tocPages;p++){
+      doc.setPage(tocFirst+p); let y=M.t;
+      if(p===0){ font('times','normal',34,P_INK); doc.text('Contents',M.l,y+10); y+=26; }
+      const cap=p===0?cap1:capN;
+      for(let k=0;k<cap&&idx<recipes.length;k++,idx++){
+        const rec=recipes[idx], t=pdfSafe(rec.title||'Untitled'), pg=String(starts[idx]);
+        const cc=pdfCatColor(rec.category||'Uncategorized');
+        doc.setFillColor(cc[0],cc[1],cc[2]); doc.circle(M.l+1.8,y+4.2,1.8,'F');
+        font('times','normal',13,P_INK);
+        let shown=t; while(shown.length>3&&doc.getTextWidth(shown)>CW-26) shown=shown.slice(0,-2);
+        if(shown!==t) shown=shown.trim()+'...';
+        doc.text(shown,M.l+7,y+5.4);
+        const tw=doc.getTextWidth(shown);
+        font('helvetica','bold',10,P_INK2); const pw=doc.getTextWidth(pg); doc.text(pg,W-M.r,y+5.4,{align:'right'});
+        const xs=M.l+7+tw+3, xe=W-M.r-pw-2;
+        if(xe>xs+4){ doc.setDrawColor(...P_INK3); doc.setLineWidth(0.3); if(doc.setLineDashPattern) doc.setLineDashPattern([0.2,1.1],0); if(doc.setLineCap) doc.setLineCap('round'); doc.line(xs,y+5,xe,y+5); if(doc.setLineDashPattern) doc.setLineDashPattern([],0); }
+        y+=9;
+      }
+    }
+  }
+  /* footers */
+  for(let p=book?2:1;p<=total;p++){
+    if(!book&&total===1) break;
+    doc.setPage(p); font('helvetica','bold',7.5,P_INK3); cs(0.4);
+    if(book){ doc.text(pdfSafe(bookTitle).toUpperCase().slice(0,48),M.l,H-11); doc.text(String(p),W-M.r,H-11,{align:'right'}); }
+    else doc.text(p+' / '+total,W-M.r,H-11,{align:'right'});
+    cs(0);
+  }
+  doc.setProperties({title:book?bookTitle:(recipes[0]&&recipes[0].title)||'Recipe'});
+  return doc;
+}
+//#PDF-END
+/* ================= app ================= */
+const CAT_COLORS={'Breakfast':'#E8A93D','Starters':'#2F9E8F','Soups & Salads':'#5E9A3A','Mains':'#C8553D','Sides':'#C0728F','Baking':'#8A6BBE','Desserts':'#D9824A','Drinks':'#2F6B9A','Sauces & Preserves':'#9AA32E','Snacks':'#3A9AA6','Uncategorized':'#8C8370'};
+const EXTRA_COLORS=['#B5527A','#4F6DB5','#B38A3C','#3E8F63','#9A55B0','#6E8F3A'];
+function catColor(n){ if(CAT_COLORS[n]) return CAT_COLORS[n]; let h=0; for(const c of String(n)) h=(h*31+c.charCodeAt(0))>>>0; return EXTRA_COLORS[h%EXTRA_COLORS.length]; }
+const ic=(n,cls)=>'<svg class="ic'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
+let toastT;
+/* ================= standalone storage: this browser (IndexedDB), backup files, GitHub repo ================= */
+const STORE_KEY='cookbook-creator-v1', GH_KEY='cookbook-gh-v1', DEL_KEY='cookbook-deleted-v1', IDB_NAME='cookbook-creator', IDB_STORE='recipes';
+const S={recipes:[],ready:false,mode:'pending',q:'',cat:'all',tag:'',sort:'new',selecting:false,sel:new Set(),detailId:null};
+let COL=null, DL=null, SAMPLE=null, CAN_IMG=true;
+const STO={mode:'ls'};
+
+const newId=()=>'r_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const safeImg=r=>typeof r.image==='string'&&/^data:image\/(jpeg|png|webp);base64,/.test(r.image)?r.image:'';
+const catOf=r=>(r.category||'').trim()||'Uncategorized';
+function toast(msg,err){
+  const t=$('#toast'); t.textContent=msg; t.classList.toggle('err',!!err);
+  try{ if(t.matches(':popover-open')) t.hidePopover(); t.showPopover(); }catch(e){}
+  clearTimeout(toastT); toastT=setTimeout(()=>{ try{t.hidePopover();}catch(e){} },err?6000:3200);
+}
+function dbMsg(e){
+  if(e&&e.code==='quota_exceeded') return 'This browser has no room left for recipes. Export a backup, then delete a few recipes or photos.';
+  return 'Could not save. Try again.';
+}
+
+/* IndexedDB, with localStorage as a fallback (for example in some private windows) */
+let IDBP=null;
+function idb(){
+  if(IDBP) return IDBP;
+  IDBP=new Promise((res,rej)=>{ try{ const q=indexedDB.open(IDB_NAME,1); q.onupgradeneeded=()=>q.result.createObjectStore(IDB_STORE,{keyPath:'id'}); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }catch(e){ rej(e); } });
+  return IDBP;
+}
+async function idbTx(mode,fn){
+  const db=await idb();
+  return new Promise((res,rej)=>{ const tx=db.transaction(IDB_STORE,mode); let r; try{ r=fn(tx.objectStore(IDB_STORE)); }catch(e){ rej(e); return; }
+    tx.oncomplete=()=>res(r&&r.result); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); });
+}
+function localLoad(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch(e){ return []; } }
+function localSave(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(S.recipes)); return true; }catch(e){ return false; } }
+async function persistPut(rec){
+  if(STO.mode==='idb'){ try{ await idbTx('readwrite',st=>st.put(rec)); return; }catch(e){ throw {code:'quota_exceeded'}; } }
+  if(!localSave()) throw {code:'quota_exceeded'};
+}
+async function persistDel(id){
+  if(STO.mode==='idb'){ try{ await idbTx('readwrite',st=>st.delete(id)); }catch(e){} return; }
+  localSave();
+}
+const delLoad=()=>{ try{ return new Set(JSON.parse(localStorage.getItem(DEL_KEY)||'[]')); }catch(e){ return new Set(); } };
+const delSave=s=>{ try{ localStorage.setItem(DEL_KEY,JSON.stringify([...s])); }catch(e){} };
+
+async function saveRecipe(id,data){
+  const body=JSON.parse(JSON.stringify(data)); delete body.id; delete body._h; body.updatedAt=new Date().toISOString();
+  const rec=Object.assign({},body,{id}), i=S.recipes.findIndex(r=>r.id===id), prev=i>=0?S.recipes[i]:null;
+  if(i>=0) S.recipes[i]=rec; else S.recipes.push(rec);
+  try{ await persistPut(rec); }catch(e){ if(prev) S.recipes[i]=prev; else S.recipes.pop(); throw e; }
+  refreshAll();
+}
+async function patchRecipe(id,fields){
+  const r=S.recipes.find(x=>x.id===id); if(!r) return;
+  Object.assign(r,fields,{updatedAt:new Date().toISOString()}); await persistPut(r); refreshAll();
+}
+async function deleteRecipe(id){
+  S.recipes=S.recipes.filter(r=>r.id!==id); await persistDel(id);
+  const d=delLoad(); d.add(id); delSave(d); refreshAll();
+}
+/* merge recipes from a backup file or the repo; the newer updatedAt wins */
+async function mergeRecipes(list,force){
+  const tomb=force?new Set():delLoad(); let added=0,updated=0;
+  for(const raw of list){
+    if(!raw||typeof raw!=='object'||typeof raw.id!=='string'||!raw.id) continue;
+    if(tomb.has(raw.id)) continue;
+    const i=S.recipes.findIndex(r=>r.id===raw.id);
+    if(i<0){ S.recipes.push(raw); await persistPut(raw); added++; }
+    else if(String(raw.updatedAt||'')>String(S.recipes[i].updatedAt||'')){ S.recipes[i]=raw; await persistPut(raw); updated++; }
+  }
+  if(force){ const d=delLoad(); list.forEach(r=>r&&d.delete(r.id)); delSave(d); }
+  if(added||updated) refreshAll();
+  return {added,updated};
+}
+async function boot(){
+  refreshAll();
+  try{ await idb(); STO.mode='idb'; S.recipes=await idbTx('readonly',st=>st.getAll()); if(!S.recipes.length){ const old=localLoad(); if(old.length){ S.recipes=old; for(const r of old) await persistPut(r); } } }
+  catch(e){ STO.mode='ls'; S.recipes=localLoad(); }
+  S.mode=STO.mode; S.ready=true; refreshAll();
+  DL={save:async({filename,data})=>{
+    const blob=new Blob([data],{type:/\.json$/i.test(filename)?'application/json':'application/pdf'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000); return {status:'saved'};
+  }};
+  updateImportAvail();
+  /* recipes committed to the repo (data/recipes.json) are merged in on every visit */
+  try{
+    const r=await fetch('data/recipes.json',{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); const m=await mergeRecipes(Array.isArray(j)?j:(j&&j.recipes)||[]); if(m.added||m.updated) toast('Loaded '+(m.added+m.updated)+' recipe'+((m.added+m.updated)===1?'':'s')+' from the repo'); }
+  }catch(e){}
+}
+let IMG_LIM=null;
+
+
+/* ---- filtering ---- */
+const hayMap=new WeakMap();
+function hay(r){
+  let h=hayMap.get(r);
+  if(!h){ h=[r.title,r.description,(r.ingredients||[]).join(' '),(r.tags||[]).join(' '),r.category,r.cuisine,r.notes,r.source].join(' \n ').toLowerCase(); hayMap.set(r,h); }
+  return h;
+}
+function sorted(list){
+  const a=list.slice();
+  const T=(x,y)=>String(x.title||'').localeCompare(String(y.title||''));
+  if(S.sort==='az') a.sort(T);
+  else if(S.sort==='rating') a.sort((x,y)=>(y.rating||0)-(x.rating||0)||T(x,y));
+  else if(S.sort==='quick') a.sort((x,y)=>(totalMin(x)||1e9)-(totalMin(y)||1e9)||T(x,y));
+  else a.sort((x,y)=>String(y.createdAt||'').localeCompare(String(x.createdAt||''))||T(x,y));
+  return a;
+}
+function visible(){
+  const q=S.q.trim().toLowerCase();
+  return sorted(S.recipes.filter(r=>{
+    if(S.cat==='fav'&&!r.favorite) return false;
+    if(S.cat.startsWith('cat:')&&catOf(r)!==S.cat.slice(4)) return false;
+    if(S.tag&&!(r.tags||[]).includes(S.tag)) return false;
+    if(q&&!hay(r).includes(q)) return false;
+    return true;
+  }));
+}
+function allCats(){
+  const m=new Map(); S.recipes.forEach(r=>{const c=catOf(r); m.set(c,(m.get(c)||0)+1);});
+  const rank=n=>{const i=DEFAULT_CATS.indexOf(n); return i<0?(n==='Uncategorized'?999:100):i;};
+  return [...m].sort((a,b)=>rank(a[0])-rank(b[0])||a[0].localeCompare(b[0]));
+}
+function allTags(){
+  const m=new Map(); S.recipes.forEach(r=>(r.tags||[]).forEach(t=>m.set(t,(m.get(t)||0)+1)));
+  return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,14);
+}
+
+/* ---- render: rail, grid, bar ---- */
+function renderRail(){
+  const cur=S.cat, rb=(k,label,n,col)=>'<button data-cat="'+esc(k)+'" aria-current="'+(cur===k)+'">'+(col?'<span class="dot" style="background:'+col+'"></span>':'')+'<span>'+esc(label)+'</span><span class="n">'+n+'</span></button>';
+  let h=rb('all','All recipes',S.recipes.length)+rb('fav','Favorites',S.recipes.filter(r=>r.favorite).length);
+  const cats=allCats();
+  if(cats.length){ h+='<span class="sep"></span>'; cats.forEach(([n,c])=>{h+=rb('cat:'+n,n,c,catColor(n));}); }
+  const tags=allTags();
+  if(tags.length){ h+='<span class="sep"></span>'; tags.forEach(([t,c])=>{h+='<button class="tagz" data-tag="'+esc(t)+'" aria-current="'+(S.tag===t)+'"><span>'+esc(t)+'</span><span class="n">'+c+'</span></button>';}); }
+  $('#rail').innerHTML=h;
+  $('#cat-list').innerHTML=[...new Set(DEFAULT_CATS.concat(cats.map(c=>c[0]).filter(n=>n!=='Uncategorized')))].map(n=>'<option value="'+esc(n)+'">').join('');
+}
+function cardHtml(r){
+  const img=safeImg(r), tm=totalMin(r), sel=S.sel.has(r.id);
+  const ch=[]; if(tm) ch.push('<span class="pill amber num">'+esc(fmtMin(tm))+'</span>'); if(r.servings) ch.push('<span class="chip">'+esc(r.servings)+'</span>');
+  if(r.rating) ch.push('<span class="pill ok">'+ic('star','fill')+r.rating+'</span>'); if(r.example) ch.push('<span class="chip">Example</span>');
+  return '<article class="rc'+(sel?' sel':'')+'" data-id="'+esc(r.id)+'" style="--edge:'+catColor(catOf(r))+'">'
+    +'<button class="rc-main" data-open="'+esc(r.id)+'" aria-label="'+esc((S.selecting?(sel?'Deselect ':'Select '):'Open ')+(r.title||'recipe'))+'">'
+    +(img?'<img class="rc-img" src="'+img+'" alt="" loading="lazy">':'')
+    +'<span class="rc-body"><span class="rc-cat">'+esc(catOf(r))+'</span><span class="rc-title">'+esc(r.title||'Untitled')+'</span>'
+    +(ch.length?'<span class="rc-chips">'+ch.join('')+'</span>':'')+'</span></button>'
+    +'<div class="rc-foot"><button class="rc-fav" data-fav="'+esc(r.id)+'" aria-pressed="'+!!r.favorite+'" aria-label="Favorite">'+ic('heart',r.favorite?'fill':'')+(r.favorite?'Favorite':'Mark favorite')+'</button></div>'
+    +'<span class="rc-check" aria-hidden="true">'+ic('check')+'</span></article>';
+}
+function renderGrid(){
+  const list=visible(), grid=$('#grid');
+  document.body.classList.toggle('selecting',S.selecting);
+  const title=S.cat==='all'?'All recipes':S.cat==='fav'?'Favorites':S.cat.slice(4);
+  $('#view-title').textContent=title;
+  { const cats=new Set(S.recipes.map(catOf)).size, fav=S.recipes.filter(r=>r.favorite).length; $('#stats').innerHTML='<span class="stat"><span class="dot" style="background:#E8A93D"></span>'+S.recipes.length+' saved</span><span class="stat"><span class="dot" style="background:#2F9E5B"></span>'+cats+' categories</span><span class="stat"><span class="dot" style="background:#C13B23"></span>'+fav+' favorites</span>'; }
+  $('#count').textContent=list.length===S.recipes.length?S.recipes.length+(S.recipes.length===1?' recipe':' recipes'):list.length+' of '+S.recipes.length;
+  $('#tagchip').innerHTML=S.tag?'<button class="chip" data-cleartag="1" aria-label="Remove tag filter">'+esc(S.tag)+' '+ic('x')+'</button>':'';
+  if(!S.ready){ grid.innerHTML='<div class="empty" style="grid-column:1/-1"><p style="margin:0">Opening your recipe box...</p></div>'; return; }
+  if(!list.length){
+    grid.innerHTML=S.recipes.length
+      ?'<div class="empty" style="grid-column:1/-1"><h2>Nothing matches</h2><p>Try a different word, or clear the filters.</p><button class="btn" data-clear="1">Clear filters</button></div>'
+      :'<div class="empty" style="grid-column:1/-1"><h2>Your recipe box is empty</h2><p>Add a scanned page, a saved webpage, or type one in. Each recipe is split into ingredients, steps and a picture.</p><button class="btn primary" data-addnew="1">Add your first recipe</button></div>';
+    return;
+  }
+  grid.innerHTML=list.map(cardHtml).join('');
+}
+function renderBar(){
+  const bar=$('#selbar'); bar.hidden=!S.selecting;
+  $('#sel-n').textContent=S.sel.size+' selected';
+  $('#sel-book').disabled=!S.sel.size; $('#btn-select').setAttribute('aria-pressed',String(S.selecting));
+  $('#btn-select').textContent=S.selecting?'Done selecting':'Select';
+}
+function renderBanner(){
+  const ex=S.recipes.filter(r=>r.example);
+  $('#banner').innerHTML=ex.length?'<div class="banner"><span>The recipes marked Example show how a card looks. Remove them whenever you like.</span><button class="btn sm" data-rmex="1">Remove examples</button></div>':'';
+}
+function refreshAll(){
+  for(const id of [...S.sel]) if(!S.recipes.some(r=>r.id===id)) S.sel.delete(id);
+  renderRail(); renderGrid(); renderBar(); renderBanner();
+  if(S.detailId){ if(S.recipes.some(r=>r.id===S.detailId)) renderDetail(); else { $('#dlg-detail').close(); S.detailId=null; } }
+}
+
+/* ---- detail card ---- */
+const dRate={};
+function renderDetail(){
+  const r=S.recipes.find(x=>x.id===S.detailId); if(!r) return;
+  const img=safeImg(r), tm=totalMin(r);
+  const facts=[]; const F=(k,v)=>facts.push('<div class="fact"><div class="lbl">'+k+'</div><div class="v">'+esc(v)+'</div></div>');
+  if(r.servings) F('Yield',r.servings); if(r.prepMin) F('Prep',fmtMin(r.prepMin)); if(r.cookMin) F('Cook',fmtMin(r.cookMin));
+  if(tm&&(r.totalMin||(r.prepMin&&r.cookMin))) F('Total',fmtMin(tm));
+  const ing=(r.ingredients||[]).map(t=>/^#/.test(t)?'<li class="grp">'+esc(t.replace(/^#+\s*/,''))+'</li>':'<li><label><input type="checkbox"><span>'+esc(t)+'</span></label></li>').join('');
+  const steps=(r.steps||[]).map(t=>'<li><span>'+esc(t)+'</span></li>').join('');
+  const src=r.source?(/^https?:\/\//i.test(r.source)?'<a href="'+esc(r.source)+'" target="_blank" rel="noopener noreferrer" style="color:var(--accent-ink);overflow-wrap:anywhere">'+esc(r.source)+'</a>':esc(r.source)):'';
+  let rate=''; for(let i=1;i<=5;i++) rate+='<button data-rate="'+i+'" aria-pressed="'+(r.rating>=i)+'" aria-label="'+i+' of 5">'+ic('star',r.rating>=i?'fill':'')+'</button>';
+  $('#detail-body').innerHTML='<div class="hd" style="--tile:'+catColor(catOf(r))+'"><div class="cat-line"><span class="lbl">'+esc([catOf(r),r.cuisine].filter(Boolean).join(' / '))+'</span>'+(r.example?'<span class="chip">Example</span>':'')+'</div>'
+    +'<h2 class="card-title">'+esc(r.title||'Untitled')+'</h2>'+(r.description?'<p class="lede">'+esc(r.description)+'</p>':'')+'</div>'
+    +'<div class="facts">'+facts.join('')+'<div class="fact"><div class="lbl">Rating</div><div class="rate" role="group" aria-label="Rating">'+rate+'</div></div></div>'
+    +(img?'<img class="hero" src="'+img+'" alt="">':'')
+    +((r.tags||[]).length?'<div class="tagrow">'+r.tags.map(t=>'<span class="chip">'+esc(t)+'</span>').join('')+'</div>':'')
+    +'<div class="cols"><section><h3>Ingredients</h3>'+(ing?'<ul class="ings">'+ing+'</ul>':'<p class="muted">No ingredients yet.</p>')+'</section>'
+    +'<section><h3>Method</h3>'+(steps?'<ol class="steps">'+steps+'</ol>':'<p class="muted">No steps yet.</p>')+'</section></div>'
+    +((r.notes||src)?'<div class="extra">'+(r.notes?'<div><div class="lbl">Notes</div><p>'+esc(r.notes)+'</p></div>':'')+(src?'<div><div class="lbl">Source</div><p>'+src+'</p></div>':'')+'</div>':'');
+  const armed=dRate.del===r.id;
+  $('#detail-foot').innerHTML='<button class="btn" data-d="fav" aria-pressed="'+!!r.favorite+'">'+ic('heart',r.favorite?'fill':'')+(r.favorite?'Favorited':'Favorite')+'</button>'
+    +'<button class="btn" data-d="edit">'+ic('pencil')+'Edit</button><button class="btn" data-d="pdf">'+ic('down')+'Export PDF</button>'
+    +'<button class="btn" data-d="tobook">'+ic('book')+'Add to cookbook</button><span class="sp"></span>'
+    +'<button class="btn danger" data-d="'+(armed?'delok':'del')+'">'+ic('trash')+(armed?'Click again to delete':'Delete')+'</button>';
+}
+function openDetail(id){ S.detailId=id; dRate.del=null; renderDetail(); $('#dlg-detail').showModal(); $('#detail-body').scrollTop=0; }
+/* ---- image helpers ---- */
+async function loadImage(file){
+  const url=URL.createObjectURL(file);
+  try{ const img=new Image(); img.src=url; await img.decode(); return {img,w:img.naturalWidth,h:img.naturalHeight,url}; }
+  catch(e){ URL.revokeObjectURL(url); throw {code:'image_rejected'}; }
+}
+function drawScaled(img,w,h,maxSide){
+  const k=Math.min(1,maxSide/Math.max(w,h)), c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(w*k)); c.height=Math.max(1,Math.round(h*k));
+  const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height); return c;
+}
+function encodeCanvas(c){
+  let q=0.84, cv=c;
+  for(let i=0;i<9;i++){
+    const url=cv.toDataURL('image/jpeg',q);
+    if(url.length<185000) return {url,w:cv.width,h:cv.height};
+    if(q>0.6) q-=0.08; else { const n=document.createElement('canvas'); n.width=Math.round(cv.width*.85); n.height=Math.round(cv.height*.85); n.getContext('2d').drawImage(cv,0,0,n.width,n.height); cv=n; }
+  }
+  return {url:cv.toDataURL('image/jpeg',0.55),w:cv.width,h:cv.height};
+}
+const toBlob=(c,q)=>new Promise(res=>c.toBlob(res,'image/jpeg',q));
+function cropBox(s,box){
+  const x=clamp(+box.x||0,0,1), y=clamp(+box.y||0,0,1), w=clamp(+box.w||0,0,1-x), h=clamp(+box.h||0,0,1-y);
+  const cw=w*s.w, ch=h*s.h; if(cw<140||ch<100) return null;
+  const k=Math.min(1,900/Math.max(cw,ch)), c=document.createElement('canvas');
+  c.width=Math.round(cw*k); c.height=Math.round(ch*k);
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  g.drawImage(s.img,x*s.w,y*s.h,cw,ch,0,0,c.width,c.height); return encodeCanvas(c);
+}
+async function photoFromFile(file){ const s=await loadImage(file); const out=encodeCanvas(drawScaled(s.img,s.w,s.h,900)); URL.revokeObjectURL(s.url); return out; }
+async function ensureDims(list){
+  await Promise.all(list.map(r=>{ const u=safeImg(r); if(!u||(r.imageW&&r.imageH)) return null;
+    return new Promise(res=>{ const i=new Image(); i.onload=()=>{r.imageW=i.naturalWidth;r.imageH=i.naturalHeight;res();}; i.onerror=res; i.src=u; }); }));
+}
+
+/* ---- editor ---- */
+const ED={id:null,fresh:false,rating:0,image:'',imageW:0,imageH:0,scans:[],base:null};
+function edRender(){
+  let h=''; for(let i=1;i<=5;i++) h+='<button type="button" data-er="'+i+'" aria-pressed="'+(ED.rating>=i)+'" aria-label="'+i+' of 5">'+ic('star',ED.rating>=i?'fill':'')+'</button>';
+  $('#ed-rate').innerHTML=h;
+  $('#ed-imgprev').innerHTML=ED.image?'<img src="'+ED.image+'" alt="Recipe picture">':'<div class="none">No picture</div>';
+  $('#ed-rmimg').hidden=!ED.image; $('#ed-usescan').hidden=!ED.scans.length;
+}
+function openEditor(rec,opts){
+  opts=opts||{};
+  ED.base=rec; ED.id=opts.fresh?newId():rec.id; ED.fresh=!!opts.fresh; ED.rating=rec.rating||0;
+  ED.image=safeImg(rec); ED.imageW=rec.imageW||0; ED.imageH=rec.imageH||0; ED.scans=opts.scans||[];
+  $('#ed-head').textContent=ED.fresh?'Check and save recipe':'Edit recipe';
+  $('#ed-title').value=rec.title||''; $('#ed-desc').value=rec.description||''; $('#ed-cat').value=rec.category||'';
+  $('#ed-servings').value=rec.servings||''; $('#ed-cuisine').value=rec.cuisine||''; $('#ed-tags').value=(rec.tags||[]).join(', ');
+  $('#ed-prep').value=rec.prepMin||''; $('#ed-cook').value=rec.cookMin||''; $('#ed-total').value=rec.totalMin||'';
+  $('#ed-ing').value=(rec.ingredients||[]).join('\n'); $('#ed-steps').value=(rec.steps||[]).join('\n');
+  $('#ed-notes').value=rec.notes||''; $('#ed-source').value=rec.source||'';
+  const note=$('#ed-note'); note.hidden=!opts.note; note.textContent=opts.note||'';
+  const sb=$('#ed-scanbox'); sb.hidden=!ED.scans.length;
+  $('#ed-scans').innerHTML=ED.scans.map(s=>'<img src="'+s.url+'" alt="Scan page">').join('');
+  $('#ed-err').hidden=true; edRender();
+  if(!$('#dlg-edit').open) $('#dlg-edit').showModal();
+  $('#dlg-edit .dlg-body').scrollTop=0;
+}
+function closeEditor(){
+  ED.scans.forEach(s=>{ try{URL.revokeObjectURL(s.url);}catch(e){} }); ED.scans=[];
+  $('#dlg-edit').close();
+}
+function edError(msg){ const e=$('#ed-err'); e.textContent=msg; e.hidden=false; }
+async function saveEditor(){
+  const title=$('#ed-title').value.trim();
+  if(!title){ edError('Give the recipe a title.'); $('#ed-title').focus(); return; }
+  const lines=id=>$(id).value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const num=id=>{const n=parseInt($(id).value,10);return n>0?n:null;};
+  const base=ED.base||{};
+  const rec=Object.assign({},base,{
+    title,description:$('#ed-desc').value.trim(),category:$('#ed-cat').value.trim(),servings:$('#ed-servings').value.trim(),
+    cuisine:$('#ed-cuisine').value.trim(),tags:$('#ed-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).slice(0,12),
+    prepMin:num('#ed-prep'),cookMin:num('#ed-cook'),totalMin:num('#ed-total'),
+    ingredients:lines('#ed-ing').map(s=>/^#/.test(s)?'# '+s.replace(/^#+\s*/,''):stripBullet(s)).filter(Boolean),
+    steps:lines('#ed-steps').map(stripStepNo).filter(Boolean),
+    notes:$('#ed-notes').value.trim(),source:$('#ed-source').value.trim(),rating:ED.rating,
+    image:ED.image,imageW:ED.imageW,imageH:ED.imageH
+  });
+  delete rec.id; delete rec.example; delete rec.imageUrl;
+  if(ED.fresh) rec.createdAt=new Date().toISOString(); else rec.createdAt=base.createdAt||new Date().toISOString();
+  if(base.example&&!ED.fresh) rec.example=false;
+  const btn=$('#ed-save'); btn.disabled=true;
+  try{ await saveRecipe(ED.id,rec); const id=ED.id; closeEditor(); toast('Recipe saved'); if(S.detailId&&S.detailId===id) renderDetail(); }
+  catch(e){ edError(dbMsg(e)); }
+  finally{ btn.disabled=false; }
+}
+
+/* ---- import ---- */
+const IMP={tab:'photo',files:[],text:'',htmlName:'',busy:false,ctl:null,photo:null};
+function impTab(t){
+  IMP.tab=t;
+  $$('#imp-tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  $$('#dlg-import [data-pane]').forEach(p=>p.hidden=p.dataset.pane!==t);
+  $('#imp-go').textContent=t==='manual'?'Start blank card':'Read recipe';
+  impStatus(''); impGo();
+}
+function impGo(){
+  let ok=true;
+  if(IMP.tab==='photo') ok=IMP.files.length>0&&CAN_IMG&&!IMP.busy;
+  else if(IMP.tab==='web') ok=!!($('#imp-paste').value.trim()||IMP.text)&&!IMP.busy;
+  else ok=!IMP.busy;
+  $('#imp-go').disabled=!ok;
+}
+function updateImportAvail_unused(){
+  const h=$('#imp-photo-hint');
+  if(!SAMPLE) h.textContent='Reading scans needs Claude, which is not available in this view. You can still use a saved webpage, pasted text, or type the recipe in.';
+  else if(!CAN_IMG) h.textContent='Sending images to Claude is not available in this view. You can still use a saved webpage, pasted text, or type the recipe in.';
+  impGo();
+}
+function impStatus(msg,kind){
+  const w=$('#imp-statuswrap'), s=$('#imp-status'); w.hidden=!msg;
+  s.className='status'+(kind==='err'?' err':''); s.innerHTML=(kind==='busy'?'<span class="spin"></span>':'')+'<span></span>'; s.lastChild.textContent=msg;
+}
+function renderThumbs_unused(){
+  $('#imp-thumbs').innerHTML=IMP.files.map((f,i)=>'<div class="thumb"><img src="'+f.url+'" alt="Page '+(i+1)+'"><button data-rmf="'+i+'" aria-label="Remove page '+(i+1)+'">'+ic('x')+'</button></div>').join('');
+  impGo();
+}
+function addImageFiles(list){
+  const max=(IMG_LIM&&IMG_LIM.maxCount)||6;
+  for(const f of list){
+    if(!/^image\//.test(f.type)) continue;
+    if(IMP.files.length>=max){ impStatus('You can send up to '+max+' images for one recipe.','err'); break; }
+    IMP.files.push({file:f,url:URL.createObjectURL(f)});
+  }
+  renderThumbs();
+}
+function resetImport(){
+  IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[]; IMP.text=''; IMP.htmlName=''; IMP.photo=null;
+  $('#imp-paste').value=''; $('#imp-url').value=''; $('#imp-html').value=''; $('#imp-photo').value=''; $('#imp-files').value='';
+  $('#imp-htmlname').textContent='No file chosen'; renderThumbs(); impStatus('');
+}
+function openImport(){ resetImport(); impTab('photo'); $('#dlg-import').showModal(); }
+function importErr(e){
+  const c=e&&e.code;
+  if(c==='ocr_missing') return 'The text-reading library did not load. Check your internet connection and reload the page.';
+  if(c==='not_granted') return 'Claude access was declined for this page. You can still use pasted text or type the recipe in.';
+  if(c==='sampling_disabled'||c==='not_declared'||c==='capability_disabled'||c==='capability_removed') return 'Claude is not available in this view.';
+  if(c==='rate_limited') return 'Too many requests right now. Wait a minute, then try again.';
+  if(c==='image_rejected'||c==='images_unavailable') return 'One of the images could not be used. Try a JPG or PNG under 20 MB.';
+  if(c==='prompt_too_large') return 'That page is too long to read in one go. Paste just the recipe part.';
+  if(c==='invalid_json'||c==='empty_completion'||c==='refused') return 'Claude could not turn that into a recipe. Try a clearer photo, or type it in.';
+  if(c==='session_expired') return 'Your session expired. Sign in again and retry.';
+  return 'Something went wrong while reading'+(e&&e.message?' ('+e.message+')':'')+'. Try again.';
+}
+const RECIPE_SHAPE='{"title": string, "description": string (one short sentence taken from the source, else ""), "ingredients": string[] (one line each, exactly as written with amount and unit; use a line like "# For the sauce" for a group heading), "steps": string[] (one string per step, without step numbers), "servings": string (like "4 servings" or "12 cookies", else ""), "prepMinutes": number or null, "cookMinutes": number or null, "category": string (best fit of: '+DEFAULT_CATS.join(', ')+'), "cuisine": string, "tags": string[] (up to 5 short lowercase tags such as vegetarian or one-pot), "notes": string (tips printed with the recipe, else ""), "source": string (book, magazine, person or website credited, else "")';
+async function importScans_unused(signal){
+  const loaded=[];
+  for(const f of IMP.files){ impStatus('Preparing '+(loaded.length+1)+' of '+IMP.files.length+'...','busy'); loaded.push(await loadImage(f.file)); }
+  const blobs=[]; for(const s of loaded) blobs.push(await toBlob(drawScaled(s.img,s.w,s.h,1800),0.88));
+  impStatus('Claude is reading the page. This can take up to a minute.','busy');
+  const prompt='These images are scans or photos of ONE recipe (a cookbook page, recipe card, magazine clipping or handwritten note). Several images are consecutive pages, in order. Read the recipe and transcribe it faithfully, in the language it is written in. Do not translate, and do not invent amounts or steps. Write [illegible] for words you cannot read.\nReply with only one JSON object of this shape:\n'+RECIPE_SHAPE+', "photo": null or {"image": number (0-based index of the image), "x": number, "y": number, "w": number, "h": number}}\n"photo" is the bounding box of the main photograph of the finished dish, as fractions from 0 to 1 of that image\'s width and height. Use null if the page has no photograph of the dish.';
+  const raw=await SAMPLE.json(prompt,{images:blobs,signal,cache:false});
+  const d=normalizeDraft(raw); d.origin='scan';
+  if(raw&&raw.photo&&typeof raw.photo==='object'){
+    const s=loaded[clamp(parseInt(raw.photo.image,10)||0,0,loaded.length-1)];
+    try{ const p=cropBox(s,raw.photo); if(p){ d.image=p.url; d.imageW=p.w; d.imageH=p.h; } }catch(e){}
+  }
+  return {draft:d,scans:loaded.map(s=>({url:s.url,img:s.img,w:s.w,h:s.h})),note:'Read by Claude from your scan. Compare each line with the original below before saving.'+(d.image?' The dish photo was cut out of the scan.':' No dish photo was found; add one below if you like.')};
+}
+async function importText(signal){
+  const raw=IMP.text||$('#imp-paste').value; const url=$('#imp-url').value.trim();
+  let draft=null, text=raw, how='';
+  if(looksLikeHtml(raw)){
+    const doc=new DOMParser().parseFromString(raw,'text/html');
+    const node=findJsonLdRecipe(doc); if(node) draft=recipeFromJsonLd(node,url);
+    text=htmlToText(doc);
+  }
+  if(draft&&draft.ingredients.length&&draft.steps.length) return {draft,note:'Read from the recipe data built into the page. Webpage pictures are not copied; add one below.'};
+  let ai=null, aiNote='';
+  if(SAMPLE){
+    try{
+      impStatus('Claude is reading the text. This can take up to a minute.','busy');
+      const prompt='Below is the text of a recipe web page or recipe text. Extract the recipe and ignore menus, comments, ads and unrelated text. Keep the language it is written in. Do not invent amounts or steps.\nReply with only one JSON object of this shape:\n'+RECIPE_SHAPE+'}\n\nTEXT:\n'+text.slice(0,60000);
+      const r=await SAMPLE.json(prompt,{signal,cache:false}); ai=normalizeDraft(r);
+    }catch(e){ if(e&&e.code==='cancelled') throw e; aiNote=' Claude could not be used ('+importErr(e)+')'; }
+  }
+  if(ai&&(ai.ingredients.length||ai.steps.length)){
+    if(draft){ ['title','description','servings','category','cuisine','notes'].forEach(k=>{ if(!draft[k]) draft[k]=ai[k]; }); if(!draft.ingredients.length) draft.ingredients=ai.ingredients; if(!draft.steps.length) draft.steps=ai.steps; if(!draft.tags.length) draft.tags=ai.tags; if(!draft.prepMin) draft.prepMin=ai.prepMin; if(!draft.cookMin) draft.cookMin=ai.cookMin; }
+    else { draft=ai; draft.origin=looksLikeHtml(raw)?'web':'text'; }
+    if(url) draft.source=url; else if(!draft.source) draft.source=ai.source;
+    return {draft,note:'Read by Claude from the text. Check the ingredients and steps before saving.'+(looksLikeHtml(raw)?' Webpage pictures are not copied; add one below.':'')};
+  }
+  if(!draft){ draft=parseRecipeText(text); if(url) draft.source=url; }
+  return {draft,note:'Read with simple text rules, so check everything carefully.'+aiNote};
+}
+async function runImport(){
+  if(IMP.tab==='manual'){ resetImport(); $('#dlg-import').close(); openEditor(Object.assign(blankDraft(),{category:''}),{fresh:true}); return; }
+  IMP.busy=true; IMP.ctl=new AbortController(); $('#imp-stop').hidden=false; impGo();
+  try{
+    let res;
+    if(IMP.tab==='photo') res=await importScans(IMP.ctl.signal); else res=await importText(IMP.ctl.signal);
+    const d=res.draft;
+    if(IMP.tab==='web'&&IMP.photo){ try{ const p=await photoFromFile(IMP.photo); d.image=p.url; d.imageW=p.w; d.imageH=p.h; }catch(e){} }
+    if(IMP.tab==='web'&&!d.image&&d.imageUrl){ impStatus('Fetching the recipe picture...','busy'); try{ const bl=await proxyGet(new URL(d.imageUrl,$('#imp-url').value.trim()||undefined).href,true); if(bl){ const p=await photoFromFile(bl); d.image=p.url; d.imageW=p.w; d.imageH=p.h; } }catch(x){} }
+    delete d.imageUrl;
+    if(!d.title&&!d.ingredients.length&&!d.steps.length){ impStatus('No recipe was found in that. Check the file, or type it in.','err'); return; }
+    $('#dlg-import').close(); IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[];
+    openEditor(d,{fresh:true,scans:res.scans||[],note:res.note});
+  }catch(e){
+    if(e&&e.code==='cancelled') impStatus('Stopped.');
+    else impStatus(importErr(e),'err');
+  }finally{ IMP.busy=false; IMP.ctl=null; $('#imp-stop').hidden=true; impGo(); }
+}
+
+/* ---- export ---- */
+const EX={mode:'single',ids:[],busy:false};
+function exList(){
+  const byId=new Map(S.recipes.map(r=>[r.id,r]));
+  $('#ex-list').innerHTML=EX.ids.map((id,i)=>{ const r=byId.get(id); if(!r) return '';
+    return '<li data-id="'+esc(id)+'"><span class="n">'+(i+1)+'</span><span class="t">'+esc(r.title||'Untitled')+'</span><span class="lbl">'+esc(catOf(r))+'</span>'
+      +'<span><button class="icon-btn" data-mv="-1" aria-label="Move up">'+ic('up')+'</button><button class="icon-btn" data-mv="1" aria-label="Move down">'+ic('dn')+'</button></span>'
+      +'<button class="icon-btn" data-rm="1" aria-label="Remove from cookbook">'+ic('x')+'</button></li>'; }).join('');
+  $('#ex-go').disabled=!EX.ids.length||EX.busy;
+}
+function openExport(mode,ids){
+  EX.mode=mode; EX.ids=ids.slice(); EX.busy=false;
+  const book=mode==='book';
+  $$('#dlg-export [data-book]').forEach(n=>n.hidden=!book);
+  $('#ex-head').textContent=book?'Make a cookbook':'Export recipe as PDF';
+  $('#ex-golbl').textContent=book?'Create cookbook PDF':'Create PDF';
+  $('#ex-toc').checked=EX.ids.length>2; $('#ex-status').hidden=true;
+  if(book) exList(); else $('#ex-go').disabled=false;
+  if(!DL){ const s=$('#ex-status'); s.hidden=false; s.className='status err'; s.textContent='Saving files is not available in this view.'; }
+  $('#dlg-export').showModal();
+}
+async function doExport(){
+  const list=EX.ids.map(id=>S.recipes.find(r=>r.id===id)).filter(Boolean).map(r=>Object.assign({},r));
+  if(!list.length) return;
+  const st=$('#ex-status'); const show=(m,k)=>{ st.hidden=false; st.className='status'+(k==='err'?' err':''); st.innerHTML=(k==='busy'?'<span class="spin"></span>':'')+'<span></span>'; st.lastChild.textContent=m; };
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ show('The PDF library did not load. Reload the page and try again.','err'); return; }
+  if(!DL){ show('Saving files is not available in this view.','err'); return; }
+  EX.busy=true; $('#ex-go').disabled=true; show('Building the PDF...','busy');
+  try{
+    await new Promise(r=>setTimeout(r,30)); await ensureDims(list);
+    const book=EX.mode==='book';
+    const o={book,paper:$('#ex-paper').value,photos:$('#ex-photos').checked,notes:$('#ex-notes').checked,toc:book&&$('#ex-toc').checked,
+      title:$('#ex-title').value.trim()||'My Cookbook',subtitle:$('#ex-sub').value.trim(),author:$('#ex-author').value.trim(),
+      cover:($('input[name=cover]:checked')||{}).value||'basil',
+      layout:($('input[name=layout]:checked')||{}).value||'classic'};
+    const doc=buildPdf(window.jspdf.jsPDF,list,o);
+    const buf=doc.output('arraybuffer');
+    show('Ready. Starting the download...','busy');
+    const res=await DL.save({filename:slug(book?o.title:list[0].title)+'.pdf',data:buf});
+    show(res&&res.status==='saved'?'PDF saved.':'PDF sent.');
+  }catch(e){
+    if(e&&e.code==='declined') show('Not saved. Create the PDF again when you are ready.');
+    else show('The PDF could not be created or saved.','err');
+  }finally{ EX.busy=false; if(EX.mode==='single') $('#ex-go').disabled=false; else exList(); }
+}
+
+/* ---- events ---- */
+function setCat(c){ S.cat=c; renderRail(); renderGrid(); }
+function toggleSel(id){ if(S.sel.has(id)) S.sel.delete(id); else S.sel.add(id); renderGrid(); renderBar(); }
+function orderedSel(){ return sorted(S.recipes.filter(r=>S.sel.has(r.id))).map(r=>r.id); }
+async function guard(fn){ try{ await fn(); }catch(e){ toast(dbMsg(e),true); } }
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-cat],[data-tag]'); if(!t) return;
+  const d=t.dataset;
+  if(d.cat!==undefined&&t.closest('#rail')){ setCat(d.cat); return; }
+  if(d.tag!==undefined&&t.closest('#rail')){ S.tag=S.tag===d.tag?'':d.tag; renderRail(); renderGrid(); return; }
+  if(d.cleartag){ S.tag=''; renderRail(); renderGrid(); return; }
+  if(d.clear){ S.q=''; S.tag=''; S.cat='all'; $('#q').value=''; renderRail(); renderGrid(); return; }
+  if(d.addnew){ openImport(); return; }
+  if(d.rmex){ guard(async()=>{ for(const r of S.recipes.filter(x=>x.example)) await deleteRecipe(r.id); toast('Examples removed'); }); return; }
+  if(d.open){ if(S.selecting) toggleSel(d.open); else openDetail(d.open); return; }
+  if(d.fav&&t.classList.contains('rc-fav')){ const r=S.recipes.find(x=>x.id===d.fav); if(r) guard(()=>patchRecipe(r.id,{favorite:!r.favorite})); return; }
+  if(t.id==='btn-add'){ openImport(); return; }
+  if(t.id==='btn-select'){ S.selecting=!S.selecting; if(!S.selecting) S.sel.clear(); renderGrid(); renderBar(); return; }
+  if(t.id==='sel-all'){ visible().forEach(r=>S.sel.add(r.id)); renderGrid(); renderBar(); return; }
+  if(t.id==='sel-none'){ S.sel.clear(); renderGrid(); renderBar(); return; }
+  if(t.id==='sel-done'){ S.selecting=false; S.sel.clear(); renderGrid(); renderBar(); return; }
+  if(t.id==='sel-book'){ openExport('book',orderedSel()); return; }
+  const dlg=t.closest('dialog');
+  /* detail */
+  if(dlg&&dlg.id==='dlg-detail'){
+    const r=S.recipes.find(x=>x.id===S.detailId); if(!r) return;
+    if(d.d==='close'){ dlg.close(); return; }
+    if(d.rate){ const n=+d.rate; guard(()=>patchRecipe(r.id,{rating:r.rating===n?0:n})); return; }
+    if(d.d==='fav'){ guard(()=>patchRecipe(r.id,{favorite:!r.favorite})); return; }
+    if(d.d==='edit'){ dlg.close(); openEditor(r); return; }
+    if(d.d==='pdf'){ openExport('single',[r.id]); return; }
+    if(d.d==='tobook'){ S.selecting=true; S.sel.add(r.id); dlg.close(); renderGrid(); renderBar(); toast('Added to your selection. Pick more, then Make cookbook.'); return; }
+    if(d.d==='del'){ dRate.del=r.id; renderDetail(); return; }
+    if(d.d==='delok'){ guard(async()=>{ dlg.close(); S.detailId=null; await deleteRecipe(r.id); toast('Recipe deleted'); }); return; }
+  }
+  /* editor */
+  if(dlg&&dlg.id==='dlg-edit'){
+    if(d.e==='close'){ closeEditor(); return; }
+    if(d.er){ const n=+d.er; ED.rating=ED.rating===n?0:n; edRender(); return; }
+    if(t.id==='ed-save'){ saveEditor(); return; }
+    if(t.id==='ed-rmimg'){ ED.image=''; ED.imageW=ED.imageH=0; edRender(); return; }
+    if(t.id==='ed-usescan'){ const s=ED.scans[0]; if(s){ const p=encodeCanvas(drawScaled(s.img,s.w,s.h,900)); ED.image=p.url; ED.imageW=p.w; ED.imageH=p.h; edRender(); } return; }
+  }
+  /* import */
+  if(dlg&&dlg.id==='dlg-import'){
+    if(d.i==='close'){ if(IMP.ctl) IMP.ctl.abort(); dlg.close(); return; }
+    if(d.tab){ impTab(d.tab); return; }
+    if(d.rmf!==undefined){ const f=IMP.files.splice(+d.rmf,1)[0]; if(f) URL.revokeObjectURL(f.url); renderThumbs(); return; }
+    if(t.id==='imp-go'){ runImport(); return; }
+    if(t.id==='imp-stop'){ if(IMP.ctl) IMP.ctl.abort(); return; }
+  }
+  /* export */
+  if(dlg&&dlg.id==='dlg-export'){
+    if(d.x==='close'){ dlg.close(); return; }
+    if(t.id==='ex-go'){ doExport(); return; }
+    if(t.id==='ex-az'||t.id==='ex-bycat'){
+      const by=new Map(S.recipes.map(r=>[r.id,r])), T=(a,b)=>String(by.get(a).title||'').localeCompare(String(by.get(b).title||''));
+      EX.ids=EX.ids.filter(id=>by.has(id));
+      if(t.id==='ex-az') EX.ids.sort(T);
+      else { const rank=n=>{const i=DEFAULT_CATS.indexOf(n);return i<0?(n==='Uncategorized'?999:100):i;}; EX.ids.sort((a,b)=>rank(catOf(by.get(a)))-rank(catOf(by.get(b)))||catOf(by.get(a)).localeCompare(catOf(by.get(b)))||T(a,b)); }
+      exList(); return;
+    }
+    const li=t.closest('#ex-list li');
+    if(li){ const i=EX.ids.indexOf(li.dataset.id);
+      if(d.mv){ const j=i+(+d.mv); if(j>=0&&j<EX.ids.length){ [EX.ids[i],EX.ids[j]]=[EX.ids[j],EX.ids[i]]; exList(); const nb=$('#ex-list li:nth-child('+(j+1)+') [data-mv="'+d.mv+'"]'); if(nb) nb.focus(); } return; }
+      if(d.rm){ EX.ids.splice(i,1); exList(); return; } }
+  }
+});
+document.addEventListener('click',e=>{ if(e.target instanceof HTMLDialogElement&&(e.target.id==='dlg-detail'||e.target.id==='dlg-export')) e.target.close(); });
+$('#dlg-detail').addEventListener('close',()=>{ S.detailId=null; });
+$('#dlg-import').addEventListener('close',()=>{ if(IMP.ctl) IMP.ctl.abort(); });
+$('#q').addEventListener('input',e=>{ S.q=e.target.value; renderGrid(); });
+$('#sort').addEventListener('change',e=>{ S.sort=e.target.value; renderGrid(); });
+$('#imp-files').addEventListener('change',e=>{ addImageFiles(Array.from(e.target.files)); e.target.value=''; });
+$('#imp-photo').addEventListener('change',e=>{ IMP.photo=e.target.files[0]||null; });
+$('#imp-paste').addEventListener('input',impGo);
+$('#imp-html').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ IMP.text=await f.text(); IMP.htmlName=f.name; $('#imp-htmlname').textContent=f.name; }catch(err){ impStatus('That file could not be read.','err'); }
+  impGo();
+});
+$('#ed-file').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const p=await photoFromFile(f); ED.image=p.url; ED.imageW=p.w; ED.imageH=p.h; edRender(); }catch(err){ edError('That image could not be used. Try a JPG or PNG.'); }
+});
+function dropWire(id,fn){
+  const z=$(id); if(!z) return;
+  ['dragenter','dragover'].forEach(n=>z.addEventListener(n,e=>{ e.preventDefault(); z.classList.add('over'); }));
+  ['dragleave','drop'].forEach(n=>z.addEventListener(n,e=>{ e.preventDefault(); z.classList.remove('over'); }));
+  z.addEventListener('drop',e=>{ fn(Array.from(e.dataTransfer.files||[])); });
+}
+dropWire('#drop-photo',files=>addImageFiles(files));
+dropWire('#drop-web',async files=>{ const f=files[0]; if(!f) return; try{ IMP.text=await f.text(); IMP.htmlName=f.name; $('#imp-htmlname').textContent=f.name; impGo(); }catch(err){} });
+$('#dlg-import').addEventListener('paste',e=>{
+  if(IMP.tab!=='photo') return;
+  const fs=Array.from((e.clipboardData&&e.clipboardData.files)||[]).filter(f=>/^image\//.test(f.type));
+  if(fs.length){ e.preventDefault(); addImageFiles(fs); }
+});
+
+/* ================= standalone: scans with marked regions and Tesseract ================= */
+const RT={ing:{label:'Ingredients',c:'#2F9E5B'},steps:{label:'Steps',c:'#2F6B9A'},info:{label:'Title and info',c:'#8A6BBE'},pic:{label:'Picture',c:'#C8553D'},notes:{label:'Notes',c:'#B8710E'}};
+const REG={tool:'ing',boxes:[],cur:null,drag:null,imgs:new WeakMap(),pend:new WeakMap()};
+const LANG_KEY='cookbook-ocr-lang';
+function regImage(f){
+  if(REG.imgs.has(f)) return Promise.resolve(REG.imgs.get(f));
+  if(!REG.pend.has(f)) REG.pend.set(f,loadImage(f.file).then(s=>{ REG.imgs.set(f,s.img); try{URL.revokeObjectURL(s.url);}catch(e){} regDraw(); return s.img; }));
+  return REG.pend.get(f);
+}
+function regSync(){
+  REG.boxes=REG.boxes.filter(b=>IMP.files.includes(b.f));
+  const box=$('#reg'); box.hidden=!IMP.files.length;
+  if(!IMP.files.length){ REG.cur=null; return; }
+  if(!REG.cur||!IMP.files.includes(REG.cur)) REG.cur=IMP.files[0];
+  $$('#imp-thumbs img').forEach((im,i)=>im.setAttribute('aria-current',String(IMP.files[i]===REG.cur)));
+  $$('#reg-tools button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.rt===REG.tool)));
+  regImage(REG.cur).then(regDraw).catch(()=>{});
+  regList();
+}
+function regDraw(){
+  const f=REG.cur, img=f&&REG.imgs.get(f); if(!img) return;
+  const cv=$('#reg-cv'), W=Math.min(cv.parentElement.clientWidth||560,760);
+  cv.width=Math.round(W); cv.height=Math.max(1,Math.round(img.naturalHeight*W/img.naturalWidth));
+  const g=cv.getContext('2d'); g.drawImage(img,0,0,cv.width,cv.height);
+  const paint=(b,t,dash)=>{ const c=RT[t].c, x=b.x*cv.width, y=b.y*cv.height, w=b.w*cv.width, h=b.h*cv.height;
+    g.fillStyle=c+'33'; g.fillRect(x,y,w,h); g.lineWidth=2.5; g.strokeStyle=c; g.setLineDash(dash?[6,4]:[]); g.strokeRect(x,y,w,h); g.setLineDash([]);
+    g.font='600 13px Work Sans, sans-serif'; const lab=RT[t].label, tw=g.measureText(lab).width+12; g.fillStyle=c; g.fillRect(x,Math.max(0,y-20),tw,20); g.fillStyle='#fff'; g.fillText(lab,x+6,Math.max(0,y-20)+14); };
+  REG.boxes.filter(b=>b.f===f).forEach(b=>paint(b,b.t,false));
+  if(REG.drag){ const d=REG.drag; paint({x:Math.min(d.x0,d.x1),y:Math.min(d.y0,d.y1),w:Math.abs(d.x1-d.x0),h:Math.abs(d.y1-d.y0)},REG.tool,true); }
+}
+function regList(){
+  $('#reg-list').innerHTML=REG.boxes.map((b,i)=>'<li><span class="dot" style="background:'+RT[b.t].c+'"></span><span>'+RT[b.t].label+(IMP.files.length>1?' on page '+(IMP.files.indexOf(b.f)+1):'')+'</span><button class="icon-btn" data-regdel="'+i+'" aria-label="Remove this box">'+ic('x')+'</button></li>').join('');
+  $('#reg-empty').hidden=REG.boxes.length>0;
+}
+(function wireRegion(){
+  const cv=$('#reg-cv'); const pt=e=>{ const r=cv.getBoundingClientRect(); return {x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)}; };
+  cv.addEventListener('pointerdown',e=>{ if(!REG.cur) return; e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){} const p=pt(e); REG.drag={x0:p.x,y0:p.y,x1:p.x,y1:p.y}; regDraw(); });
+  cv.addEventListener('pointermove',e=>{ if(!REG.drag) return; const p=pt(e); REG.drag.x1=p.x; REG.drag.y1=p.y; regDraw(); });
+  const end=e=>{ const d=REG.drag; if(!d) return; REG.drag=null;
+    const b={f:REG.cur,t:REG.tool,x:Math.min(d.x0,d.x1),y:Math.min(d.y0,d.y1),w:Math.abs(d.x1-d.x0),h:Math.abs(d.y1-d.y0)};
+    if(b.w>0.02&&b.h>0.012){ if(b.t==='info'||b.t==='pic') REG.boxes=REG.boxes.filter(x=>x.t!==b.t); REG.boxes.push(b); }
+    regDraw(); regList(); };
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',()=>{ REG.drag=null; regDraw(); });
+  document.addEventListener('click',e=>{
+    const t=e.target.closest('[data-rt],[data-regdel],#imp-thumbs img'); if(!t) return;
+    if(t.dataset.rt){ REG.tool=t.dataset.rt; regSync(); return; }
+    if(t.dataset.regdel!==undefined){ REG.boxes.splice(+t.dataset.regdel,1); regDraw(); regList(); return; }
+    const i=$$('#imp-thumbs img').indexOf(t); if(i>=0&&IMP.files[i]){ REG.cur=IMP.files[i]; regSync(); }
+  });
+  window.addEventListener('resize',()=>{ if(!$('#reg').hidden) regDraw(); });
+  const sel=$('#imp-lang'); try{ const v=localStorage.getItem(LANG_KEY); if(v&&[...sel.options].some(o=>o.value===v)) sel.value=v; }catch(e){}
+  sel.addEventListener('change',()=>{ try{ localStorage.setItem(LANG_KEY,sel.value); }catch(e){} });
+})();
+function renderThumbs(){
+  $('#imp-thumbs').innerHTML=IMP.files.map((f,i)=>'<div class="thumb"><img src="'+f.url+'" alt="Page '+(i+1)+(IMP.files.length>1?' (click to mark)':'')+'"><button data-rmf="'+i+'" aria-label="Remove page '+(i+1)+'">'+ic('x')+'</button></div>').join('');
+  impGo(); regSync();
+}
+function updateImportAvail(){ impGo(); }
+
+function regCrop(img,b){
+  const sx=b.x*img.naturalWidth, sy=b.y*img.naturalHeight, sw=Math.max(8,b.w*img.naturalWidth), sh=Math.max(8,b.h*img.naturalHeight);
+  const k=clamp(1500/Math.max(sw,sh),1,2.5), c=document.createElement('canvas'); c.width=Math.round(sw*k); c.height=Math.round(sh*k);
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+  try{ g.filter='grayscale(1) contrast(1.35)'; }catch(e){}
+  g.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height); return c;
+}
+async function ocrRun(jobs,lang,signal){
+  if(!window.Tesseract) throw {code:'ocr_missing'};
+  let i=0;
+  const worker=await Tesseract.createWorker(lang,1,{logger:m=>{ if(!m||!m.status) return;
+    if(/load|init/i.test(m.status)) impStatus('Loading the text reader'+(/traineddata/i.test(m.status)?' and language data (first time only, a few MB)':'')+'...','busy');
+    else if(m.status==='recognizing text') impStatus('Reading text, part '+(i+1)+' of '+jobs.length+' ('+Math.round((m.progress||0)*100)+'%)...','busy'); }});
+  const stop=()=>{ try{worker.terminate();}catch(e){} };
+  signal.addEventListener('abort',stop);
+  const out=[];
+  try{
+    for(i=0;i<jobs.length;i++){
+      if(signal.aborted) throw {code:'cancelled'};
+      await worker.setParameters({tessedit_pageseg_mode:String(jobs[i].psm)});
+      const r=await worker.recognize(jobs[i].canvas); out.push(r.data.text||'');
+    }
+  }catch(e){ if(signal.aborted) throw {code:'cancelled'}; throw e; }
+  finally{ signal.removeEventListener('abort',stop); stop(); }
+  return out;
+}
+async function importScans(signal){
+  const loaded=[]; for(const f of IMP.files){ impStatus('Preparing '+(loaded.length+1)+' of '+IMP.files.length+'...','busy'); const s=await loadImage(f.file); s.f=f; loaded.push(s); }
+  const lang=$('#imp-lang').value||'eng', pageOf=b=>loaded.find(s=>s.f===b.f);
+  const order=(a,b)=>loaded.indexOf(pageOf(a))-loaded.indexOf(pageOf(b))||a.y-b.y||a.x-b.x;
+  const boxes=REG.boxes.filter(b=>pageOf(b)).sort(order), textBoxes=boxes.filter(b=>b.t!=='pic');
+  let draft, how;
+  if(textBoxes.length){
+    const jobs=textBoxes.map(b=>({canvas:regCrop(pageOf(b).img,b),psm:6}));
+    const texts=await ocrRun(jobs,lang,signal), by={ing:[],steps:[],info:[],notes:[]};
+    textBoxes.forEach((b,k)=>by[b.t].push(texts[k]));
+    const info=ocrInfo(by.info.join('\n'));
+    draft=normalizeDraft(Object.assign({},info,{ingredients:by.ing.flatMap(ocrIngredients),steps:by.steps.flatMap(ocrSteps),notes:by.notes.join('\n').replace(/\s*\n\s*/g,' ')}));
+    how='Read from the areas you marked.';
+  } else {
+    const jobs=loaded.map(s=>({canvas:regCrop(s.img,{x:0,y:0,w:1,h:1}),psm:3}));
+    const texts=await ocrRun(jobs,lang,signal);
+    draft=normalizeDraft(parseRecipeText(texts.join('\n\n')));
+    how='No areas were marked, so each whole page was read and sorted automatically. Marking the ingredients and steps gives much better results.';
+  }
+  draft.origin='scan';
+  const pic=boxes.find(b=>b.t==='pic');
+  if(pic){ try{ const p=cropBox(pageOf(pic),pic); if(p){ draft.image=p.url; draft.imageW=p.w; draft.imageH=p.h; how+=' The picture was cut out of your scan.'; } else how+=' The picture area was too small to use.'; }catch(e){} }
+  return {draft,scans:loaded.map(s=>({url:s.url,img:s.img,w:s.w,h:s.h})),note:how+' Text recognition makes mistakes, especially with fractions and fancy fonts, so compare each line with the original scan below before saving.'};
+}
+
+/* ---- webpage fetch through a public relay (best effort) ---- */
+async function proxyGet(u,asBlob){
+  const prox=[x=>'https://api.allorigins.win/raw?url='+encodeURIComponent(x),x=>'https://corsproxy.io/?url='+encodeURIComponent(x)];
+  for(const p of prox){
+    try{ const c=new AbortController(), t=setTimeout(()=>c.abort(),15000); const r=await fetch(p(u),{signal:c.signal}); clearTimeout(t); if(r.ok) return asBlob?await r.blob():await r.text(); }catch(e){}
+  }
+  return null;
+}
+$('#imp-fetch').addEventListener('click',async()=>{
+  const u=$('#imp-url').value.trim();
+  if(!/^https?:\/\//i.test(u)){ impStatus('Enter a full web address starting with https://','err'); return; }
+  impStatus('Fetching the page through a public relay...','busy');
+  const t=await proxyGet(u,false);
+  if(!t||t.length<200){ impStatus('The page could not be fetched (relays are unreliable and some sites block them). Save the page and choose the file, or paste its text.','err'); return; }
+  IMP.text=t; $('#imp-htmlname').textContent='Fetched '+u.replace(/^https?:\/\//,'').slice(0,50); impStatus('Page fetched. Press Read recipe.'); impGo();
+});
+
+/* ---- library: backup files and GitHub sync ---- */
+const GH={ load(){ try{ return JSON.parse(localStorage.getItem(GH_KEY)||'{}'); }catch(e){ return {}; } }, save(o){ try{ localStorage.setItem(GH_KEY,JSON.stringify(o)); }catch(e){} } };
+function ghGuess(){ const m=location.hostname.match(/^([^.]+)\.github\.io$/); if(!m) return {}; const seg=location.pathname.split('/').filter(Boolean)[0]; return {owner:m[1],repo:seg&&!/\./.test(seg)?seg:m[1]+'.github.io'}; }
+function libStatus(msg,kind){ const s=$('#lib-status'); s.hidden=!msg; s.className='status f6'+(kind==='err'?' err':''); s.innerHTML=(kind==='busy'?'<span class="spin"></span>':'')+'<span></span>'; s.lastChild.textContent=msg; }
+function libCfg(){ return {owner:$('#gh-owner').value.trim(),repo:$('#gh-repo').value.trim(),branch:$('#gh-branch').value.trim()||'main',path:($('#gh-path').value.trim()||'data/recipes.json').replace(/^\/+/,''),token:$('#gh-token').value.trim()}; }
+function openLib(){
+  const c=Object.assign({branch:'main',path:'data/recipes.json'},ghGuess(),GH.load());
+  $('#gh-owner').value=c.owner||''; $('#gh-repo').value=c.repo||''; $('#gh-branch').value=c.branch; $('#gh-path').value=c.path; $('#gh-token').value=c.token||'';
+  libStatus(''); $('#dlg-lib').showModal();
+}
+function toB64(str){ const b=new TextEncoder().encode(str); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
+function ghErr(e){
+  const s=e&&e.gh;
+  if(s===401||s===403) return 'GitHub refused the token. It needs Contents read and write access to this repository.';
+  if(s===404) return 'Repository or branch not found. Check the owner, repository and branch (private repositories need the token).';
+  if(s===409||s===422) return 'The file changed on GitHub while saving. Press Sync again.';
+  return 'Could not reach GitHub. Check your connection and try again.';
+}
+async function ghGet(c){
+  const base='https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo)+'/contents/'+c.path.split('/').map(encodeURIComponent).join('/');
+  const H={Authorization:'Bearer '+c.token,'X-GitHub-Api-Version':'2022-11-28'}, q='?ref='+encodeURIComponent(c.branch);
+  const meta=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github+json'},H)});
+  if(meta.status===404){ const rp=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo),{headers:H}); if(!rp.ok) throw {gh:404}; return {base,H,sha:null,list:[]}; }
+  if(!meta.ok) throw {gh:meta.status};
+  const sha=(await meta.json()).sha;
+  const raw=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github.raw+json'},H)}); if(!raw.ok) throw {gh:raw.status};
+  let j=[]; try{ j=JSON.parse(await raw.text()); }catch(e){}
+  return {base,H,sha,list:Array.isArray(j)?j:(j&&j.recipes)||[]};
+}
+async function ghSync(pushToo){
+  const c=libCfg(); if(!c.owner||!c.repo||!c.token){ libStatus('Fill in owner, repository and token first.','err'); return; }
+  GH.save(c); $('#gh-save').disabled=$('#gh-load').disabled=true;
+  try{
+    libStatus('Reading from GitHub...','busy'); const r=await ghGet(c);
+    const m=await mergeRecipes(r.list);
+    if(!pushToo){ libStatus('Loaded from GitHub: '+m.added+' new, '+m.updated+' updated.'); return; }
+    libStatus('Saving to GitHub...','busy');
+    const body={message:'Update recipes from Cookbook Creator',content:toB64(JSON.stringify(S.recipes,null,1)),branch:c.branch}; if(r.sha) body.sha=r.sha;
+    const p=await fetch(r.base,{method:'PUT',headers:Object.assign({Accept:'application/vnd.github+json','Content-Type':'application/json'},r.H),body:JSON.stringify(body)});
+    if(!p.ok) throw {gh:p.status};
+    delSave(new Set());
+    libStatus('Synced. '+S.recipes.length+' recipe'+(S.recipes.length===1?'':'s')+' saved to '+c.path+' ('+m.added+' new from GitHub).');
+  }catch(e){ libStatus(ghErr(e),'err'); }
+  finally{ $('#gh-save').disabled=$('#gh-load').disabled=false; }
+}
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.id==='btn-lib'){ openLib(); return; }
+  if(!t.closest('#dlg-lib')) return;
+  if(t.dataset.l==='close'){ $('#dlg-lib').close(); return; }
+  if(t.id==='lib-export'){
+    const stamp=new Date().toISOString().slice(0,10);
+    try{ await DL.save({filename:'recipes-'+stamp+'.json',data:JSON.stringify(S.recipes,null,1)}); libStatus('Backup downloaded ('+S.recipes.length+' recipes). Commit it as data/recipes.json to publish it with your site.'); }catch(err){ libStatus('The backup could not be created.','err'); }
+    return;
+  }
+  if(t.id==='gh-save'){ ghSync(true); return; }
+  if(t.id==='gh-load'){ ghSync(false); return; }
+});
+$('#lib-import').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const j=JSON.parse(await f.text()); const list=Array.isArray(j)?j:(j&&j.recipes)||[]; const m=await mergeRecipes(list,true); libStatus('Imported: '+m.added+' new, '+m.updated+' updated, '+(list.length-m.added-m.updated)+' already up to date or skipped.'); }
+  catch(err){ libStatus('That file is not a recipe backup.','err'); }
+});
+
+boot();
+
+})();
+
+</script>
+</body></html>
