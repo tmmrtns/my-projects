@@ -484,7 +484,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f3" data-book><label for="ex-sub">Subtitle</label><input type="text" id="ex-sub" placeholder="Optional" autocomplete="off"></div>
     <div class="fld f3" data-book><label for="ex-author">Compiled by</label><input type="text" id="ex-author" placeholder="Optional" autocomplete="off"></div>
     <div class="fld f3"><label for="ex-paper">Paper</label><select id="ex-paper"><option value="a4">A4</option><option value="a5">A5</option><option value="letter">US Letter</option></select></div>
-    <div class="fld f3"><label for="ex-font">Font style</label><select id="ex-font"><option value="classic">Classic: serif headings, plain text</option><option value="serif">All serif</option><option value="sans">All sans-serif</option><option value="typewriter">Typewriter</option><option value="penguin">Penguin Random House: Garamond, classic book headings</option></select><p class="hint">Penguin Random House style changes the fonts, cover, title page, contents and page headers. It keeps the page layout you choose below; pick Book style for the full centred look. The accent colour is not used with it.</p></div>
+    <div class="fld f3"><label for="ex-font">Font style</label><select id="ex-font"><option value="classic">Classic: serif headings, plain text</option><option value="serif">All serif</option><option value="sans">All sans-serif</option><option value="typewriter">Typewriter</option><option value="penguin">Penguin Random House: Garamond, classic book headings</option></select><p class="hint">Penguin Random House style changes the fonts, title page, contents and page headers. The cover style and page layout stay as you choose them; pick Book cover and Book style for the full look. The accent colour is not used with it.</p></div>
     <div class="fld f6"><span class="lbl">Accent colour</span>
       <div class="swatches" id="ex-accent">
         <label><input type="radio" name="accent" value="amber" checked><span style="background:#B8710E" title="Amber"></span></label>
@@ -501,6 +501,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label><input type="radio" name="coverstyle" value="frame"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="2" y="2" width="50" height="68" rx="2" class="ac"/><rect x="6" y="6" width="42" height="60" rx="2" style="fill:#FFFDF6"/><rect x="14" y="28" width="26" height="5" class="ln"/><rect x="18" y="37" width="18" height="3" class="ln"/></svg><b>Framed</b><small>Cream panel in a colour border</small></span></label>
         <label><input type="radio" name="coverstyle" value="bands"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="2" y="2" width="50" height="40" class="ac"/><rect x="2" y="42" width="50" height="3" class="ac2"/><rect x="7" y="28" width="30" height="5" style="fill:#fff"/><rect x="7" y="52" width="24" height="3" class="ln"/></svg><b>Bands</b><small>Colour block above, cream below</small></span></label>
         <label><input type="radio" name="coverstyle" value="photo"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="2" y="2" width="50" height="46" rx="2" class="ac2"/><circle cx="18" cy="20" r="6" class="ln"/><rect x="2" y="48" width="50" height="22" class="ac"/><rect x="7" y="54" width="28" height="4" style="fill:#fff"/></svg><b>Photo</b><small>Your own picture, title on a colour panel</small></span></label>
+        <label><input type="radio" name="coverstyle" value="penguin"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="2" y="2" width="50" height="11" class="ac"/><rect x="2" y="59" width="50" height="11" class="ac"/><rect x="14" y="28" width="26" height="4" class="ln"/><rect x="20" y="37" width="14" height="2" class="ln"/></svg><b>Book cover</b><small>Colour bands above and below, title in spaced capitals</small></span></label>
       </div>
       <div class="coverup"><button type="button" class="btn" id="cv-pick">Upload a cover photo</button><input type="file" id="cv-file" accept="image/*" hidden>
         <span id="cv-prev" hidden><img id="cv-thumb" alt="Cover photo"><button type="button" class="btn" id="cv-clear">Remove</button></span>
@@ -530,8 +531,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label><input type="checkbox" id="ex-gray-pages">Grayscale pages and photos</label>
       </div>
       <div class="checks" style="margin-top:8px">
-        <label><input type="radio" name="vary" value="vary" checked>Title colours vary by category</label>
-        <label><input type="radio" name="vary" value="same">One consistent title colour</label>
+        <label><input type="radio" name="vary" value="vary" checked>Colour accents vary by category</label>
+        <label><input type="radio" name="vary" value="same">One consistent accent colour</label>
       </div></div>
     <div class="fld f6"><span class="lbl">Include</span>
       <div class="checks">
@@ -829,7 +830,10 @@ function buildPdf(jsPDF,recipes,o){
   const wrap=(t,w)=>doc.splitTextToSize(pdfSafe(t),w);
   const mix=(c,t,a)=>c.map((v,i)=>Math.round(v+(t[i]-v)*a));
   const st={y:M.t,rec:null};
-  const catCol=n=>o.vary===false?mix(P_ACC,[255,255,255],.62):pdfCatColor(n);
+  const BASE_ACC=P_ACC.slice();
+  const catCol=n=>o.vary===false?mix(BASE_ACC,[255,255,255],.62):pdfCatColor(n);
+  /* every colour accent follows the title colour: per category when varied, one colour when consistent */
+  const setAccent=r=>{ const a=(penguin||o.vary===false||!r)?BASE_ACC:mix(pdfCatColor(r.category||'Uncategorized'),[0,0,0],.4); P_ACC.splice(0,3,...a); };
 
   function newPage(cont){
     doc.addPage([W,H]); st.y=M.t;
@@ -855,7 +859,7 @@ function buildPdf(jsPDF,recipes,o){
   function drawCover(){
     const c=o.coverRGB||COVERS[o.cover]||COVERS.basil, lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
     const tc=lum>0.6?P_INK:[255,255,255], soft=lum>0.6?mix(c,[0,0,0],.08):mix(c,[255,255,255],.12);
-    const CREAM=[250,245,230], style=(penguin&&o.coverStyle!=='photo')?'penguin':(o.coverStyle||'plates');
+    const CREAM=[250,245,230], style=o.coverStyle||'plates';
     if(style==='stripe'){
       doc.setFillColor(...CREAM); doc.rect(0,0,W,H,'F');
       doc.setFillColor(c[0],c[1],c[2]); doc.rect(0,0,30,H,'F');
@@ -1232,8 +1236,9 @@ function buildPdf(jsPDF,recipes,o){
       else if(i>0){ st.y+=5; doc.setDrawColor(...P_INK3); doc.setLineWidth(0.5); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7; }
       else st.y=M.t;
     } else { if(book||i>0) doc.addPage([W,H]); st.y=M.t; }
-    starts.push(doc.getNumberOfPages()); drawFn(r);
+    starts.push(doc.getNumberOfPages()); setAccent(r); drawFn(r);
   });
+  setAccent(null);
   const total=doc.getNumberOfPages();
   if(book&&o.toc){
     const cap1=Math.floor((H-M.t-M.b-26)/9), capN=Math.floor((H-M.t-M.b)/9);
