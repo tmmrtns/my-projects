@@ -175,6 +175,8 @@ dialog.dlg::backdrop{background:rgba(10,18,13,.65)}
 .ings input:checked+span{text-decoration:line-through;color:var(--ink-3)}
 .steps{counter-reset:s}
 .steps li{counter-increment:s;display:grid;grid-template-columns:42px minmax(0,1fr);padding:0 0 16px;font-size:16.5px;line-height:1.55}
+.steps li.grp{counter-increment:none;display:block;padding:6px 0 10px;font:700 12px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.steps li.grp::before{content:none;display:none}
 .steps li::before{content:counter(s);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:700 14px/1 var(--font-display)}
 .extra{padding:0 26px 26px;display:grid;gap:16px}
 .extra p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -382,7 +384,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f2"><label for="ed-cook">Cook (min)</label><input type="number" id="ed-cook" min="0" inputmode="numeric"></div>
     <div class="fld f2"><label for="ed-total">Total (min)</label><input type="number" id="ed-total" min="0" inputmode="numeric"><p class="hint">Leave empty to add prep and cook.</p></div>
     <div class="fld f3"><label for="ed-ing">Ingredients</label><textarea id="ed-ing" rows="12" spellcheck="false"></textarea><p class="hint">One per line. Start a line with # for a group heading, like # For the sauce.</p></div>
-    <div class="fld f3"><label for="ed-steps">Method</label><textarea id="ed-steps" rows="12"></textarea><p class="hint">One step per line. Numbers are added for you.</p></div>
+    <div class="fld f3"><label for="ed-steps">Method</label><textarea id="ed-steps" rows="12"></textarea><p class="hint">One step per line. Numbers are added for you. Start a line with # for a section heading, like # The sauce.</p></div>
     <div class="fld f6"><label for="ed-notes">Notes</label><textarea id="ed-notes" rows="3"></textarea></div>
     <div class="fld f4"><label for="ed-source">Source</label><input type="text" id="ed-source" placeholder="Web address, book, or person" autocomplete="off"></div>
     <div class="fld f2"><span class="lbl">Rating</span><span class="rate" id="ed-rate" role="group" aria-label="Rating"></span></div>
@@ -535,7 +537,7 @@ function clean(s){
   return s.replace(/[   ]/g,' ').replace(/[ \t]+/g,' ').trim();
 }
 function stripBullet(s){ return String(s).replace(/^[\s•·▪◦*\-–—‣]+/,'').trim(); }
-function stripStepNo(s){ return String(s).replace(/^\s*(?:step\s*)?\d+\s*[.):\-]\s*/i,'').trim(); }
+function stripStepNo(s){ s=String(s).trim(); if(/^#/.test(s)) return '# '+s.replace(/^#+\s*/,''); return s.replace(/^\s*(?:step\s*)?\d+\s*[.):\-]\s*/i,'').trim(); }
 function minutesFromISO(v){
   if(typeof v!=='string') return null;
   const m=v.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i);
@@ -870,7 +872,10 @@ function buildPdf(jsPDF,recipes,o){
     if(steps.length){
       heading('Method');
       const SZ=10.5, LH=lh(SZ,1.4), IND=10;
+      let sn=0;
       steps.forEach((s,i)=>{
+        if(/^#/.test(s)){ font('helvetica','bold',8.5,P_ACC); ensure(LH*2); st.y+=2; doc.text(s.replace(/^#+\s*/,'').toUpperCase(),M.l,st.y+LH*0.7); st.y+=LH+1; return; }
+        sn++;
         font('helvetica','normal',SZ,P_INK);
         const lines=wrap(s,CW-IND), h=lines.length*LH+3.6;
         ensure(Math.min(h,LH*4));
@@ -878,7 +883,7 @@ function buildPdf(jsPDF,recipes,o){
           if(st.y+LH>H-M.b) newPage(true);
           if(j===0){
             doc.setFillColor(...P_ACC); doc.circle(M.l+2.9,st.y+LH*0.62,2.9,'F');
-            font('helvetica','bold',8,[255,255,255]); doc.text(String(i+1),M.l+2.9,st.y+LH*0.62+1.05,{align:'center'});
+            font('helvetica','bold',8,[255,255,255]); doc.text(String(sn),M.l+2.9,st.y+LH*0.62+1.05,{align:'center'});
           }
           font('helvetica','normal',SZ,P_INK); doc.text(l,M.l+IND,st.y+LH*0.8); st.y+=LH;
         });
@@ -926,15 +931,21 @@ function buildPdf(jsPDF,recipes,o){
   function ingFlow(items,x,SZ){ items.forEach(it=>{ ensure(it.h+(it.grp?4:0)); drawIngItem(it,x,st.y,SZ); st.y+=it.h; }); }
   function stepsAt(steps,from,x,w,SZ,flow,mode){
     const LH=lh(SZ,1.4), IND=mode==='circle'?10:7, gap=mode==='circle'?3.6:2.4;
+    let sn=0; for(let k=0;k<from;k++) if(!/^#/.test(steps[k])) sn++;
     for(let i=from;i<steps.length;i++){
+      if(/^#/.test(steps[i])){
+        const hh=LH*2+1; if(st.y+hh+LH>H-M.b){ if(!flow) return i; newPage(true); }
+        font('helvetica','bold',Math.min(SZ,9),P_ACC); st.y+=1.5; doc.text(steps[i].replace(/^#+\s*/,'').toUpperCase(),x,st.y+LH*0.7); st.y+=LH+1; continue;
+      }
+      sn++;
       font('helvetica','normal',SZ,P_INK);
       const lines=wrap(steps[i],w-IND), h=lines.length*LH+gap;
       if(st.y+h>H-M.b){ if(!flow) return i; if(h<=H-M.t-M.b-8) newPage(true); }
       lines.forEach((l,j)=>{
         if(st.y+LH>H-M.b) newPage(true);
         if(j===0){
-          if(mode==='circle'){ doc.setFillColor(...P_ACC); doc.circle(x+2.9,st.y+LH*0.62,2.9,'F'); font('helvetica','bold',8,[255,255,255]); doc.text(String(i+1),x+2.9,st.y+LH*0.62+1.05,{align:'center'}); }
-          else { font('helvetica','bold',SZ,P_ACC); doc.text(String(i+1)+'.',x,st.y+LH*0.8); }
+          if(mode==='circle'){ doc.setFillColor(...P_ACC); doc.circle(x+2.9,st.y+LH*0.62,2.9,'F'); font('helvetica','bold',8,[255,255,255]); doc.text(String(sn),x+2.9,st.y+LH*0.62+1.05,{align:'center'}); }
+          else { font('helvetica','bold',SZ,P_ACC); doc.text(String(sn)+'.',x,st.y+LH*0.8); }
         }
         font('helvetica','normal',SZ,P_INK); doc.text(l,x+IND,st.y+LH*0.8); st.y+=LH;
       });
@@ -1272,7 +1283,7 @@ function renderDetail(){
   if(r.servings) F('Yield',r.servings); if(r.prepMin) F('Prep',fmtMin(r.prepMin)); if(r.cookMin) F('Cook',fmtMin(r.cookMin));
   if(tm&&(r.totalMin||(r.prepMin&&r.cookMin))) F('Total',fmtMin(tm));
   const ing=(r.ingredients||[]).map(t=>/^#/.test(t)?'<li class="grp">'+esc(t.replace(/^#+\s*/,''))+'</li>':'<li><label><input type="checkbox"><span>'+esc(t)+'</span></label></li>').join('');
-  const steps=(r.steps||[]).map(t=>'<li><span>'+esc(t)+'</span></li>').join('');
+  const steps=(r.steps||[]).map(t=>/^#/.test(t)?'<li class="grp">'+esc(t.replace(/^#+\s*/,''))+'</li>':'<li><span>'+esc(t)+'</span></li>').join('');
   const src=r.source?(/^https?:\/\//i.test(r.source)?'<a href="'+esc(r.source)+'" target="_blank" rel="noopener noreferrer" style="color:var(--accent-ink);overflow-wrap:anywhere">'+esc(r.source)+'</a>':esc(r.source)):'';
   let rate=''; for(let i=1;i<=5;i++) rate+='<button data-rate="'+i+'" aria-pressed="'+(r.rating>=i)+'" aria-label="'+i+' of 5">'+ic('star',r.rating>=i?'fill':'')+'</button>';
   $('#detail-body').innerHTML='<div class="hd" style="--tile:'+catColor(catOf(r))+'"><div class="cat-line"><span class="lbl">'+esc([catOf(r),r.cuisine].filter(Boolean).join(' / '))+'</span>'+(r.person?'<span class="chip">'+esc(r.person)+'</span>':'')+(r.example?'<span class="chip">Example</span>':'')+'</div>'
@@ -1452,7 +1463,7 @@ function importErr(e){
   if(c==='session_expired') return 'Your session expired. Sign in again and retry.';
   return 'Something went wrong while reading'+(e&&e.message?' ('+e.message+')':'')+'. Try again.';
 }
-const RECIPE_SHAPE='{"title": string, "description": string (the intro text printed with the recipe, in full, else ""), "ingredients": string[] (one line each, exactly as written with amount and unit; use a line like "# For the sauce" for a group heading), "steps": string[] (one string per step, without step numbers), "servings": string (like "4 servings" or "12 cookies", else ""), "prepMinutes": number or null, "cookMinutes": number or null, "category": string (best fit of: '+DEFAULT_CATS.join(', ')+'), "cuisine": string, "tags": string[] (up to 5 short lowercase tags such as vegetarian or one-pot), "notes": string (tips printed with the recipe, else ""), "source": string (book, magazine, person or website credited, else "")';
+const RECIPE_SHAPE='{"title": string, "description": string (the intro text printed with the recipe, in full, else ""), "ingredients": string[] (one line each, exactly as written with amount and unit; use a line like "# For the sauce" for a group heading), "steps": string[] (one string per step, without step numbers; a line like "# For the sauce" for a section heading when the recipe has them), "servings": string (like "4 servings" or "12 cookies", else ""), "prepMinutes": number or null, "cookMinutes": number or null, "category": string (best fit of: '+DEFAULT_CATS.join(', ')+'), "cuisine": string, "tags": string[] (up to 5 short lowercase tags such as vegetarian or one-pot), "notes": string (tips printed with the recipe, else ""), "source": string (book, magazine, person or website credited, else "")';
 async function importScans_unused(signal){
   const loaded=[];
   for(const f of IMP.files){ impStatus('Preparing '+(loaded.length+1)+' of '+IMP.files.length+'...','busy'); loaded.push(await loadImage(f.file)); }
