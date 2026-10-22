@@ -248,6 +248,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
 .xl{list-style:none;margin:0;padding:6px;border-radius:12px;background:var(--tint);max-height:320px;overflow:auto}
 .xl li{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:4px 6px 4px 12px;border-radius:10px}
 .xl li:hover{background:var(--card)}
+.xl .xo{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:0 0 4px}.xl .xo select{max-width:100%;padding:5px 8px;font-size:13.5px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.xl .xo label{display:flex;gap:6px;align-items:center;font-size:13.5px}
 .xl .n{font:600 12.5px/1 var(--font-label);color:var(--ink-3)}
 .xl .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -1238,15 +1239,16 @@ function buildPdf(jsPDF,recipes,o){
     }
   }
   gray=!!o.grayPages;
-  const layout=o.layout||'classic';
-  const drawFn={penguin:drawRecipePenguin,side:drawRecipeSide,compact:drawRecipeCompact,photo:drawRecipePhoto,large:drawRecipeLarge,simple:drawRecipeSimple}[layout]||drawRecipe;
+  const DRAW={penguin:drawRecipePenguin,side:drawRecipeSide,compact:drawRecipeCompact,photo:drawRecipePhoto,large:drawRecipeLarge,simple:drawRecipeSimple};
+  let prevLay='';
   recipes.forEach((r,i)=>{
-    if(layout==='compact'){
-      if((book&&i===0)||(i>0&&st.y>H-M.b-80)){ doc.addPage([W,H]); st.y=M.t; }
-      else if(i>0){ st.y+=5; doc.setDrawColor(...P_INK3); doc.setLineWidth(0.5); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7; }
-      else st.y=M.t;
-    } else { if(book||i>0) doc.addPage([W,H]); st.y=M.t; }
-    starts.push(doc.getNumberOfPages()); setAccent(r); drawFn(r);
+    /* a recipe can have its own layout, or share a page with the next one (both are then set compact) */
+    const prev=i>0?recipes[i-1]:null;
+    const lay=((prev&&prev._join)||r._join)?'compact':(r._layout||o.layout||'classic');
+    const drawFn=DRAW[lay]||drawRecipe;
+    if(i>0&&prevLay==='compact'&&lay==='compact'&&st.y<=H-M.b-80){ st.y+=5; doc.setDrawColor(...P_INK3); doc.setLineWidth(0.5); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7; }
+    else { if(book||i>0) doc.addPage([W,H]); st.y=M.t; }
+    starts.push(doc.getNumberOfPages()); setAccent(r); drawFn(r); prevLay=lay;
   });
   setAccent(null);
   const total=doc.getNumberOfPages();
@@ -1740,17 +1742,24 @@ async function runImport(){
 }
 
 /* ---- export ---- */
-const EX={mode:'single',ids:[],busy:false};
+const EX={mode:'single',ids:[],busy:false,opt:{}};
+const EX_LAYOUTS=[['','Page layout: as chosen above'],['classic','Classic'],['side','Side by side'],['compact','Compact'],['photo','Photo first'],['large','Large print'],['simple','Simple'],['penguin','Book style']];
+document.addEventListener('change',e=>{
+  const t=e.target; if(!t||!t.closest||!t.closest('#ex-list')) return; const li=t.closest('li'); if(!li) return; const id=li.dataset.id; const o=EX.opt[id]||(EX.opt[id]={});
+  if(t.matches('[data-exl]')) o.layout=t.value; else if(t.matches('[data-exj]')) o.join=t.checked;
+});
 function exList(){
   const byId=new Map(S.recipes.map(r=>[r.id,r]));
   $('#ex-list').innerHTML=EX.ids.map((id,i)=>{ const r=byId.get(id); if(!r) return '';
     return '<li data-id="'+esc(id)+'"><span class="n">'+(i+1)+'</span><span class="t">'+esc(r.title||'Untitled')+'</span><span class="lbl">'+esc(catOf(r))+'</span>'
       +'<span><button class="icon-btn" data-mv="-1" aria-label="Move up">'+ic('up')+'</button><button class="icon-btn" data-mv="1" aria-label="Move down">'+ic('dn')+'</button></span>'
-      +'<button class="icon-btn" data-rm="1" aria-label="Remove from cookbook">'+ic('x')+'</button></li>'; }).join('');
+      +'<button class="icon-btn" data-rm="1" aria-label="Remove from cookbook">'+ic('x')+'</button>'
+      +'<div class="xo"><select data-exl aria-label="Page layout for this recipe">'+EX_LAYOUTS.map(([v,l])=>'<option value="'+v+'"'+(((EX.opt[id]||{}).layout||'')===v?' selected':'')+'>'+l+'</option>').join('')+'</select>'
+      +(i<EX.ids.length-1?'<label><input type="checkbox" data-exj'+((EX.opt[id]||{}).join?' checked':'')+'>Share a page with the next recipe (both use Compact)</label>':'')+'</div></li>'; }).join('');
   $('#ex-go').disabled=!EX.ids.length||EX.busy;
 }
 function openExport(mode,ids){
-  EX.mode=mode; EX.ids=ids.slice(); EX.busy=false;
+  EX.mode=mode; EX.ids=ids.slice(); EX.busy=false; EX.opt={};
   const book=mode==='book';
   $$('#dlg-export [data-book]').forEach(n=>n.hidden=!book);
   $('#ex-head').textContent=book?'Make a cookbook':'Export recipe as PDF';
@@ -1792,7 +1801,7 @@ function coverCrop(paper,gray){
   return c.toDataURL('image/jpeg',0.86);
 }
 async function doExport(){
-  const list=EX.ids.map(id=>S.recipes.find(r=>r.id===id)).filter(Boolean).map(r=>Object.assign({},r));
+  const list=EX.ids.map(id=>S.recipes.find(r=>r.id===id)&&Object.assign({},S.recipes.find(r=>r.id===id),{_layout:(EX.opt[id]||{}).layout||'',_join:!!(EX.opt[id]||{}).join})).filter(Boolean);
   if(!list.length) return;
   const st=$('#ex-status'); const show=(m,k)=>{ st.hidden=false; st.className='status'+(k==='err'?' err':''); st.innerHTML=(k==='busy'?'<span class="spin"></span>':'')+'<span></span>'; st.lastChild.textContent=m; };
   if(!(window.jspdf&&window.jspdf.jsPDF)){ show('The PDF library did not load. Reload the page and try again.','err'); return; }
