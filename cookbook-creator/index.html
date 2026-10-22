@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2316261D%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%769%27 fill=%27%23E8A93D%27/%3E%3C/svg%3E">
 <style>html{padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Cookbook creator</title>
+<title>Cookbook Creator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Work+Sans:wght@400;500;600;700&display=swap">
@@ -287,7 +287,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
 <div class="wrap" id="root">
   <header class="top">
     <div class="titleblock">
-      <h1 class="site-title">Cookbook creator</h1>
+      <h1 class="site-title">Cookbook Creator</h1>
       <p class="tagline">Scan it, save it, cook it. Veni, Vidi, Cucinavi.</p>
     </div>
     <div class="top-actions">
@@ -339,6 +339,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <p class="hint">Recipes live in this browser. Export them to a JSON file to keep a copy or move them to another device, and import such a file to merge it in.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" id="lib-export">Export all recipes</button>
         <label class="btn" for="lib-import">Import backup</label><input type="file" id="lib-import" accept=".json,application/json" hidden></div></div>
+    <div class="fld f6"><label for="relay-url">Web relay for importing recipe pages (optional)</label><input type="text" id="relay-url" autocomplete="off" placeholder="https://your-relay.example/?url={url}">
+      <p class="hint">Public relays are unreliable. If you run your own, enter its address with {url} where the page address goes.</p></div>
     <div class="fld f6"><span class="lbl">GitHub repository</span>
       <p class="hint">Sync saves all recipes to a JSON file in your repository, and the published site loads that file for every visitor. You need a fine-grained personal access token limited to this one repository with Contents: read and write. The token stays in this browser only.</p></div>
     <div class="fld f3"><label for="gh-owner">Owner</label><input type="text" id="gh-owner" autocomplete="off"></div>
@@ -432,7 +434,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <p class="hint" id="imp-photo-hint">Text is read on your device with Tesseract. The first scan downloads the language data (a few MB). Printed text works well; handwriting does not.</p>
     </div>
     <div class="pane" data-pane="web" hidden>
-      <p class="hint" style="margin:0">Enter the web address and press Fetch page. This goes through a free public relay, so it can fail and the relay sees the address. If it does, save the page from your browser (File, Save Page As, "Webpage, HTML only") and drop the file, or paste the text below.</p>
+      <p class="hint" style="margin:0">Paste the web address and press Read recipe: the page is fetched and the recipe details are filled in. Fetching tries the site directly, then free public relays (they can fail, and a relay sees the address). If it fails, save the page from your browser (File, Save Page As, "Webpage, HTML only") and drop the file, or paste the text below.</p>
       <div class="drop" id="drop-web">
         <svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px" aria-hidden="true"><use href="#i-page"/></svg>
         <label class="btn" for="imp-html">Choose saved page</label>
@@ -440,7 +442,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <span class="muted" id="imp-htmlname">No file chosen</span>
       </div>
       <div class="fld"><label for="imp-paste">Or paste page text or source</label><textarea id="imp-paste" rows="6" placeholder="Paste here"></textarea></div>
-      <div class="fld"><label for="imp-url">Web address (kept as the source)</label><div style="display:flex;gap:8px"><input type="url" id="imp-url" placeholder="https://" autocomplete="off" style="flex:1"><button class="btn" type="button" id="imp-fetch">Fetch page</button></div></div>
+      <div class="fld"><label for="imp-url">Web address (kept as the source)</label><div style="display:flex;gap:8px"><input type="url" id="imp-url" placeholder="https://" autocomplete="off" style="flex:1"><button class="btn" type="button" id="imp-fetch">Fetch only</button></div></div>
       <div class="fld"><label for="imp-photo">Dish photo (optional)</label><input type="file" id="imp-photo" accept="image/*">
         <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead.</p></div>
     </div>
@@ -1370,7 +1372,7 @@ function impTab(t){
 function impGo(){
   let ok=true;
   if(IMP.tab==='photo') ok=IMP.files.length>0&&CAN_IMG&&!IMP.busy;
-  else if(IMP.tab==='web') ok=!!($('#imp-paste').value.trim()||IMP.text)&&!IMP.busy;
+  else if(IMP.tab==='web') ok=!!($('#imp-paste').value.trim()||IMP.text||/^https?:\/\/\S+\.\S+/i.test($('#imp-url').value.trim()))&&!IMP.busy;
   else ok=!IMP.busy;
   $('#imp-go').disabled=!ok;
 }
@@ -1461,6 +1463,7 @@ async function runImport(){
   IMP.busy=true; IMP.ctl=new AbortController(); $('#imp-stop').hidden=false; impGo();
   try{
     let res;
+    if(IMP.tab==='web'&&!IMP.text&&!$('#imp-paste').value.trim()){ if(!(await fetchRecipePage($('#imp-url').value.trim()))) return; }
     if(IMP.tab==='photo') res=await importScans(IMP.ctl.signal); else res=await importText(IMP.ctl.signal);
     const d=res.draft;
     if(IMP.tab==='web'&&IMP.photo){ try{ const p=await photoFromFile(IMP.photo); d.image=p.url; d.imageW=p.w; d.imageH=p.h; }catch(e){} }
@@ -1732,20 +1735,32 @@ async function importScans(signal){
 }
 
 /* ---- webpage fetch through a public relay (best effort) ---- */
+const RELAY_KEY='cookbook-relay-v1';
 async function proxyGet(u,asBlob){
-  const prox=[x=>'https://api.allorigins.win/raw?url='+encodeURIComponent(x),x=>'https://corsproxy.io/?url='+encodeURIComponent(x)];
-  for(const p of prox){
-    try{ const c=new AbortController(), t=setTimeout(()=>c.abort(),15000); const r=await fetch(p(u),{signal:c.signal}); clearTimeout(t); if(r.ok) return asBlob?await r.blob():await r.text(); }catch(e){}
+  let custom=''; try{ custom=localStorage.getItem(RELAY_KEY)||''; }catch(e){}
+  const tries=[];
+  if(/\{url\}/.test(custom)) tries.push(x=>custom.replace('{url}',encodeURIComponent(x)));
+  tries.push(x=>x,
+    x=>'https://api.allorigins.win/raw?url='+encodeURIComponent(x),
+    x=>'https://corsproxy.io/?url='+encodeURIComponent(x),
+    x=>'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(x));
+  for(const p of tries){
+    try{ const c=new AbortController(), t=setTimeout(()=>c.abort(),15000); const r=await fetch(p(u),{signal:c.signal}); clearTimeout(t);
+      if(r.ok){ const v=asBlob?await r.blob():await r.text(); if(asBlob?v.size>500:v.length>200) return v; } }catch(e){}
   }
   return null;
 }
+async function fetchRecipePage(u){
+  impStatus('Fetching the page...','busy');
+  const t=await proxyGet(u,false);
+  if(!t){ impStatus('The page could not be fetched. Many sites block this. Save the page and choose the file, paste its text, or set your own relay in Library.','err'); return false; }
+  IMP.text=t; $('#imp-htmlname').textContent='Fetched '+u.replace(/^https?:\/\//,'').slice(0,50); return true;
+}
+$('#imp-url').addEventListener('input',()=>{ IMP.text=IMP.htmlName?IMP.text:''; impGo(); });
 $('#imp-fetch').addEventListener('click',async()=>{
   const u=$('#imp-url').value.trim();
   if(!/^https?:\/\//i.test(u)){ impStatus('Enter a full web address starting with https://','err'); return; }
-  impStatus('Fetching the page through a public relay...','busy');
-  const t=await proxyGet(u,false);
-  if(!t||t.length<200){ impStatus('The page could not be fetched (relays are unreliable and some sites block them). Save the page and choose the file, or paste its text.','err'); return; }
-  IMP.text=t; $('#imp-htmlname').textContent='Fetched '+u.replace(/^https?:\/\//,'').slice(0,50); impStatus('Page fetched. Press Read recipe.'); impGo();
+  if(await fetchRecipePage(u)){ impStatus('Page fetched. Press Read recipe.'); impGo(); }
 });
 
 /* ---- library: backup files and GitHub sync ---- */
@@ -1754,6 +1769,7 @@ function ghGuess(){ const m=location.hostname.match(/^([^.]+)\.github\.io$/); if
 function libStatus(msg,kind){ const s=$('#lib-status'); s.hidden=!msg; s.className='status f6'+(kind==='err'?' err':''); s.innerHTML=(kind==='busy'?'<span class="spin"></span>':'')+'<span></span>'; s.lastChild.textContent=msg; }
 function libCfg(){ return {owner:$('#gh-owner').value.trim(),repo:$('#gh-repo').value.trim(),branch:$('#gh-branch').value.trim()||'main',path:($('#gh-path').value.trim()||'data/recipes.json').replace(/^\/+/,''),token:$('#gh-token').value.trim()}; }
 function openLib(){
+  try{ $('#relay-url').value=localStorage.getItem(RELAY_KEY)||''; }catch(e){}
   const c=Object.assign({branch:'main',path:'data/recipes.json'},ghGuess(),GH.load());
   $('#gh-owner').value=c.owner||''; $('#gh-repo').value=c.repo||''; $('#gh-branch').value=c.branch; $('#gh-path').value=c.path; $('#gh-token').value=c.token||'';
   libStatus(''); $('#dlg-lib').showModal();
@@ -1846,6 +1862,8 @@ async function addImageFiles(list){
   if(cut&&!$('#imp-status').classList.contains('err')) impStatus('Only the first '+PDF_MAX_PAGES+' of '+cut+' PDF pages were opened.');
   renderThumbs();
 }
+
+$('#relay-url').addEventListener('change',e=>{ try{ localStorage.setItem(RELAY_KEY,e.target.value.trim()); }catch(err){} libStatus('Relay saved.'); });
 
 boot();
 
