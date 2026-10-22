@@ -259,7 +259,9 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
 .regtools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .regtools button{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:transparent;cursor:pointer;font:500 13.5px/1 var(--font-display);color:var(--ink)}
 .regtools button[aria-pressed="true"]{border-color:var(--ink);background:var(--tint);font-weight:600}
-.regstage{border-radius:10px;overflow:hidden;background:var(--tint);line-height:0}
+#reg{min-width:0;max-width:100%}
+.regstage{width:100%;max-width:100%;min-width:0;box-sizing:border-box;border-radius:10px;overflow:auto;max-height:78vh;background:var(--tint);line-height:0}
+.regzoom{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}.regzoom .btn{padding:6px 12px;min-width:38px}.regzoom .btn[aria-pressed="true"]{border-color:var(--ink);background:var(--tint);font-weight:600}.regzoom #reg-zl{min-width:46px;text-align:center;font:600 13px/1 var(--font-display)}
 #reg-cv{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 #reg-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
 #reg-list li{display:flex;align-items:center;gap:8px;font-size:14px}
@@ -421,13 +423,23 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       </div>
       <div class="thumbs" id="imp-thumbs"></div>
       <div id="reg" hidden>
-        <p class="hint" style="margin:0 0 8px"><b>Mark what is where.</b> Pick a type, then drag a box over that part of the page. Only the text inside the boxes is read, and a Picture box is saved as the recipe photo.</p>
+        <p class="hint" style="margin:0 0 8px"><b>Mark what is where.</b> Pick a type, then drag a box over that part of the page. Besides ingredients and steps you can mark the title, description, servings, times, tags, source and notes. Only the text inside the boxes is read, and a Picture box is saved as the recipe photo.</p>
         <div class="regtools" id="reg-tools" role="group" aria-label="What are you marking?">
           <button type="button" data-rt="ing" aria-pressed="true"><span class="dot" style="background:#2F9E5B"></span>Ingredients</button>
           <button type="button" data-rt="steps" aria-pressed="false"><span class="dot" style="background:#2F6B9A"></span>Steps</button>
           <button type="button" data-rt="info" aria-pressed="false"><span class="dot" style="background:#8A6BBE"></span>Title and info</button>
           <button type="button" data-rt="pic" aria-pressed="false"><span class="dot" style="background:#C8553D"></span>Picture</button>
           <button type="button" data-rt="notes" aria-pressed="false"><span class="dot" style="background:#B8710E"></span>Notes</button>
+          <button type="button" data-rt="title" aria-pressed="false"><span class="dot" style="background:#6B4EA3"></span>Title</button>
+          <button type="button" data-rt="desc" aria-pressed="false"><span class="dot" style="background:#2A8F9C"></span>Description</button>
+          <button type="button" data-rt="serv" aria-pressed="false"><span class="dot" style="background:#C2398A"></span>Servings</button>
+          <button type="button" data-rt="time" aria-pressed="false"><span class="dot" style="background:#7A8F1E"></span>Times</button>
+          <button type="button" data-rt="tags" aria-pressed="false"><span class="dot" style="background:#8C6A4F"></span>Tags</button>
+          <button type="button" data-rt="src" aria-pressed="false"><span class="dot" style="background:#5F6B7A"></span>Source</button>
+        </div>
+        <div class="regzoom" role="group" aria-label="Zoom the scan">
+          <button type="button" class="btn" data-rz="out" aria-label="Zoom out">&minus;</button><span id="reg-zl" aria-live="polite">100%</span><button type="button" class="btn" data-rz="in" aria-label="Zoom in">+</button><button type="button" class="btn" data-rz="fit">Fit</button><button type="button" class="btn" id="reg-pan" aria-pressed="false">Move page</button>
+          <span class="hint" style="margin:0">Zoom in for small print. Use Move page to drag the scan around, or Ctrl + scroll to zoom.</span>
         </div>
         <div class="regstage"><canvas id="reg-cv" aria-label="Scan. Drag to mark an area."></canvas></div>
         <ul id="reg-list"></ul>
@@ -733,7 +745,7 @@ function ocrInfo(t){
     }
     if(!used) rest.push(l);
   }
-  r.description=rest.reduce((a,b)=>a?joinWrap(a,b):b,'').slice(0,300);
+  r.description=rest.reduce((a,b)=>a?joinWrap(a,b):b,'').slice(0,3000);
   return r;
 }
 //#OCR-END
@@ -1709,8 +1721,10 @@ document.addEventListener('paste',async e=>{
   if($('#dlg-import').open&&IMP.tab==='web'){ e.preventDefault(); IMP.photo=f; $('#imp-photo-note').textContent='Pasted picture will be used as the dish photo.'; }
 });
 /* ================= standalone: scans with marked regions and Tesseract ================= */
-const RT={ing:{label:'Ingredients',c:'#2F9E5B'},steps:{label:'Steps',c:'#2F6B9A'},info:{label:'Title and info',c:'#8A6BBE'},pic:{label:'Picture',c:'#C8553D'},notes:{label:'Notes',c:'#B8710E'}};
-const REG={tool:'ing',boxes:[],cur:null,drag:null,imgs:new WeakMap(),pend:new WeakMap()};
+const RT={ing:{label:'Ingredients',c:'#2F9E5B'},steps:{label:'Steps',c:'#2F6B9A'},info:{label:'Title and info',c:'#8A6BBE'},pic:{label:'Picture',c:'#C8553D'},notes:{label:'Notes',c:'#B8710E'},
+  title:{label:'Title',c:'#6B4EA3'},desc:{label:'Description',c:'#2A8F9C'},serv:{label:'Servings',c:'#C2398A'},time:{label:'Times',c:'#7A8F1E'},tags:{label:'Tags',c:'#8C6A4F'},src:{label:'Source',c:'#5F6B7A'}};
+const SINGLE=['info','pic','title','serv','time','tags','src'];
+const REG={zoom:1,pan:false,tool:'ing',boxes:[],cur:null,drag:null,imgs:new WeakMap(),pend:new WeakMap()};
 const LANG_KEY='cookbook-ocr-lang';
 function regImage(f){
   if(REG.imgs.has(f)) return Promise.resolve(REG.imgs.get(f));
@@ -1723,13 +1737,15 @@ function regSync(){
   if(!IMP.files.length){ REG.cur=null; return; }
   if(!REG.cur||!IMP.files.includes(REG.cur)) REG.cur=IMP.files[0];
   $$('#imp-thumbs img').forEach((im,i)=>im.setAttribute('aria-current',String(IMP.files[i]===REG.cur)));
-  $$('#reg-tools button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.rt===REG.tool)));
+  $$('#reg-tools button').forEach(b=>b.setAttribute('aria-pressed',String(!REG.pan&&b.dataset.rt===REG.tool)));
+  $('#reg-pan').setAttribute('aria-pressed',String(REG.pan)); $('#reg-zl').textContent=Math.round(REG.zoom*100)+'%'; $('#reg-cv').style.cursor=REG.pan?'grab':'crosshair';
   regImage(REG.cur).then(regDraw).catch(()=>{});
   regList();
 }
 function regDraw(){
   const f=REG.cur, img=f&&REG.imgs.get(f); if(!img) return;
-  const cv=$('#reg-cv'), W=Math.min(cv.parentElement.clientWidth||560,760);
+  const cv=$('#reg-cv'), W=Math.min(cv.parentElement.clientWidth||560,760)*REG.zoom;
+  cv.style.width=REG.zoom>1?Math.round(W)+'px':'100%';
   cv.width=Math.round(W); cv.height=Math.max(1,Math.round(img.naturalHeight*W/img.naturalWidth));
   const g=cv.getContext('2d'); g.drawImage(img,0,0,cv.width,cv.height);
   const paint=(b,t,dash)=>{ const c=RT[t].c, x=b.x*cv.width, y=b.y*cv.height, w=b.w*cv.width, h=b.h*cv.height;
@@ -1744,19 +1760,31 @@ function regList(){
 }
 (function wireRegion(){
   const cv=$('#reg-cv'); const pt=e=>{ const r=cv.getBoundingClientRect(); return {x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)}; };
-  cv.addEventListener('pointerdown',e=>{ if(!REG.cur) return; e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){} const p=pt(e); REG.drag={x0:p.x,y0:p.y,x1:p.x,y1:p.y}; regDraw(); });
-  cv.addEventListener('pointermove',e=>{ if(!REG.drag) return; const p=pt(e); REG.drag.x1=p.x; REG.drag.y1=p.y; regDraw(); });
-  const end=e=>{ const d=REG.drag; if(!d) return; REG.drag=null;
+  const stage=$('.regstage');
+  cv.addEventListener('pointerdown',e=>{ if(!REG.cur) return; e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){}
+    if(REG.pan){ REG.mv={x:e.clientX,y:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop}; cv.style.cursor='grabbing'; return; }
+    const p=pt(e); REG.drag={x0:p.x,y0:p.y,x1:p.x,y1:p.y}; regDraw(); });
+  cv.addEventListener('pointermove',e=>{ if(REG.mv){ stage.scrollLeft=REG.mv.sl-(e.clientX-REG.mv.x); stage.scrollTop=REG.mv.st-(e.clientY-REG.mv.y); return; } if(!REG.drag) return; const p=pt(e); REG.drag.x1=p.x; REG.drag.y1=p.y; regDraw(); });
+  const end=e=>{ if(REG.mv){ REG.mv=null; cv.style.cursor=REG.pan?'grab':'crosshair'; return; } const d=REG.drag; if(!d) return; REG.drag=null;
     const b={f:REG.cur,t:REG.tool,x:Math.min(d.x0,d.x1),y:Math.min(d.y0,d.y1),w:Math.abs(d.x1-d.x0),h:Math.abs(d.y1-d.y0)};
-    if(b.w>0.02&&b.h>0.012){ if(b.t==='info'||b.t==='pic') REG.boxes=REG.boxes.filter(x=>x.t!==b.t); REG.boxes.push(b); }
+    if(b.w>0.02&&b.h>0.012){ if(SINGLE.includes(b.t)) REG.boxes=REG.boxes.filter(x=>x.t!==b.t); REG.boxes.push(b); }
     regDraw(); regList(); };
-  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',()=>{ REG.drag=null; regDraw(); });
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',()=>{ REG.drag=null; REG.mv=null; regDraw(); });
   document.addEventListener('click',e=>{
-    const t=e.target.closest('[data-rt],[data-regdel],#imp-thumbs img'); if(!t) return;
-    if(t.dataset.rt){ REG.tool=t.dataset.rt; regSync(); return; }
+    const t=e.target.closest('[data-rt],[data-regdel],[data-rz],#reg-pan,#imp-thumbs img'); if(!t) return;
+    if(t.dataset.rz){ const z=t.dataset.rz; zoomTo(z==='fit'?1:z==='in'?REG.zoom*1.4:REG.zoom/1.4); return; }
+    if(t.id==='reg-pan'){ REG.pan=!REG.pan; regSync(); return; }
+    if(t.dataset.rt){ REG.tool=t.dataset.rt; REG.pan=false; regSync(); return; }
     if(t.dataset.regdel!==undefined){ REG.boxes.splice(+t.dataset.regdel,1); regDraw(); regList(); return; }
     const i=$$('#imp-thumbs img').indexOf(t); if(i>=0&&IMP.files[i]){ REG.cur=IMP.files[i]; regSync(); }
   });
+  function zoomTo(z){
+    z=clamp(Math.round(z*100)/100,1,4); if(z===REG.zoom) return;
+    const fx=(stage.scrollLeft+stage.clientWidth/2)/Math.max(1,stage.scrollWidth), fy=(stage.scrollTop+stage.clientHeight/2)/Math.max(1,stage.scrollHeight);
+    REG.zoom=z; regDraw(); $('#reg-zl').textContent=Math.round(z*100)+'%';
+    stage.scrollLeft=fx*stage.scrollWidth-stage.clientWidth/2; stage.scrollTop=fy*stage.scrollHeight-stage.clientHeight/2;
+  }
+  stage.addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)) return; e.preventDefault(); zoomTo(REG.zoom*(e.deltaY<0?1.15:1/1.15)); },{passive:false});
   window.addEventListener('resize',()=>{ if(!$('#reg').hidden) regDraw(); });
   const sel=$('#imp-lang'); try{ const v=localStorage.getItem(LANG_KEY); if(v&&[...sel.options].some(o=>o.value===v)) sel.value=v; }catch(e){}
   sel.addEventListener('change',()=>{ try{ localStorage.setItem(LANG_KEY,sel.value); }catch(e){} });
@@ -1801,10 +1829,17 @@ async function importScans(signal){
   let draft, how;
   if(textBoxes.length){
     const jobs=textBoxes.map(b=>({canvas:regCrop(pageOf(b).img,b),psm:6}));
-    const texts=await ocrRun(jobs,lang,signal), by={ing:[],steps:[],info:[],notes:[]};
+    const texts=await ocrRun(jobs,lang,signal), by={ing:[],steps:[],info:[],notes:[],title:[],desc:[],serv:[],time:[],tags:[],src:[]};
     textBoxes.forEach((b,k)=>by[b.t].push(texts[k]));
-    const info=ocrInfo(by.info.join('\n'));
+    const info=ocrInfo(by.info.join('\n')), flat=a=>a.join('\n').replace(/\s*\n\s*/g,' ').replace(/\s+/g,' ').trim();
+    if(by.title.length) info.title=flat(by.title).replace(/^[^\p{L}\d]+|[^\p{L}\d!?.)]+$/gu,'');
+    if(by.desc.length) info.description=flat(by.desc);
+    if(by.serv.length){ const t=flat(by.serv), x=ocrInfo('x\n'+t); info.servings=x.servings||(/^\d+(\s*[-–]\s*\d+)?$/.test(t)?t+' servings':t); }
+    if(by.time.length){ const t=by.time.join('\n'), x=ocrInfo('x\n'+t); if(x.prepMin) info.prepMin=x.prepMin; if(x.cookMin) info.cookMin=x.cookMin; if(x.totalMin) info.totalMin=x.totalMin;
+      if(!x.prepMin&&!x.cookMin&&!x.totalMin){ const m=minsIn(t); if(m) info.totalMin=m; } }
+    info.tags=flat(by.tags).split(/[,;•·|]/).map(s=>s.trim().toLowerCase()).filter(Boolean); info.source=flat(by.src);
     draft=normalizeDraft(Object.assign({},info,{ingredients:by.ing.flatMap(ocrIngredients),steps:by.steps.flatMap(ocrSteps),notes:by.notes.join('\n').replace(/\s*\n\s*/g,' ')}));
+    if(info.totalMin) draft.totalMin=info.totalMin;
     how='Read from the areas you marked.';
   } else {
     const jobs=loaded.map(s=>({canvas:regCrop(s.img,{x:0,y:0,w:1,h:1}),psm:3}));
