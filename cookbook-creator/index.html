@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en"><head>
 <script src="../login.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2316261D%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%769%27 fill=%27%23E8A93D%27/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
 <style>html{padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Cookbook Creator</title>
+<title>🍳 Cookbook Creator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Work+Sans:wght@400;500;600;700&display=swap">
@@ -589,6 +589,7 @@ function recipeFromJsonLd(node,srcUrl){
   d.tags=kw.map(k=>clean(k).toLowerCase()).filter(k=>k.length>1&&k.length<29&&!seen.has(k)&&seen.add(k)).slice(0,6);
   d.source=srcUrl||personName(node.author);
   { let im=node.image; if(Array.isArray(im)) im=im[0]; if(im&&typeof im==='object') im=im.url||im.contentUrl; d.imageUrl=typeof im==='string'?im:''; }
+  d.notes=clean([].concat(node.recipeNotes||node.notes||[]).join(' ')).slice(0,1500);
   d.origin='web';
   return d;
 }
@@ -618,6 +619,20 @@ function htmlToText(doc){
   return body.textContent.replace(/[ \t ]+/g,' ').replace(/ ?\n ?/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
 }
 function looksLikeHtml(s){ return /<\s*(html|body|head|script|div|p|article)\b/i.test(String(s).slice(0,20000)); }
+const reNotes=/^(recipe notes?|cook'?s? notes?|chef'?s? notes?|notes?|tips?( and tricks)?|tips? (&|en) tricks|opmerkingen?|notities|kooktips?|tips? van de chef|anmerkungen|hinweise|remarques?|astuces?|conseils?)\s*:?$/i;
+const reNotesStop=/^(nutrition|nutritional|voedingswaarde|n[aä]hrwerte|valeurs? nutritionnelles?|comments?|reacties|reviews?|related|share|print|you may also|more recipes|ingredients?|ingredi[eë]nten|instructions?|directions?|method|bereiding|werkwijze|zubereitung|pr[ée]paration|leave a|subscribe)\b/i;
+function extractNotes(text){
+  const L=String(text||'').split(/\r?\n/).map(s=>s.trim());
+  const i=L.findIndex(l=>l.length<32&&reNotes.test(l));
+  if(i<0) return {notes:'',from:-1,to:-1};
+  const out=[]; let j=i+1, n=0;
+  for(;j<L.length;j++){
+    const l=L[j]; if(!l) { if(out.length&&L[j+1]===''){ break; } continue; }
+    if(l.length<40&&reNotesStop.test(l)) break;
+    out.push(stripBullet(l)); n+=l.length; if(n>1500||out.length>14) break;
+  }
+  return {notes:clean(out.join(' ')).slice(0,1500),from:i,to:j};
+}
 function parseRecipeText(text){
   const L=String(text||'').split(/\r?\n/).map(s=>s.trim());
   const reIng=/^(ingredients?|ingredi[eë]nten|zutaten|ingr[ée]dients|benodigdheden)\b/i;
@@ -625,6 +640,8 @@ function parseRecipeText(text){
   const iI=L.findIndex(l=>l.length<40&&reIng.test(l));
   const iM=L.findIndex((l,i)=>i>iI&&l.length<40&&reMet.test(l));
   const d=blankDraft(); d.origin='text';
+  const nt=extractNotes(L.join('\n'));
+  if(nt.notes){ d.notes=nt.notes; for(let k=nt.from;k<nt.to;k++) L[k]=''; }
   const first=L.find(l=>l&&!(l.length<40&&reIng.test(l)))||'';
   d.title=clean(first).slice(0,120);
   if(iI>=0){
@@ -1458,6 +1475,7 @@ async function importText(signal){
     const node=findJsonLdRecipe(doc); if(node) draft=recipeFromJsonLd(node,url);
     text=htmlToText(doc);
   }
+  if(draft&&!draft.notes){ const nt=extractNotes(text); if(nt.notes) draft.notes=nt.notes; }
   if(draft&&draft.ingredients.length&&draft.steps.length) return {draft,note:'Read from the recipe data built into the page. Webpage pictures are not copied; add one below.'};
   let ai=null, aiNote='';
   if(SAMPLE){
@@ -1474,6 +1492,7 @@ async function importText(signal){
     return {draft,note:'Read by Claude from the text. Check the ingredients and steps before saving.'+(looksLikeHtml(raw)?' Webpage pictures are not copied; add one below.':'')};
   }
   if(!draft){ draft=parseRecipeText(text); if(url) draft.source=url; }
+  else if(!draft.notes){ const nt=extractNotes(text); if(nt.notes) draft.notes=nt.notes; }
   return {draft,note:'Read with simple text rules, so check everything carefully.'+aiNote};
 }
 async function runImport(){
