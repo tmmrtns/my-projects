@@ -1,6 +1,5 @@
 <!doctype html>
-<html lang="en"><head>
-<script src="../login.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
 <style>html{padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Cookbook Creator</title>
@@ -103,6 +102,37 @@ button.chip{cursor:pointer;border:0}
 .banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;border-radius:14px;margin-bottom:20px;background:var(--bchip);border:1px dashed var(--bline);font-size:15px;color:var(--bink)}
 .banner .btn{margin-left:auto}
 
+/* filters, view tabs and table view */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font:500 13.5px/1 var(--font-display)}
+.chips button[aria-pressed="true"]{border-color:var(--ink);background:var(--tint);font-weight:600}
+.chips button .n{font:600 12px/1 var(--font-label);color:var(--ink-3)}
+.viewtabs{margin-left:auto;display:inline-flex;border-radius:999px;border:2px solid var(--line);overflow:hidden;background:var(--card)}
+.viewtabs button{border:0;background:transparent;color:var(--ink-2);padding:8px 16px;cursor:pointer;font:600 13.5px/1 var(--font-display)}
+.viewtabs button[aria-selected="true"]{background:var(--ink);color:var(--card)}
+.tblwrap{overflow-x:auto;border-radius:14px;background:var(--card);color:var(--ink);box-shadow:0 10px 24px var(--shadow);border:1px solid var(--line)}
+.tbl{width:100%;border-collapse:collapse;font-size:14.4px;min-width:720px}
+.tbl th{position:sticky;top:0;text-align:left;font:700 11.5px/1.2 var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);background:var(--tint);padding:0;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th button{all:unset;display:block;box-sizing:border-box;width:100%;padding:12px 12px;cursor:pointer}
+.tbl th button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.tbl th .ar{opacity:.6;margin-left:4px}
+.tbl td{padding:9px 12px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.tbl tr[data-row]{cursor:pointer}
+.tbl tbody tr:hover{background:color-mix(in srgb,var(--tint) 70%,transparent)}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl td:first-child{box-shadow:inset 5px 0 var(--edge,var(--active));padding-left:16px}
+.tbl .ttl{display:flex;align-items:center;gap:10px;min-width:0}
+.tbl .ttl img{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--tint);flex:none}
+.tbl .ttl b{font:400 17px/1.2 var(--font-slab);overflow-wrap:anywhere}
+.tbl .cat{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.tbl .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.tbl .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .tg{display:flex;flex-wrap:wrap;gap:5px}
+.tbl .tb-check{display:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);place-items:center;color:transparent;flex:none}
+.selecting .tbl .tb-check{display:grid}
+.tbl tr.sel{background:rgba(184,113,14,.14)}
+.tbl tr.sel .tb-check{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tbl .rc-fav{padding:4px}
 /* recipe cards: cream paper on the board */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;align-items:start}
 .rc{position:relative;background:var(--card);color:var(--ink);border-radius:14px;overflow:hidden;box-shadow:0 10px 24px var(--shadow);border:1px solid var(--line)}
@@ -315,6 +345,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <option value="quick">Quickest</option>
         <option value="person">By person (Tom, Lies)</option>
       </select></div>
+    <div class="fld" style="grid-column:1/-1"><span class="lbl">Whose recipe</span>
+      <div class="chips" id="person-filter" role="group" aria-label="Show recipes from"></div></div>
   </div>
   <div class="app" id="app">
     <nav class="rail" id="rail" aria-label="Browse recipes"></nav>
@@ -323,7 +355,10 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <h2 id="view-title">All recipes</h2>
         <span class="count" id="count"></span>
         <span id="tagchip"></span>
-        </div>
+        <div class="viewtabs" role="tablist" aria-label="View">
+          <button type="button" role="tab" data-view="board" aria-selected="true">Board</button>
+          <button type="button" role="tab" data-view="table" aria-selected="false">Table</button>
+        </div></div>
       <div id="banner"></div>
       <div id="grid" class="grid"></div>
     </main>
@@ -1307,7 +1342,7 @@ const ic=(n,cls)=>'<svg class="ic'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-
 let toastT;
 /* ================= standalone storage: this browser (IndexedDB), backup files, GitHub repo ================= */
 const STORE_KEY='cookbook-creator-v1', GH_KEY='cookbook-gh-v1', DEL_KEY='cookbook-deleted-v1', IDB_NAME='cookbook-creator', IDB_STORE='recipes';
-const S={recipes:[],ready:false,mode:'pending',q:'',cat:'all',tag:'',sort:'new',selecting:false,sel:new Set(),detailId:null};
+const S={recipes:[],ready:false,mode:'pending',q:'',cat:'all',tag:'',sort:'new',persons:new Set(),view:'board',tcol:'',tdir:1,selecting:false,sel:new Set(),detailId:null};
 let COL=null, DL=null, SAMPLE=null, CAN_IMG=true;
 const STO={mode:'ls'};
 
@@ -1415,15 +1450,23 @@ function sorted(list){
   else a.sort((x,y)=>String(y.createdAt||'').localeCompare(String(x.createdAt||''))||T(x,y));
   return a;
 }
+function tsorted(a){
+  if(S.view!=='table'||!S.tcol) return a;
+  const T=(x,y)=>String(x.title||'').localeCompare(String(y.title||'')), d=S.tdir;
+  const key={title:r=>String(r.title||'').toLowerCase(),category:r=>catOf(r).toLowerCase(),person:r=>r.person||'~',servings:r=>String(r.servings||'~').toLowerCase(),cuisine:r=>String(r.cuisine||'~').toLowerCase(),time:r=>totalMin(r)||1e9,rating:r=>r.rating||0}[S.tcol];
+  if(!key) return a;
+  return a.slice().sort((x,y)=>{ const A=key(x),B=key(y); return (A<B?-1:A>B?1:0)*d||T(x,y); });
+}
 function visible(){
   const q=S.q.trim().toLowerCase();
-  return sorted(S.recipes.filter(r=>{
+  return tsorted(sorted(S.recipes.filter(r=>{
     if(S.cat==='fav'&&!r.favorite) return false;
     if(S.cat.startsWith('cat:')&&catOf(r)!==S.cat.slice(4)) return false;
     if(S.tag&&!(r.tags||[]).includes(S.tag)) return false;
+    if(S.persons.size&&!S.persons.has(r.person||'-')) return false;
     if(q&&!hay(r).includes(q)) return false;
     return true;
-  }));
+  })));
 }
 function allCats(){
   const m=new Map(); S.recipes.forEach(r=>{const c=catOf(r); m.set(c,(m.get(c)||0)+1);});
@@ -1457,7 +1500,28 @@ function cardHtml(r){
     +'<div class="rc-foot"><button class="rc-fav" data-fav="'+esc(r.id)+'" aria-pressed="'+!!r.favorite+'" aria-label="Favorite">'+ic('heart',r.favorite?'fill':'')+(r.favorite?'Favorite':'Mark favorite')+'</button></div>'
     +'<span class="rc-check" aria-hidden="true">'+ic('check')+'</span></article>';
 }
+const TCOLS=[['title','Recipe'],['category','Category'],['person','Whose'],['servings','Yield'],['time','Time'],['rating','Rating'],['cuisine','Cuisine'],['','Tags']];
+function tableHtml(list){
+  const head='<tr>'+TCOLS.map(([k,l])=>'<th>'+(k?'<button type="button" data-th="'+k+'" aria-label="Sort by '+l+'">'+l+(S.tcol===k?'<span class="ar">'+(S.tdir>0?'\u25B2':'\u25BC')+'</span>':'')+'</button>':'<button type="button" disabled style="cursor:default">'+l+'</button>')+'</th>').join('')+'<th></th></tr>';
+  const rows=list.map(r=>{ const img=safeImg(r), tm=totalMin(r), sel=S.sel.has(r.id);
+    return '<tr data-row="'+esc(r.id)+'" class="'+(sel?'sel':'')+'" style="--edge:'+catColor(catOf(r))+'">'
+      +'<td><div class="ttl"><span class="tb-check" aria-hidden="true">'+ic('check')+'</span>'+(img?'<img src="'+img+'" alt="" loading="lazy">':'')+'<button class="rc-main" style="width:auto" data-open="'+esc(r.id)+'" aria-label="'+esc((S.selecting?(sel?'Deselect ':'Select '):'Open ')+(r.title||'recipe'))+'"><b>'+esc(r.title||'Untitled')+'</b></button></div></td>'
+      +'<td><span class="cat"><span class="dot" style="background:'+catColor(catOf(r))+'"></span>'+esc(catOf(r))+'</span></td>'
+      +'<td>'+esc(r.person||'')+'</td><td>'+esc(r.servings||'')+'</td><td class="num">'+esc(tm?fmtMin(tm):'')+'</td>'
+      +'<td class="num">'+(r.rating?ic('star','fill')+' '+r.rating:'')+'</td><td>'+esc(r.cuisine||'')+'</td>'
+      +'<td><div class="tg">'+(r.tags||[]).slice(0,3).map(t=>'<span class="chip">'+esc(t)+'</span>').join('')+'</div></td>'
+      +'<td><button class="rc-fav" data-fav="'+esc(r.id)+'" aria-pressed="'+!!r.favorite+'" aria-label="Favorite">'+ic('heart',r.favorite?'fill':'')+'</button></td></tr>'; }).join('');
+  return '<table class="tbl"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>';
+}
+function renderPersons(){
+  const n={}; S.recipes.forEach(r=>{ const k=r.person||'-'; n[k]=(n[k]||0)+1; });
+  const names=['Tom','Lies']; if(n['-']) names.push('-');
+  $('#person-filter').innerHTML=names.map(k=>'<button type="button" data-person="'+k+'" aria-pressed="'+S.persons.has(k)+'">'+(k==='-'?'No name':k)+' <span class="n">'+(n[k]||0)+'</span></button>').join('')
+    +(S.persons.size?'<button type="button" data-person="*" aria-pressed="false">Show everyone</button>':'');
+  $$('.viewtabs [data-view]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===S.view)));
+}
 function renderGrid(){
+  renderPersons();
   const list=visible(), grid=$('#grid');
   document.body.classList.toggle('selecting',S.selecting);
   const title=S.cat==='all'?'All recipes':S.cat==='fav'?'Favorites':S.cat.slice(4);
@@ -1465,6 +1529,7 @@ function renderGrid(){
   { const cats=new Set(S.recipes.map(catOf)).size, fav=S.recipes.filter(r=>r.favorite).length; $('#stats').innerHTML='<span class="stat"><span class="dot" style="background:#E8A93D"></span>'+S.recipes.length+' saved</span><span class="stat"><span class="dot" style="background:#2F9E5B"></span>'+cats+' categories</span><span class="stat"><span class="dot" style="background:#C13B23"></span>'+fav+' favorites</span>'; }
   $('#count').textContent=list.length===S.recipes.length?S.recipes.length+(S.recipes.length===1?' recipe':' recipes'):list.length+' of '+S.recipes.length;
   $('#tagchip').innerHTML=S.tag?'<button class="chip" data-cleartag="1" aria-label="Remove tag filter">'+esc(S.tag)+' '+ic('x')+'</button>':'';
+  grid.className='grid';
   if(!S.ready){ grid.innerHTML='<div class="empty" style="grid-column:1/-1"><p style="margin:0">Opening your recipe box...</p></div>'; return; }
   if(!list.length){
     grid.innerHTML=S.recipes.length
@@ -1472,7 +1537,8 @@ function renderGrid(){
       :'<div class="empty" style="grid-column:1/-1"><h2>Your recipe box is empty</h2><p>Add a scanned page, a saved webpage, or type one in. Each recipe is split into ingredients, steps and a picture.</p><button class="btn primary" data-addnew="1">Add your first recipe</button></div>';
     return;
   }
-  grid.innerHTML=list.map(cardHtml).join('');
+  if(S.view==='table'){ grid.className='tblwrap'; grid.innerHTML=tableHtml(list); }
+  else{ grid.className='grid'; grid.innerHTML=list.map(cardHtml).join(''); }
 }
 function renderBar(){
   const bar=$('#selbar'); bar.hidden=!S.selecting;
@@ -1837,12 +1903,17 @@ function orderedSel(){ return sorted(S.recipes.filter(r=>S.sel.has(r.id))).map(r
 async function guard(fn){ try{ await fn(); }catch(e){ toast(dbMsg(e),true); } }
 
 document.addEventListener('click',e=>{
+  const row=e.target.closest('tr[data-row]');
+  if(row&&!e.target.closest('button')){ if(S.selecting) toggleSel(row.dataset.row); else openDetail(row.dataset.row); return; }
   const t=e.target.closest('button,[data-cat],[data-tag]'); if(!t) return;
   const d=t.dataset;
+  if(d.person!==undefined&&t.closest('#person-filter')){ if(d.person==='*') S.persons.clear(); else if(S.persons.has(d.person)) S.persons.delete(d.person); else S.persons.add(d.person); renderGrid(); return; }
+  if(d.view&&t.closest('.viewtabs')){ S.view=d.view; try{ localStorage.setItem('cookbook-view-v1',S.view); }catch(x){} renderGrid(); return; }
+  if(d.th){ if(S.tcol===d.th) S.tdir=-S.tdir; else{ S.tcol=d.th; S.tdir=d.th==='rating'?-1:1; } renderGrid(); return; }
   if(d.cat!==undefined&&t.closest('#rail')){ setCat(d.cat); return; }
   if(d.tag!==undefined&&t.closest('#rail')){ S.tag=S.tag===d.tag?'':d.tag; renderRail(); renderGrid(); return; }
   if(d.cleartag){ S.tag=''; renderRail(); renderGrid(); return; }
-  if(d.clear){ S.q=''; S.tag=''; S.cat='all'; $('#q').value=''; renderRail(); renderGrid(); return; }
+  if(d.clear){ S.q=''; S.tag=''; S.cat='all'; S.persons.clear(); $('#q').value=''; renderRail(); renderGrid(); return; }
   if(d.addnew){ openImport(); return; }
   if(d.rmex){ guard(async()=>{ for(const r of S.recipes.filter(x=>x.example)) await deleteRecipe(r.id); toast('Examples removed'); }); return; }
   if(d.open){ if(S.selecting) toggleSel(d.open); else openDetail(d.open); return; }
@@ -1902,6 +1973,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{ if(e.target instanceof HTMLDialogElement&&(e.target.id==='dlg-detail'||e.target.id==='dlg-export')) e.target.close(); });
 $('#dlg-detail').addEventListener('close',()=>{ S.detailId=null; });
 $('#dlg-import').addEventListener('close',()=>{ if(IMP.ctl) IMP.ctl.abort(); });
+try{ const v=localStorage.getItem('cookbook-view-v1'); if(v==='table'||v==='board') S.view=v; }catch(e){}
 $('#q').addEventListener('input',e=>{ S.q=e.target.value; renderGrid(); });
 $('#sort').addEventListener('change',e=>{ S.sort=e.target.value; renderGrid(); });
 $('#imp-files').addEventListener('change',e=>{ addImageFiles(Array.from(e.target.files)); e.target.value=''; });
