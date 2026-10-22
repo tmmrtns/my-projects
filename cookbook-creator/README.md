@@ -23,4 +23,4 @@ Text recognition is Tesseract.js, loaded from jsDelivr, and runs on the device. 
 Mark the ingredients, steps, title/info, notes and picture on the scan so only those areas are read.
 
 ## Webpages
-"Fetch page" uses public CORS relays (allorigins, corsproxy.io). It can fail; saving the page or pasting text always works.
+Paste a web address and press Read recipe. The page is fetched directly if the site allows it, otherwise through public CORS relays (allorigins, corsproxy.io, codetabs), or through your own relay set in Library (address with `{url}` in it). Recipes are read from the page data; the picture is fetched too when possible. It can fail on sites that block relays; saving the page or pasting text always works.
