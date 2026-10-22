@@ -3,7 +3,7 @@
 <script src="../login.js"></script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
 <style>html{padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>🍳 Cookbook Creator</title>
+<title>Cookbook Creator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Work+Sans:wght@400;500;600;700&display=swap">
@@ -375,7 +375,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f2"><label for="ed-cat">Category</label><select id="ed-cat"></select><input type="text" id="ed-cat-new" placeholder="New category name" autocomplete="off" maxlength="40" hidden></div>
     <div class="fld f2"><label for="ed-person">Whose recipe</label><select id="ed-person"><option value="">Not set</option><option value="Tom">Tom</option><option value="Lies">Lies</option></select></div>
     <div class="fld f2"><label for="ed-servings">Yield</label><input type="text" id="ed-servings" placeholder="4 servings"></div>
-    <div class="fld f6"><label for="ed-desc">Short description</label><textarea id="ed-desc" rows="2"></textarea></div>
+    <div class="fld f6"><label for="ed-desc">Description</label><textarea id="ed-desc" rows="4"></textarea></div>
     <div class="fld f2"><label for="ed-cuisine">Cuisine</label><input type="text" id="ed-cuisine" autocomplete="off"></div>
     <div class="fld f4"><label for="ed-tags">Tags</label><input type="text" id="ed-tags" placeholder="vegetarian, one-pot" autocomplete="off"></div>
     <div class="fld f2"><label for="ed-prep">Prep (min)</label><input type="number" id="ed-prep" min="0" inputmode="numeric"></div>
@@ -576,7 +576,7 @@ function recipeFromJsonLd(node,srcUrl){
   const d=blankDraft();
   const ing=[].concat(node.recipeIngredient||node.ingredients||[]).map(clean).filter(Boolean);
   d.title=clean(node.name||node.headline||'').slice(0,160);
-  d.description=clean(node.description||'').slice(0,300);
+  d.description=clean(node.description||'').slice(0,3000);
   d.ingredients=ing;
   d.steps=flattenInstructions(node.recipeInstructions).map(stripStepNo);
   d.servings=normYield(node.recipeYield);
@@ -658,7 +658,7 @@ function normalizeDraft(r){
   const num=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.round(n):null;};
   const d=blankDraft();
   d.title=clean(r.title||'').slice(0,160);
-  d.description=clean(r.description||'').slice(0,300);
+  d.description=clean(r.description||'').slice(0,3000);
   d.ingredients=arr(r.ingredients).map(s=>/^#/.test(s)?'# '+s.replace(/^#+\s*/,''):stripBullet(s)).filter(Boolean);
   d.steps=arr(r.steps).map(stripStepNo).filter(Boolean);
   d.servings=clean(r.servings||'').slice(0,60);
@@ -800,7 +800,7 @@ function buildPdf(jsPDF,recipes,o){
     font('times','normal',30,P_INK);
     const tLines=wrap(r.title||'Untitled',CW-16).slice(0,4);
     font('times','italic',11.5,P_INK);
-    const dLines=r.description?wrap(r.description,CW-16).slice(0,4):[];
+    const dLines=r.description?wrap(r.description,CW-16).slice(0,30):[];
     const TL=lh(30,1.02), DL=lh(11.5,1.3);
     const bandH=8+4.5+3+tLines.length*TL+(dLines.length?3.5+dLines.length*DL:0)+8;
     doc.setFillColor(tile[0],tile[1],tile[2]); doc.roundedRect(M.l,st.y,CW,bandH,5,5,'F');
@@ -946,7 +946,7 @@ function buildPdf(jsPDF,recipes,o){
   function titleBlock(r,x,w,tsz,withDesc){
     font('times','normal',tsz,P_INK); const tl=wrap(r.title||'Untitled',w).slice(0,4); const TL=lh(tsz,1.05);
     tl.forEach(l=>{ st.y+=TL; doc.text(l,x,st.y); });
-    if(withDesc&&r.description){ font('times','italic',11.5,P_INK2); st.y+=1.5; wrap(r.description,w).slice(0,4).forEach(l=>{ st.y+=lh(11.5,1.3); doc.text(l,x,st.y-1); }); }
+    if(withDesc&&r.description){ font('times','italic',11.5,P_INK2); st.y+=1.5; wrap(r.description,w).slice(0,10).forEach(l=>{ st.y+=lh(11.5,1.3); doc.text(l,x,st.y-1); }); }
   }
 
   /* ---- layout: ingredients in a side column, method beside it ---- */
@@ -998,7 +998,7 @@ function buildPdf(jsPDF,recipes,o){
     st.y=top+3; titleBlock(r,M.l,hw,19,false);
     const fl=factsLine(r);
     if(fl){ st.y+=4.6; font('helvetica','bold',7.2,P_INK2); cs(0.25); wrap(fl,hw).forEach(l=>{ doc.text(l,M.l,st.y); st.y+=3.6; }); cs(0); st.y-=3.6; }
-    if(r.description){ st.y+=1.5; font('times','italic',9.5,P_INK2); wrap(r.description,hw).slice(0,3).forEach(l=>{ st.y+=lh(9.5,1.3); doc.text(l,M.l,st.y-1); }); }
+    if(r.description){ st.y+=1.5; font('times','italic',9.5,P_INK2); wrap(r.description,hw).slice(0,8).forEach(l=>{ st.y+=lh(9.5,1.3); doc.text(l,M.l,st.y-1); }); }
     if(hasImg){ try{ doc.addImage(r.image,'JPEG',W-M.r-tw,top,tw,th,undefined,'FAST'); }catch(e){} st.y=Math.max(st.y,top+th); }
     st.y+=4; doc.setDrawColor(...P_RULE); doc.setLineWidth(0.3); doc.line(M.l,st.y,W-M.r,st.y); st.y+=4;
     const SZ=9, ing=r.ingredients||[];
@@ -1452,7 +1452,7 @@ function importErr(e){
   if(c==='session_expired') return 'Your session expired. Sign in again and retry.';
   return 'Something went wrong while reading'+(e&&e.message?' ('+e.message+')':'')+'. Try again.';
 }
-const RECIPE_SHAPE='{"title": string, "description": string (one short sentence taken from the source, else ""), "ingredients": string[] (one line each, exactly as written with amount and unit; use a line like "# For the sauce" for a group heading), "steps": string[] (one string per step, without step numbers), "servings": string (like "4 servings" or "12 cookies", else ""), "prepMinutes": number or null, "cookMinutes": number or null, "category": string (best fit of: '+DEFAULT_CATS.join(', ')+'), "cuisine": string, "tags": string[] (up to 5 short lowercase tags such as vegetarian or one-pot), "notes": string (tips printed with the recipe, else ""), "source": string (book, magazine, person or website credited, else "")';
+const RECIPE_SHAPE='{"title": string, "description": string (the intro text printed with the recipe, in full, else ""), "ingredients": string[] (one line each, exactly as written with amount and unit; use a line like "# For the sauce" for a group heading), "steps": string[] (one string per step, without step numbers), "servings": string (like "4 servings" or "12 cookies", else ""), "prepMinutes": number or null, "cookMinutes": number or null, "category": string (best fit of: '+DEFAULT_CATS.join(', ')+'), "cuisine": string, "tags": string[] (up to 5 short lowercase tags such as vegetarian or one-pot), "notes": string (tips printed with the recipe, else ""), "source": string (book, magazine, person or website credited, else "")';
 async function importScans_unused(signal){
   const loaded=[];
   for(const f of IMP.files){ impStatus('Preparing '+(loaded.length+1)+' of '+IMP.files.length+'...','busy'); loaded.push(await loadImage(f.file)); }
