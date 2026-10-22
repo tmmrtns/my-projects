@@ -392,7 +392,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
           <input type="file" id="ed-file" accept="image/*" hidden>
           <button class="btn sm" type="button" id="ed-usescan" hidden>Use the scan as picture</button>
           <button class="btn sm quiet danger" type="button" id="ed-rmimg" hidden>Remove</button>
-        </div></div></div>
+        </div></div>
+      <p class="hint">Or copy a picture and paste it here with Ctrl+V (Cmd+V on a Mac).</p></div>
   </div></div>
   <div class="dlg-foot"><span class="status err sp" id="ed-err" hidden></span>
     <button class="btn" data-e="close">Cancel</button><button class="btn primary" id="ed-save">Save recipe</button></div>
@@ -411,7 +412,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="pane" data-pane="photo">
       <div class="drop" id="drop-photo">
         <svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px" aria-hidden="true"><use href="#i-camera"/></svg>
-        <div><b>Drop scans, photos or a PDF here</b><br><span class="muted">JPG, PNG, WebP or PDF (scanned or printed page). Add several pages in order if the recipe runs over.</span></div>
+        <div><b>Drop scans, photos or a PDF here</b><br><span class="muted">JPG, PNG, WebP or PDF (scanned or printed page). Add several pages in order if the recipe runs over. You can also paste a screenshot or copied picture with Ctrl+V (Cmd+V on a Mac).</span></div>
         <label class="btn" for="imp-files">Choose images or PDF</label>
         <input type="file" id="imp-files" accept="image/*,application/pdf,.pdf" multiple hidden>
       </div>
@@ -444,7 +445,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <div class="fld"><label for="imp-paste">Or paste page text or source</label><textarea id="imp-paste" rows="6" placeholder="Paste here"></textarea></div>
       <div class="fld"><label for="imp-url">Web address (kept as the source)</label><div style="display:flex;gap:8px"><input type="url" id="imp-url" placeholder="https://" autocomplete="off" style="flex:1"><button class="btn" type="button" id="imp-fetch">Fetch only</button></div></div>
       <div class="fld"><label for="imp-photo">Dish photo (optional)</label><input type="file" id="imp-photo" accept="image/*">
-        <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead.</p></div>
+        <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead. You can also copy a picture and paste it here with Ctrl+V (Cmd+V on a Mac).</p><span id="imp-photo-note" class="hint"></span></div>
     </div>
     <div class="pane" data-pane="manual" hidden>
       <p style="margin:0">Start with a blank card and type or paste the recipe yourself.</p>
@@ -1400,7 +1401,7 @@ function addImageFiles_unused(list){
   renderThumbs();
 }
 function resetImport(){
-  IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[]; IMP.text=''; IMP.htmlName=''; IMP.photo=null;
+  IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[]; IMP.text=''; IMP.htmlName=''; IMP.photo=null; { const n=$('#imp-photo-note'); if(n) n.textContent=''; }
   $('#imp-paste').value=''; $('#imp-url').value=''; $('#imp-html').value=''; $('#imp-photo').value=''; $('#imp-files').value='';
   $('#imp-htmlname').textContent='No file chosen'; renderThumbs(); impStatus('');
 }
@@ -1599,7 +1600,7 @@ $('#dlg-import').addEventListener('close',()=>{ if(IMP.ctl) IMP.ctl.abort(); });
 $('#q').addEventListener('input',e=>{ S.q=e.target.value; renderGrid(); });
 $('#sort').addEventListener('change',e=>{ S.sort=e.target.value; renderGrid(); });
 $('#imp-files').addEventListener('change',e=>{ addImageFiles(Array.from(e.target.files)); e.target.value=''; });
-$('#imp-photo').addEventListener('change',e=>{ IMP.photo=e.target.files[0]||null; });
+$('#imp-photo').addEventListener('change',e=>{ IMP.photo=e.target.files[0]||null; $('#imp-photo-note').textContent=''; });
 $('#imp-paste').addEventListener('input',impGo);
 $('#imp-html').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -1624,6 +1625,17 @@ $('#dlg-import').addEventListener('paste',e=>{
   if(fs.length){ e.preventDefault(); addImageFiles(fs); }
 });
 
+/* paste a copied picture: into the editor (recipe picture) or the web tab (dish photo) */
+document.addEventListener('paste',async e=>{
+  const f=Array.from((e.clipboardData&&e.clipboardData.files)||[]).find(x=>/^image\//.test(x.type)); if(!f) return;
+  if($('#dlg-edit').open){
+    e.preventDefault();
+    try{ const p=await photoFromFile(f); ED.image=p.url; ED.imageW=p.w; ED.imageH=p.h; edRender(); toast('Picture pasted'); }
+    catch(err){ edError('That image could not be used. Try a JPG or PNG.'); }
+    return;
+  }
+  if($('#dlg-import').open&&IMP.tab==='web'){ e.preventDefault(); IMP.photo=f; $('#imp-photo-note').textContent='Pasted picture will be used as the dish photo.'; }
+});
 /* ================= standalone: scans with marked regions and Tesseract ================= */
 const RT={ing:{label:'Ingredients',c:'#2F9E5B'},steps:{label:'Steps',c:'#2F6B9A'},info:{label:'Title and info',c:'#8A6BBE'},pic:{label:'Picture',c:'#C8553D'},notes:{label:'Notes',c:'#B8710E'}};
 const REG={tool:'ing',boxes:[],cur:null,drag:null,imgs:new WeakMap(),pend:new WeakMap()};
