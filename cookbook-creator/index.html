@@ -483,6 +483,9 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label><input type="radio" name="layout" value="classic" checked><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="16" rx="3" class="ac"/><rect x="6" y="27" width="42" height="9" rx="1.5" class="ln"/><rect x="6" y="40" width="19" height="3" class="ln"/><rect x="29" y="40" width="19" height="3" class="ln"/><rect x="6" y="46" width="19" height="3" class="ln"/><rect x="29" y="46" width="19" height="3" class="ln"/><rect x="6" y="56" width="42" height="3" class="ln"/><rect x="6" y="62" width="42" height="3" class="ln"/></svg><b>Classic</b><small>Colour title band, photo, ingredients, then method</small></span></label>
         <label><input type="radio" name="layout" value="side"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="3" class="ac"/><rect x="6" y="13" width="30" height="5" class="ln"/><rect x="6" y="24" width="18" height="40" rx="2" class="ac2"/><rect x="9" y="28" width="12" height="3" class="ln"/><rect x="9" y="34" width="12" height="3" class="ln"/><rect x="9" y="40" width="12" height="3" class="ln"/><rect x="28" y="26" width="20" height="3" class="ln"/><rect x="28" y="33" width="20" height="3" class="ln"/><rect x="28" y="40" width="20" height="3" class="ln"/><rect x="28" y="47" width="20" height="3" class="ln"/></svg><b>Side by side</b><small>Ingredients in a column, method next to it</small></span></label>
         <label><input type="radio" name="layout" value="compact"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="26" height="4" class="ln"/><rect x="38" y="6" width="10" height="9" class="ac2"/><rect x="6" y="17" width="19" height="2" class="ln"/><rect x="29" y="17" width="19" height="2" class="ln"/><rect x="6" y="22" width="42" height="2" class="ln"/><rect x="6" y="27" width="42" height="1" class="ac"/><rect x="6" y="34" width="26" height="4" class="ln"/><rect x="6" y="44" width="19" height="2" class="ln"/><rect x="29" y="44" width="19" height="2" class="ln"/><rect x="6" y="49" width="42" height="2" class="ln"/><rect x="6" y="54" width="42" height="2" class="ln"/></svg><b>Compact</b><small>Small type, recipes share pages. Fewer sheets</small></span></label>
+        <label><input type="radio" name="layout" value="photo"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="26" rx="2" class="ac2"/><rect x="6" y="37" width="30" height="4" class="ln"/><rect x="6" y="46" width="19" height="3" class="ln"/><rect x="29" y="46" width="19" height="3" class="ln"/><rect x="6" y="54" width="42" height="3" class="ln"/><rect x="6" y="60" width="42" height="3" class="ln"/></svg><b>Photo first</b><small>A big photo under the title, then ingredients and method</small></span></label>
+        <label><input type="radio" name="layout" value="large"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="34" height="6" class="ln"/><rect x="6" y="18" width="42" height="5" class="ln"/><rect x="6" y="27" width="42" height="5" class="ln"/><rect x="6" y="36" width="30" height="5" class="ln"/><rect x="6" y="48" width="42" height="5" class="ln"/><rect x="6" y="57" width="42" height="5" class="ln"/></svg><b>Large print</b><small>Bigger type that is easy to read at the stove</small></span></label>
+        <label><input type="radio" name="layout" value="simple"><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="1" class="ln"/><rect x="6" y="11" width="30" height="4" class="ln"/><rect x="6" y="22" width="19" height="2" class="ln"/><rect x="29" y="22" width="19" height="2" class="ln"/><rect x="6" y="28" width="19" height="2" class="ln"/><rect x="6" y="38" width="42" height="2" class="ln"/><rect x="6" y="44" width="42" height="2" class="ln"/><rect x="6" y="50" width="42" height="2" class="ln"/></svg><b>Simple</b><small>No colour blocks or photos. Cheap and quick to print</small></span></label>
       </div></div>
     <div class="fld f6"><span class="lbl">Include</span>
       <div class="checks">
@@ -997,6 +1000,28 @@ function buildPdf(jsPDF,recipes,o){
     tail(r);
   }
 
+  /* ---- layouts: photo on top, large print, simple (one flowing column) ---- */
+  function drawRecipeFlow(r,v){
+    st.rec=r;
+    const SZ=v.sz, label=[r.category||'Uncategorized',r.cuisine].filter(Boolean).join('  /  ');
+    if(v.mono){ doc.setDrawColor(...P_INK); doc.setLineWidth(0.6); doc.line(M.l,st.y,W-M.r,st.y); st.y+=6; }
+    else { const tile=pdfCatColor(r.category||'Uncategorized'); doc.setFillColor(tile[0],tile[1],tile[2]); doc.rect(M.l,st.y,CW,2.2,'F'); st.y+=2.2+6; }
+    font('helvetica','bold',8,P_ACC); cs(0.8); doc.text(pdfSafe(label).toUpperCase(),M.l,st.y); cs(0);
+    titleBlock(r,M.l,CW,v.mono?26:30,true);
+    const fl=factsLine(r);
+    if(fl){ st.y+=6; font('helvetica','bold',8,P_INK2); cs(0.3); wrap(fl,CW).forEach(l=>{ doc.text(l,M.l,st.y); st.y+=4; }); cs(0); st.y-=4; }
+    st.y+=5; doc.setDrawColor(...P_RULE); doc.setLineWidth(0.4); doc.line(M.l,st.y,W-M.r,st.y); st.y+=7;
+    if(v.hero&&photoOf(r)){
+      const ar=(r.imageW&&r.imageH)?r.imageW/r.imageH:4/3; let w=CW,h=w/ar; if(h>95){h=95;w=h*ar;}
+      ensure(h+6); try{ doc.addImage(r.image,'JPEG',M.l+(CW-w)/2,st.y,w,h,undefined,'FAST'); }catch(e){} st.y+=h+7;
+    }
+    const ing=r.ingredients||[], steps=r.steps||[];
+    if(ing.length){ ensure(18); font('times','normal',17,P_INK); doc.text('Ingredients',M.l,st.y+4.5); st.y+=11; ingFlow(measureIng(ing,CW,SZ),M.l,SZ); }
+    if(steps.length){ ensure(18); st.y+=3; font('times','normal',17,P_INK); doc.text('Method',M.l,st.y+4.5); st.y+=11; stepsAt(steps,0,M.l,CW,SZ,true,v.mono?'plain':'circle'); }
+    tail(r,v.mono?10:v.sz>12?12.5:11);
+  }
+  const drawRecipePhoto=r=>drawRecipeFlow(r,{sz:10.5,hero:true}), drawRecipeLarge=r=>drawRecipeFlow(r,{sz:14}), drawRecipeSimple=r=>drawRecipeFlow(r,{sz:10.5,mono:true});
+
   /* ---- layout: compact, small type, recipes share pages ---- */
   function drawRecipeCompact(r){
     st.rec=r;
@@ -1038,7 +1063,7 @@ function buildPdf(jsPDF,recipes,o){
     }
   }
   const layout=o.layout||'classic';
-  const drawFn=layout==='side'?drawRecipeSide:layout==='compact'?drawRecipeCompact:drawRecipe;
+  const drawFn={side:drawRecipeSide,compact:drawRecipeCompact,photo:drawRecipePhoto,large:drawRecipeLarge,simple:drawRecipeSimple}[layout]||drawRecipe;
   recipes.forEach((r,i)=>{
     if(layout==='compact'){
       if((book&&i===0)||(i>0&&st.y>H-M.b-80)){ doc.addPage([W,H]); st.y=M.t; }
