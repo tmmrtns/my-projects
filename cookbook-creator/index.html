@@ -223,6 +223,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
 
 /* export */
 .coverup{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}.coverup>span[id=cv-prev]{display:inline-flex;align-items:center;gap:8px}.coverup img{height:46px;width:auto;border-radius:6px;border:1px solid var(--line)}
+.swatches .cvcustom input.cpick{position:absolute;top:0;left:0;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:50%;opacity:0;cursor:pointer;pointer-events:auto}
 .swatches input[type=color]{position:static;opacity:1;pointer-events:auto;width:38px;height:38px;padding:0;border:2px solid var(--line);border-radius:50%;background:none;cursor:pointer}
 .swatches{display:flex;gap:10px;flex-wrap:wrap}
 .swatches label{cursor:pointer;position:relative}
@@ -494,7 +495,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label><input type="radio" name="accent" value="blue"><span style="background:#2F5F9A" title="Blue"></span></label>
         <label><input type="radio" name="accent" value="plum"><span style="background:#6E3C78" title="Plum"></span></label>
         <label><input type="radio" name="accent" value="charcoal"><span style="background:#3C342A" title="Charcoal"></span></label>
-        <label><input type="radio" name="accent" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span></label><input type="color" id="ex-accent-custom" value="#2F6B4C" aria-label="Pick your own accent colour">
+        <label class="cvcustom"><input type="radio" name="accent" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-accent-custom" value="#2F6B4C" aria-label="Pick your own accent colour" class="cpick"></label>
       </div><p class="hint">Used for numbers, labels, rules and title bands when "One consistent accent colour" is chosen.</p></div>
     <div class="fld f6" data-book><span class="lbl">Cover style</span>
       <div class="layouts" id="ex-coverstyle">
@@ -515,7 +516,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label><input type="radio" name="cover" value="tomato"><span style="background:#C13B23" title="Tomato"></span></label>
         <label><input type="radio" name="cover" value="plum"><span style="background:#563058" title="Plum"></span></label>
         <label><input type="radio" name="cover" value="ink"><span style="background:#2B2318" title="Charcoal"></span></label>
-        <label class="cvcustom"><input type="radio" name="cover" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span></label><input type="color" id="ex-cover-custom" value="#B8710E" aria-label="Pick your own cover colour">
+        <label class="cvcustom"><input type="radio" name="cover" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-cover-custom" value="#B8710E" aria-label="Pick your own cover colour" class="cpick"></label>
       </div></div>
     <div class="fld f6"><span class="lbl">Page layout</span>
       <div class="layouts" id="ex-layout">
@@ -1771,7 +1772,7 @@ function openExport(mode,ids){
 }
 const CV={img:null};
 (function(){
-  for(const [ci,nm] of [['#ex-cover-custom','cover'],['#ex-accent-custom','accent']]){ const c=$(ci); if(c) c.addEventListener('input',()=>{ const r=$('input[name='+nm+'][value=custom]'); if(r) r.checked=true; }); }
+  for(const [ci,nm] of [['#ex-cover-custom','cover'],['#ex-accent-custom','accent']]){ const c=$(ci); if(!c) continue; const pick=()=>{ const r=$('input[name='+nm+'][value=custom]'); if(r) r.checked=true; const sw=c.previousElementSibling; if(sw&&sw.tagName==='SPAN'&&c.dataset.set) sw.style.background=c.value; }; c.addEventListener('click',()=>{ const r=$('input[name='+nm+'][value=custom]'); if(r) r.checked=true; }); c.addEventListener('input',()=>{ c.dataset.set='1'; pick(); }); c.addEventListener('change',()=>{ c.dataset.set='1'; pick(); }); }
   /* keep the dialog where it is when a colour, style or option is picked */
   const bd=$('#dlg-export .dlg-body'); if(!bd) return; let keep=0, until=0;
   const mark=()=>{ keep=bd.scrollTop; until=Date.now()+600; };
