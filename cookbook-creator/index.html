@@ -487,16 +487,15 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f3" data-book><label for="ex-author">Compiled by</label><input type="text" id="ex-author" placeholder="Optional" autocomplete="off"></div>
     <div class="fld f3"><label for="ex-paper">Paper</label><select id="ex-paper"><option value="a4">A4</option><option value="a5">A5</option><option value="letter">US Letter</option></select></div>
     <div class="fld f3"><label for="ex-font">Font style</label><select id="ex-font"><option value="classic">Classic: serif headings, plain text</option><option value="serif">All serif</option><option value="sans">All sans-serif</option><option value="typewriter">Typewriter</option><option value="penguin">Penguin Random House: Garamond, classic book headings</option></select><p class="hint">Penguin Random House style changes the fonts, title page, contents and page headers. The cover style and page layout stay as you choose them; pick Book cover and Book style for the full look. The accent colour is not used with it.</p></div>
-    <div class="fld f6"><span class="lbl">Accent colour</span>
-      <div class="swatches" id="ex-accent">
-        <label><input type="radio" name="accent" value="amber" checked><span style="background:#B8710E" title="Amber"></span></label>
-        <label><input type="radio" name="accent" value="green"><span style="background:#2F6B4C" title="Green"></span></label>
-        <label><input type="radio" name="accent" value="red"><span style="background:#B43C28" title="Red"></span></label>
-        <label><input type="radio" name="accent" value="blue"><span style="background:#2F5F9A" title="Blue"></span></label>
-        <label><input type="radio" name="accent" value="plum"><span style="background:#6E3C78" title="Plum"></span></label>
-        <label><input type="radio" name="accent" value="charcoal"><span style="background:#3C342A" title="Charcoal"></span></label>
-        <label class="cvcustom"><input type="radio" name="accent" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-accent-custom" value="#2F6B4C" aria-label="Pick your own accent colour" class="cpick"></label>
-      </div><p class="hint">Used for numbers, labels, rules and title bands when "One consistent accent colour" is chosen.</p></div>
+    <div class="fld f6" data-book><span class="lbl">Cover colour</span>
+      <div class="swatches" id="ex-cover">
+        <label><input type="radio" name="cover" value="basil" checked><span style="background:#16261D" title="Forest"></span></label>
+        <label><input type="radio" name="cover" value="sun"><span style="background:#E8A93D" title="Sunny"></span></label>
+        <label><input type="radio" name="cover" value="tomato"><span style="background:#C13B23" title="Tomato"></span></label>
+        <label><input type="radio" name="cover" value="plum"><span style="background:#563058" title="Plum"></span></label>
+        <label><input type="radio" name="cover" value="ink"><span style="background:#2B2318" title="Charcoal"></span></label>
+        <label class="cvcustom"><input type="radio" name="cover" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-cover-custom" value="#B8710E" aria-label="Pick your own cover colour" class="cpick"></label>
+      </div></div>
     <div class="fld f6" data-book><span class="lbl">Cover style</span>
       <div class="layouts" id="ex-coverstyle">
         <label><input type="radio" name="coverstyle" value="plates" checked><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="2" y="2" width="50" height="68" rx="2" class="ac"/><circle cx="42" cy="18" r="13" class="ac2"/><circle cx="20" cy="34" r="7" class="ac2"/><rect x="7" y="44" width="30" height="5" class="ln" style="fill:#fff"/><rect x="7" y="53" width="20" height="3" class="ln" style="fill:#fff"/></svg><b>Plates</b><small>Colour with soft circles</small></span></label>
@@ -509,15 +508,16 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <div class="coverup"><button type="button" class="btn" id="cv-pick">Upload a cover photo</button><input type="file" id="cv-file" accept="image/*" hidden>
         <span id="cv-prev" hidden><img id="cv-thumb" alt="Cover photo"><button type="button" class="btn" id="cv-clear">Remove</button></span>
         <span class="hint" style="margin:0">Used by the Photo style. It is cropped to fill the page.</span></div></div>
-    <div class="fld f3" data-book><span class="lbl">Cover color</span>
-      <div class="swatches" id="ex-cover">
-        <label><input type="radio" name="cover" value="basil" checked><span style="background:#16261D" title="Forest"></span></label>
-        <label><input type="radio" name="cover" value="sun"><span style="background:#E8A93D" title="Sunny"></span></label>
-        <label><input type="radio" name="cover" value="tomato"><span style="background:#C13B23" title="Tomato"></span></label>
-        <label><input type="radio" name="cover" value="plum"><span style="background:#563058" title="Plum"></span></label>
-        <label><input type="radio" name="cover" value="ink"><span style="background:#2B2318" title="Charcoal"></span></label>
-        <label class="cvcustom"><input type="radio" name="cover" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-cover-custom" value="#B8710E" aria-label="Pick your own cover colour" class="cpick"></label>
-      </div></div>
+    <div class="fld f6"><span class="lbl">Accent colour</span>
+      <div class="swatches" id="ex-accent">
+        <label><input type="radio" name="accent" value="amber" checked><span style="background:#B8710E" title="Amber"></span></label>
+        <label><input type="radio" name="accent" value="green"><span style="background:#2F6B4C" title="Green"></span></label>
+        <label><input type="radio" name="accent" value="red"><span style="background:#B43C28" title="Red"></span></label>
+        <label><input type="radio" name="accent" value="blue"><span style="background:#2F5F9A" title="Blue"></span></label>
+        <label><input type="radio" name="accent" value="plum"><span style="background:#6E3C78" title="Plum"></span></label>
+        <label><input type="radio" name="accent" value="charcoal"><span style="background:#3C342A" title="Charcoal"></span></label>
+        <label class="cvcustom"><input type="radio" name="accent" value="custom"><span style="background:conic-gradient(#e33,#ec3,#3b5,#37e,#a3d,#e33)" title="Your own colour"></span><input type="color" id="ex-accent-custom" value="#2F6B4C" aria-label="Pick your own accent colour" class="cpick"></label>
+      </div><p class="hint">Used for numbers, labels, rules and title bands when "One consistent accent colour" is chosen.</p></div>
     <div class="fld f6"><span class="lbl">Page layout</span>
       <div class="layouts" id="ex-layout">
         <label><input type="radio" name="layout" value="classic" checked><span class="lt"><svg viewBox="0 0 54 72" aria-hidden="true"><rect x="1" y="1" width="52" height="70" rx="3" class="pg"/><rect x="6" y="6" width="42" height="16" rx="3" class="ac"/><rect x="6" y="27" width="42" height="9" rx="1.5" class="ln"/><rect x="6" y="40" width="19" height="3" class="ln"/><rect x="29" y="40" width="19" height="3" class="ln"/><rect x="6" y="46" width="19" height="3" class="ln"/><rect x="29" y="46" width="19" height="3" class="ln"/><rect x="6" y="56" width="42" height="3" class="ln"/><rect x="6" y="62" width="42" height="3" class="ln"/></svg><b>Classic</b><small>Colour title band, photo, ingredients, then method</small></span></label>
