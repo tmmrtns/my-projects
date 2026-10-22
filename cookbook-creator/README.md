@@ -19,7 +19,7 @@ Paste it in Library once (it stays in that browser). "Sync" loads the file, merg
 Without a token you can still export a backup and commit `data/recipes.json` yourself.
 
 ## Scans
-Text recognition is Tesseract.js, loaded from jsDelivr, and runs on the device. The first scan downloads the language data.
+Text recognition is Tesseract.js, loaded from jsDelivr, and runs on the device. PDFs (scanned or printed pages) are opened with pdf.js and each page is read like a scan. The first scan downloads the language data.
 Mark the ingredients, steps, title/info, notes and picture on the scan so only those areas are read.
 
 ## Webpages
