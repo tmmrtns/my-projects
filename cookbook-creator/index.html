@@ -486,7 +486,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f3" data-book><label for="ex-sub">Subtitle</label><input type="text" id="ex-sub" placeholder="Optional" autocomplete="off"></div>
     <div class="fld f3" data-book><label for="ex-author">Compiled by</label><input type="text" id="ex-author" placeholder="Optional" autocomplete="off"></div>
     <div class="fld f3"><label for="ex-paper">Paper</label><select id="ex-paper"><option value="a4">A4</option><option value="a5">A5</option><option value="letter">US Letter</option></select></div>
-    <div class="fld f3"><label for="ex-font">Font style</label><select id="ex-font"><option value="classic">Classic: serif headings, plain text</option><option value="serif">All serif</option><option value="sans">All sans-serif</option><option value="typewriter">Typewriter</option><option value="penguin">Penguin Random House: Garamond, classic book headings</option></select><p class="hint">Penguin Random House style changes the fonts, title page, contents and page headers. The cover style and page layout stay as you choose them; pick Book cover and Book style for the full look. The accent colour is not used with it.</p></div>
+    <div class="fld f3"><label for="ex-font">Font style</label><select id="ex-font"><option value="classic">Classic: serif headings, plain text</option><option value="serif">All serif</option><option value="sans">All sans-serif</option><option value="typewriter">Typewriter</option><option value="penguin">Penguin Random House: Garamond, classic book headings</option></select><p class="hint">Penguin Random House style changes the fonts, title page, contents and page headers. The cover style, colours and page layout stay as you choose them; pick Book cover and Book style for the full look.</p></div>
     <div class="fld f6" data-book><span class="lbl">Cover colour</span>
       <div class="swatches" id="ex-cover">
         <label><input type="radio" name="cover" value="basil" checked><span style="background:#16261D" title="Forest"></span></label>
@@ -819,7 +819,7 @@ function buildPdf(jsPDF,recipes,o){
   const doc=new jsPDF({unit:'mm',format:[W,H],orientation:'portrait',compress:true});
   const small=W<160, M=small?{l:14,r:14,t:16,b:17}:{l:20,r:20,t:22,b:22}, CW=W-M.l-M.r, book=!!o.book;
   const penguin=o.font==='penguin'&&typeof EBG!=='undefined';
-  P_ACC.splice(0,3,...(penguin?[45,45,45]:(o.accentRGB||PDF_ACCENTS[o.accent]||PDF_ACCENTS.amber)));
+  P_ACC.splice(0,3,...(o.accentRGB||PDF_ACCENTS[o.accent]||PDF_ACCENTS.amber));
   const FF=penguin?{times:'EBGaramond',helvetica:'EBGaramond'}:(PDF_FONTS[o.font]||PDF_FONTS.classic);
   if(penguin){ doc.addFileToVFS('EBG-R.ttf',EBG.r); doc.addFont('EBG-R.ttf','EBGaramond','normal'); doc.addFileToVFS('EBG-I.ttf',EBG.i); doc.addFont('EBG-I.ttf','EBGaramond','italic'); doc.addFileToVFS('EBG-B.ttf',EBG.b); doc.addFont('EBG-B.ttf','EBGaramond','bold'); }
   /* grayscale: every colour call is converted while st.gray is on */
@@ -836,7 +836,7 @@ function buildPdf(jsPDF,recipes,o){
   const BASE_ACC=P_ACC.slice();
   const catCol=n=>o.vary===false?mix(BASE_ACC,[255,255,255],.62):pdfCatColor(n);
   /* every colour accent follows the title colour: per category when varied, one colour when consistent */
-  const setAccent=r=>{ const a=(penguin||o.vary===false||!r)?BASE_ACC:mix(pdfCatColor(r.category||'Uncategorized'),[0,0,0],.4); P_ACC.splice(0,3,...a); };
+  const setAccent=r=>{ const a=(o.vary===false||!r)?BASE_ACC:mix(pdfCatColor(r.category||'Uncategorized'),[0,0,0],.4); P_ACC.splice(0,3,...a); };
 
   function newPage(cont){
     doc.addPage([W,H]); st.y=M.t;
