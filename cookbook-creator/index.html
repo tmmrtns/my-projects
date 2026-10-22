@@ -306,6 +306,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <option value="az">A to Z</option>
         <option value="rating">Highest rated</option>
         <option value="quick">Quickest</option>
+        <option value="person">By person (Tom, Lies)</option>
       </select></div>
   </div>
   <div class="app" id="app">
@@ -331,6 +332,9 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
 </div></div>
 
 
+<div id="toast" popover="manual" role="status" aria-live="polite"></div>
+
+
 <dialog class="dlg narrow" id="dlg-lib" aria-label="Library backup and sync">
   <div class="dlg-head"><h2>Library</h2>
     <button class="icon-btn" data-l="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
@@ -353,9 +357,6 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
   </div></div>
 </dialog>
 
-<datalist id="cat-list"></datalist>
-<div id="toast" popover="manual" role="status" aria-live="polite"></div>
-
 <!-- recipe detail -->
 <dialog class="dlg" id="dlg-detail" aria-label="Recipe">
   <div class="dlg-head"><span class="lbl">Recipe</span><span style="margin-right:auto"></span>
@@ -371,12 +372,13 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
   <div class="dlg-body"><div class="form">
     <div class="note" id="ed-note" hidden></div>
     <details class="scanbox" id="ed-scanbox" hidden open><summary>Check against the original scan</summary><div class="scans" id="ed-scans"></div></details>
-    <div class="fld f4"><label for="ed-title">Title</label><input type="text" id="ed-title" autocomplete="off"></div>
-    <div class="fld f2"><label for="ed-cat">Category</label><input type="text" id="ed-cat" list="cat-list" autocomplete="off" placeholder="Mains"></div>
-    <div class="fld f6"><label for="ed-desc">Short description</label><textarea id="ed-desc" rows="2"></textarea></div>
+    <div class="fld f6"><label for="ed-title">Title</label><input type="text" id="ed-title" autocomplete="off"></div>
+    <div class="fld f2"><label for="ed-cat">Category</label><select id="ed-cat"></select><input type="text" id="ed-cat-new" placeholder="New category name" autocomplete="off" maxlength="40" hidden></div>
+    <div class="fld f2"><label for="ed-person">Whose recipe</label><select id="ed-person"><option value="">Not set</option><option value="Tom">Tom</option><option value="Lies">Lies</option></select></div>
     <div class="fld f2"><label for="ed-servings">Yield</label><input type="text" id="ed-servings" placeholder="4 servings"></div>
+    <div class="fld f6"><label for="ed-desc">Short description</label><textarea id="ed-desc" rows="2"></textarea></div>
     <div class="fld f2"><label for="ed-cuisine">Cuisine</label><input type="text" id="ed-cuisine" autocomplete="off"></div>
-    <div class="fld f2"><label for="ed-tags">Tags</label><input type="text" id="ed-tags" placeholder="vegetarian, one-pot" autocomplete="off"></div>
+    <div class="fld f4"><label for="ed-tags">Tags</label><input type="text" id="ed-tags" placeholder="vegetarian, one-pot" autocomplete="off"></div>
     <div class="fld f2"><label for="ed-prep">Prep (min)</label><input type="number" id="ed-prep" min="0" inputmode="numeric"></div>
     <div class="fld f2"><label for="ed-cook">Cook (min)</label><input type="number" id="ed-cook" min="0" inputmode="numeric"></div>
     <div class="fld f2"><label for="ed-total">Total (min)</label><input type="number" id="ed-total" min="0" inputmode="numeric"><p class="hint">Leave empty to add prep and cook.</p></div>
@@ -392,7 +394,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
           <input type="file" id="ed-file" accept="image/*" hidden>
           <button class="btn sm" type="button" id="ed-usescan" hidden>Use the scan as picture</button>
           <button class="btn sm quiet danger" type="button" id="ed-rmimg" hidden>Remove</button>
-        </div></div></div>
+        </div></div>
+      <p class="hint">Or copy a picture and paste it here with Ctrl+V (Cmd+V on a Mac).</p></div>
   </div></div>
   <div class="dlg-foot"><span class="status err sp" id="ed-err" hidden></span>
     <button class="btn" data-e="close">Cancel</button><button class="btn primary" id="ed-save">Save recipe</button></div>
@@ -411,7 +414,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="pane" data-pane="photo">
       <div class="drop" id="drop-photo">
         <svg class="ic" viewBox="0 0 24 24" style="width:30px;height:30px" aria-hidden="true"><use href="#i-camera"/></svg>
-        <div><b>Drop scans, photos or a PDF here</b><br><span class="muted">JPG, PNG, WebP or PDF (scanned or printed page). Add several pages in order if the recipe runs over.</span></div>
+        <div><b>Drop scans, photos or a PDF here</b><br><span class="muted">JPG, PNG, WebP or PDF (scanned or printed page). Add several pages in order if the recipe runs over. You can also paste a screenshot or copied picture with Ctrl+V (Cmd+V on a Mac).</span></div>
         <label class="btn" for="imp-files">Choose images or PDF</label>
         <input type="file" id="imp-files" accept="image/*,application/pdf,.pdf" multiple hidden>
       </div>
@@ -444,7 +447,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <div class="fld"><label for="imp-paste">Or paste page text or source</label><textarea id="imp-paste" rows="6" placeholder="Paste here"></textarea></div>
       <div class="fld"><label for="imp-url">Web address (kept as the source)</label><div style="display:flex;gap:8px"><input type="url" id="imp-url" placeholder="https://" autocomplete="off" style="flex:1"><button class="btn" type="button" id="imp-fetch">Fetch only</button></div></div>
       <div class="fld"><label for="imp-photo">Dish photo (optional)</label><input type="file" id="imp-photo" accept="image/*">
-        <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead.</p></div>
+        <p class="hint">The picture listed in the page data is fetched when possible. Add your own here to use that instead. You can also copy a picture and paste it here with Ctrl+V (Cmd+V on a Mac).</p><span id="imp-photo-note" class="hint"></span></div>
     </div>
     <div class="pane" data-pane="manual" hidden>
       <p style="margin:0">Start with a blank card and type or paste the recipe yourself.</p>
@@ -1156,7 +1159,7 @@ let IMG_LIM=null;
 const hayMap=new WeakMap();
 function hay(r){
   let h=hayMap.get(r);
-  if(!h){ h=[r.title,r.description,(r.ingredients||[]).join(' '),(r.tags||[]).join(' '),r.category,r.cuisine,r.notes,r.source].join(' \n ').toLowerCase(); hayMap.set(r,h); }
+  if(!h){ h=[r.title,r.description,(r.ingredients||[]).join(' '),(r.tags||[]).join(' '),r.category,r.cuisine,r.person,r.notes,r.source].join(' \n ').toLowerCase(); hayMap.set(r,h); }
   return h;
 }
 function sorted(list){
@@ -1164,6 +1167,7 @@ function sorted(list){
   const T=(x,y)=>String(x.title||'').localeCompare(String(y.title||''));
   if(S.sort==='az') a.sort(T);
   else if(S.sort==='rating') a.sort((x,y)=>(y.rating||0)-(x.rating||0)||T(x,y));
+  else if(S.sort==='person'){ const rk=p=>p==='Tom'?0:p==='Lies'?1:2; a.sort((x,y)=>rk(x.person)-rk(y.person)||T(x,y)); }
   else if(S.sort==='quick') a.sort((x,y)=>(totalMin(x)||1e9)-(totalMin(y)||1e9)||T(x,y));
   else a.sort((x,y)=>String(y.createdAt||'').localeCompare(String(x.createdAt||''))||T(x,y));
   return a;
@@ -1197,12 +1201,11 @@ function renderRail(){
   const tags=allTags();
   if(tags.length){ h+='<span class="sep"></span>'; tags.forEach(([t,c])=>{h+='<button class="tagz" data-tag="'+esc(t)+'" aria-current="'+(S.tag===t)+'"><span>'+esc(t)+'</span><span class="n">'+c+'</span></button>';}); }
   $('#rail').innerHTML=h;
-  $('#cat-list').innerHTML=[...new Set(DEFAULT_CATS.concat(cats.map(c=>c[0]).filter(n=>n!=='Uncategorized')))].map(n=>'<option value="'+esc(n)+'">').join('');
 }
 function cardHtml(r){
   const img=safeImg(r), tm=totalMin(r), sel=S.sel.has(r.id);
   const ch=[]; if(tm) ch.push('<span class="pill amber num">'+esc(fmtMin(tm))+'</span>'); if(r.servings) ch.push('<span class="chip">'+esc(r.servings)+'</span>');
-  if(r.rating) ch.push('<span class="pill ok">'+ic('star','fill')+r.rating+'</span>'); if(r.example) ch.push('<span class="chip">Example</span>');
+  if(r.rating) ch.push('<span class="pill ok">'+ic('star','fill')+r.rating+'</span>'); if(r.person) ch.push('<span class="chip">'+esc(r.person)+'</span>'); if(r.example) ch.push('<span class="chip">Example</span>');
   return '<article class="rc'+(sel?' sel':'')+'" data-id="'+esc(r.id)+'" style="--edge:'+catColor(catOf(r))+'">'
     +'<button class="rc-main" data-open="'+esc(r.id)+'" aria-label="'+esc((S.selecting?(sel?'Deselect ':'Select '):'Open ')+(r.title||'recipe'))+'">'
     +(img?'<img class="rc-img" src="'+img+'" alt="" loading="lazy">':'')
@@ -1256,7 +1259,7 @@ function renderDetail(){
   const steps=(r.steps||[]).map(t=>'<li><span>'+esc(t)+'</span></li>').join('');
   const src=r.source?(/^https?:\/\//i.test(r.source)?'<a href="'+esc(r.source)+'" target="_blank" rel="noopener noreferrer" style="color:var(--accent-ink);overflow-wrap:anywhere">'+esc(r.source)+'</a>':esc(r.source)):'';
   let rate=''; for(let i=1;i<=5;i++) rate+='<button data-rate="'+i+'" aria-pressed="'+(r.rating>=i)+'" aria-label="'+i+' of 5">'+ic('star',r.rating>=i?'fill':'')+'</button>';
-  $('#detail-body').innerHTML='<div class="hd" style="--tile:'+catColor(catOf(r))+'"><div class="cat-line"><span class="lbl">'+esc([catOf(r),r.cuisine].filter(Boolean).join(' / '))+'</span>'+(r.example?'<span class="chip">Example</span>':'')+'</div>'
+  $('#detail-body').innerHTML='<div class="hd" style="--tile:'+catColor(catOf(r))+'"><div class="cat-line"><span class="lbl">'+esc([catOf(r),r.cuisine].filter(Boolean).join(' / '))+'</span>'+(r.person?'<span class="chip">'+esc(r.person)+'</span>':'')+(r.example?'<span class="chip">Example</span>':'')+'</div>'
     +'<h2 class="card-title">'+esc(r.title||'Untitled')+'</h2>'+(r.description?'<p class="lede">'+esc(r.description)+'</p>':'')+'</div>'
     +'<div class="facts">'+facts.join('')+'<div class="fact"><div class="lbl">Rating</div><div class="rate" role="group" aria-label="Rating">'+rate+'</div></div></div>'
     +(img?'<img class="hero" src="'+img+'" alt="">':'')
@@ -1307,6 +1310,22 @@ async function ensureDims(list){
 }
 
 /* ---- editor ---- */
+const NEWCAT='__new__';
+function lastPerson(){ try{ return localStorage.getItem('cookbook-last-person')||''; }catch(e){ return ''; } }
+function catFill(val){
+  const used=allCats().map(c=>c[0]).filter(n=>n!=='Uncategorized'), list=[...new Set(DEFAULT_CATS.concat(used))];
+  if(val&&val!=='Uncategorized'&&!list.includes(val)) list.push(val);
+  const sel=$('#ed-cat');
+  sel.innerHTML='<option value="">Uncategorized</option>'+list.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('')+'<option value="'+NEWCAT+'">Add new category...</option>';
+  sel.value=val&&val!=='Uncategorized'?val:'';
+  $('#ed-cat-new').hidden=true; $('#ed-cat-new').value='';
+}
+function catValue(){
+  const v=$('#ed-cat').value;
+  return v===NEWCAT?$('#ed-cat-new').value.trim().slice(0,40):v;
+}
+$('#ed-cat').addEventListener('change',()=>{ const n=$('#ed-cat-new'); n.hidden=$('#ed-cat').value!==NEWCAT; if(!n.hidden) n.focus(); });
+$('#ed-person').addEventListener('change',e=>{ try{ localStorage.setItem('cookbook-last-person',e.target.value); }catch(err){} });
 const ED={id:null,fresh:false,rating:0,image:'',imageW:0,imageH:0,scans:[],base:null};
 function edRender(){
   let h=''; for(let i=1;i<=5;i++) h+='<button type="button" data-er="'+i+'" aria-pressed="'+(ED.rating>=i)+'" aria-label="'+i+' of 5">'+ic('star',ED.rating>=i?'fill':'')+'</button>';
@@ -1319,7 +1338,7 @@ function openEditor(rec,opts){
   ED.base=rec; ED.id=opts.fresh?newId():rec.id; ED.fresh=!!opts.fresh; ED.rating=rec.rating||0;
   ED.image=safeImg(rec); ED.imageW=rec.imageW||0; ED.imageH=rec.imageH||0; ED.scans=opts.scans||[];
   $('#ed-head').textContent=ED.fresh?'Check and save recipe':'Edit recipe';
-  $('#ed-title').value=rec.title||''; $('#ed-desc').value=rec.description||''; $('#ed-cat').value=rec.category||'';
+  $('#ed-title').value=rec.title||''; $('#ed-desc').value=rec.description||''; catFill(rec.category||''); $('#ed-person').value=['Tom','Lies'].includes(rec.person)?rec.person:(opts.fresh?lastPerson():'');
   $('#ed-servings').value=rec.servings||''; $('#ed-cuisine').value=rec.cuisine||''; $('#ed-tags').value=(rec.tags||[]).join(', ');
   $('#ed-prep').value=rec.prepMin||''; $('#ed-cook').value=rec.cookMin||''; $('#ed-total').value=rec.totalMin||'';
   $('#ed-ing').value=(rec.ingredients||[]).join('\n'); $('#ed-steps').value=(rec.steps||[]).join('\n');
@@ -1343,7 +1362,7 @@ async function saveEditor(){
   const num=id=>{const n=parseInt($(id).value,10);return n>0?n:null;};
   const base=ED.base||{};
   const rec=Object.assign({},base,{
-    title,description:$('#ed-desc').value.trim(),category:$('#ed-cat').value.trim(),servings:$('#ed-servings').value.trim(),
+    title,description:$('#ed-desc').value.trim(),category:catValue(),person:$('#ed-person').value,servings:$('#ed-servings').value.trim(),
     cuisine:$('#ed-cuisine').value.trim(),tags:$('#ed-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).slice(0,12),
     prepMin:num('#ed-prep'),cookMin:num('#ed-cook'),totalMin:num('#ed-total'),
     ingredients:lines('#ed-ing').map(s=>/^#/.test(s)?'# '+s.replace(/^#+\s*/,''):stripBullet(s)).filter(Boolean),
@@ -1400,7 +1419,7 @@ function addImageFiles_unused(list){
   renderThumbs();
 }
 function resetImport(){
-  IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[]; IMP.text=''; IMP.htmlName=''; IMP.photo=null;
+  IMP.files.forEach(f=>URL.revokeObjectURL(f.url)); IMP.files=[]; IMP.text=''; IMP.htmlName=''; IMP.photo=null; { const n=$('#imp-photo-note'); if(n) n.textContent=''; }
   $('#imp-paste').value=''; $('#imp-url').value=''; $('#imp-html').value=''; $('#imp-photo').value=''; $('#imp-files').value='';
   $('#imp-htmlname').textContent='No file chosen'; renderThumbs(); impStatus('');
 }
@@ -1599,7 +1618,7 @@ $('#dlg-import').addEventListener('close',()=>{ if(IMP.ctl) IMP.ctl.abort(); });
 $('#q').addEventListener('input',e=>{ S.q=e.target.value; renderGrid(); });
 $('#sort').addEventListener('change',e=>{ S.sort=e.target.value; renderGrid(); });
 $('#imp-files').addEventListener('change',e=>{ addImageFiles(Array.from(e.target.files)); e.target.value=''; });
-$('#imp-photo').addEventListener('change',e=>{ IMP.photo=e.target.files[0]||null; });
+$('#imp-photo').addEventListener('change',e=>{ IMP.photo=e.target.files[0]||null; $('#imp-photo-note').textContent=''; });
 $('#imp-paste').addEventListener('input',impGo);
 $('#imp-html').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -1624,6 +1643,17 @@ $('#dlg-import').addEventListener('paste',e=>{
   if(fs.length){ e.preventDefault(); addImageFiles(fs); }
 });
 
+/* paste a copied picture: into the editor (recipe picture) or the web tab (dish photo) */
+document.addEventListener('paste',async e=>{
+  const f=Array.from((e.clipboardData&&e.clipboardData.files)||[]).find(x=>/^image\//.test(x.type)); if(!f) return;
+  if($('#dlg-edit').open){
+    e.preventDefault();
+    try{ const p=await photoFromFile(f); ED.image=p.url; ED.imageW=p.w; ED.imageH=p.h; edRender(); toast('Picture pasted'); }
+    catch(err){ edError('That image could not be used. Try a JPG or PNG.'); }
+    return;
+  }
+  if($('#dlg-import').open&&IMP.tab==='web'){ e.preventDefault(); IMP.photo=f; $('#imp-photo-note').textContent='Pasted picture will be used as the dish photo.'; }
+});
 /* ================= standalone: scans with marked regions and Tesseract ================= */
 const RT={ing:{label:'Ingredients',c:'#2F9E5B'},steps:{label:'Steps',c:'#2F6B9A'},info:{label:'Title and info',c:'#8A6BBE'},pic:{label:'Picture',c:'#C8553D'},notes:{label:'Notes',c:'#B8710E'}};
 const REG={tool:'ing',boxes:[],cur:null,drag:null,imgs:new WeakMap(),pend:new WeakMap()};
