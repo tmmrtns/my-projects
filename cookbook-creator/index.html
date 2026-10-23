@@ -2226,7 +2226,7 @@ async function ghGet(c){
   const base='https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo)+'/contents/'+c.path.split('/').map(encodeURIComponent).join('/');
   const H={Authorization:'Bearer '+c.token,'X-GitHub-Api-Version':'2022-11-28'}, q='?ref='+encodeURIComponent(c.branch);
   const meta=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github+json'},H)});
-  if(meta.status===404){ const rp=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo),{headers:H}); if(!rp.ok) throw {gh:404}; return {base,H,sha:null,list:[]}; }
+  if(meta.status===404){ const rp=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo),{headers:H}); if(!rp.ok) throw {gh:404}; return {base,H,sha:null,list:[],deleted:[]}; }
   if(!meta.ok) throw {gh:meta.status};
   const sha=(await meta.json()).sha;
   const raw=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github.raw+json'},H)}); if(!raw.ok) throw {gh:raw.status};
