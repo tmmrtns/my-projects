@@ -396,7 +396,9 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
         <label class="btn" for="lib-import">Import backup</label><input type="file" id="lib-import" accept=".json,application/json" hidden></div></div>
     <div class="fld f6"><label for="relay-url">Web relay for importing recipe pages (optional)</label><input type="text" id="relay-url" autocomplete="off" placeholder="https://your-relay.example/?url={url}">
       <p class="hint">Public relays are unreliable. If you run your own, enter its address with {url} where the page address goes.</p></div>
-    <div class="fld f6"><span class="lbl">GitHub repository</span>
+    <div class="fld f6" id="acct-hint" hidden><span class="lbl">Signed in</span>
+      <p class="hint">You are signed in through My Projects, so your recipes sync automatically with GitHub (the data branch). No token needed on this device.</p></div>
+    <div class="fld f6"><span class="lbl">GitHub repository (manual sync, optional)</span>
       <p class="hint">Sync saves all recipes to a JSON file in your repository, and the published site loads that file for every visitor. You need a fine-grained personal access token limited to this one repository with Contents: read and write. The token stays in this browser only.</p></div>
     <div class="fld f3"><label for="gh-owner">Owner</label><input type="text" id="gh-owner" autocomplete="off"></div>
     <div class="fld f3"><label for="gh-repo">Repository</label><input type="text" id="gh-repo" autocomplete="off"></div>
@@ -1394,10 +1396,12 @@ async function idbTx(mode,fn){
 function localLoad(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch(e){ return []; } }
 function localSave(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(S.recipes)); return true; }catch(e){ return false; } }
 async function persistPut(rec){
+  try{ syncSoon(rec&&rec.id); }catch(e){}
   if(STO.mode==='idb'){ try{ await idbTx('readwrite',st=>st.put(rec)); return; }catch(e){ throw {code:'quota_exceeded'}; } }
   if(!localSave()) throw {code:'quota_exceeded'};
 }
 async function persistDel(id){
+  try{ syncSoon(id); }catch(e){}
   if(STO.mode==='idb'){ try{ await idbTx('readwrite',st=>st.delete(id)); }catch(e){} return; }
   localSave();
 }
@@ -1449,6 +1453,7 @@ async function boot(){
     const r=await fetch('data/recipes.json',{cache:'no-store'});
     if(r.ok){ const j=await r.json(); const m=await mergeRecipes(Array.isArray(j)?j:(j&&j.recipes)||[]); if(m.added||m.updated) toast('Loaded '+(m.added+m.updated)+' recipe'+((m.added+m.updated)===1?'':'s')+' from the repo'); }
   }catch(e){}
+  try{ acctSync(true); }catch(e){}
 }
 let IMG_LIM=null;
 
@@ -2206,6 +2211,7 @@ function openLib(){
   try{ $('#relay-url').value=localStorage.getItem(RELAY_KEY)||''; }catch(e){}
   const c=Object.assign({branch:'main',path:'data/recipes.json'},ghGuess(),GH.load());
   $('#gh-owner').value=c.owner||''; $('#gh-repo').value=c.repo||''; $('#gh-branch').value=c.branch; $('#gh-path').value=c.path; $('#gh-token').value=c.token||'';
+  const ah=$('#acct-hint'); if(ah) ah.hidden=!acctCfg();
   libStatus(''); $('#dlg-lib').showModal();
 }
 function toB64(str){ const b=new TextEncoder().encode(str); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
@@ -2225,7 +2231,7 @@ async function ghGet(c){
   const sha=(await meta.json()).sha;
   const raw=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github.raw+json'},H)}); if(!raw.ok) throw {gh:raw.status};
   let j=[]; try{ j=JSON.parse(await raw.text()); }catch(e){}
-  return {base,H,sha,list:Array.isArray(j)?j:(j&&j.recipes)||[]};
+  return {base,H,sha,list:Array.isArray(j)?j:(j&&j.recipes)||[],deleted:(j&&!Array.isArray(j)&&Array.isArray(j.deleted))?j.deleted:[]};
 }
 async function ghSync(pushToo){
   const c=libCfg(); if(!c.owner||!c.repo||!c.token){ libStatus('Fill in owner, repository and token first.','err'); return; }
@@ -2315,6 +2321,56 @@ document.addEventListener('click',async e=>{
   impStatus(copied?'Opened Claude in a new tab. Your picture is on the clipboard: press Add recipe there and paste it (Ctrl/Cmd+V). Then Select, Export JSON, and import that file here under Library, Import backup.':'Opened Claude in a new tab. Add the picture or PDF there. Then Select, Export JSON, and import that file here under Library, Import backup.');
 });
 
+/* ---- automatic sync: the hub sign-in keeps the GitHub token in this browser, so no token to paste ---- */
+var ACS;
+function acctCfg(){
+  try{
+    const token=localStorage.getItem('cheapskate.ghToken'); if(!token) return null;
+    const g=ghGuess(), repo=localStorage.getItem('cheapskate.ghRepo')||(g.owner?g.owner+'/'+g.repo:'');
+    const m=repo.match(/^([^/]+)\/(.+)$/); if(!m) return null;
+    return {owner:m[1],repo:m[2],branch:'data',path:'data/cookbook-recipes.json',token};
+  }catch(e){ return null; }
+}
+function syncSoon(id){
+  const a=ACS||(ACS={busy:false,quiet:false,again:false,timer:0,dirty:new Set(),fail:0});
+  if(a.quiet||!acctCfg()) return;
+  if(id) a.dirty.add(id);
+  clearTimeout(a.timer); a.timer=setTimeout(()=>acctSync(true),2500);
+}
+async function ensureDataBranch(c){
+  const H={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json'}, base='https://api.github.com/repos/'+c.owner+'/'+c.repo;
+  if((await fetch(base+'/git/ref/heads/'+c.branch,{headers:H})).ok) return;
+  const rp=await (await fetch(base,{headers:H})).json();
+  const ref=await (await fetch(base+'/git/ref/heads/'+rp.default_branch,{headers:H})).json();
+  await fetch(base+'/git/refs',{method:'POST',headers:H,body:JSON.stringify({ref:'refs/heads/'+c.branch,sha:ref.object.sha})});
+}
+async function acctSync(push){
+  const c=acctCfg(); if(!c) return;
+  const a=ACS||(ACS={busy:false,quiet:false,again:false,timer:0,dirty:new Set(),fail:0});
+  if(a.busy){ a.again=true; return; }
+  a.busy=true; a.quiet=true; const sent=new Set(a.dirty);
+  try{
+    let r; try{ r=await ghGet(c); }catch(e){ if(e&&e.gh===404){ await ensureDataBranch(c); r=await ghGet(c); } else throw e; }
+    await mergeRecipes(r.list);
+    const tomb=delLoad();
+    for(const id of r.deleted){ if(a.dirty.has(id)) continue; tomb.add(id); const i=S.recipes.findIndex(x=>x.id===id); if(i>=0){ S.recipes.splice(i,1); await persistDel(id); } }
+    delSave(tomb); refreshAll();
+    if(push){
+      const here=new Set(S.recipes.map(x=>x.id)), del=[...new Set([...r.deleted,...tomb])].filter(id=>!here.has(id));
+      const sig=l=>JSON.stringify(l.map(x=>[x.id,x.updatedAt||'']).sort());
+      if(sig(S.recipes)!==sig(r.list)||del.length!==r.deleted.length){
+        const body={message:'Update recipes from Cookbook Creator',content:toB64(JSON.stringify({recipes:S.recipes,deleted:del},null,1)),branch:c.branch}; if(r.sha) body.sha=r.sha;
+        let p=await fetch(r.base,{method:'PUT',headers:Object.assign({Accept:'application/vnd.github+json','Content-Type':'application/json'},r.H),body:JSON.stringify(body)});
+        if(!p.ok&&(p.status===404||p.status===422)&&!r.sha){ await ensureDataBranch(c); p=await fetch(r.base,{method:'PUT',headers:Object.assign({Accept:'application/vnd.github+json','Content-Type':'application/json'},r.H),body:JSON.stringify(body)}); }
+        if(!p.ok) throw {gh:p.status};
+      }
+      sent.forEach(id=>a.dirty.delete(id));
+    }
+    a.fail=0;
+  }catch(e){ if(!a.fail++) toast(e&&e.gh===409?'Sync conflict, retrying shortly.':'Could not sync with GitHub. Your recipes are still saved here.',true); a.again=a.again||(e&&e.gh===409); }
+  finally{ a.busy=false; a.quiet=false; if(a.again){ a.again=false; a.timer=setTimeout(()=>acctSync(true),1500); } }
+}
+
 boot();
 
 /* ---- choose which recipes to export / import ---- */
@@ -2347,4 +2403,5 @@ document.addEventListener('click',async e=>{
 })();
 
 </script>
+<script src="../login.js"></script>
 </body></html>
