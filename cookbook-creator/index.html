@@ -397,7 +397,8 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <div class="fld f6"><label for="relay-url">Web relay for importing recipe pages (optional)</label><input type="text" id="relay-url" autocomplete="off" placeholder="https://your-relay.example/?url={url}">
       <p class="hint">Public relays are unreliable. If you run your own, enter its address with {url} where the page address goes.</p></div>
     <div class="fld f6" id="acct-hint" hidden><span class="lbl">Signed in</span>
-      <p class="hint">You are signed in through My Projects, so your recipes sync automatically with GitHub (the data branch). No token needed on this device.</p></div>
+      <p class="hint">You are signed in through My Projects, so your recipes sync automatically with GitHub (the data branch). No token needed on this device.</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="acct-now">Sync now</button><span class="hint" id="acct-note"></span></div></div>
     <div class="fld f6"><span class="lbl">GitHub repository (manual sync, optional)</span>
       <p class="hint">Sync saves all recipes to a JSON file in your repository, and the published site loads that file for every visitor. You need a fine-grained personal access token limited to this one repository with Contents: read and write. The token stays in this browser only.</p></div>
     <div class="fld f3"><label for="gh-owner">Owner</label><input type="text" id="gh-owner" autocomplete="off"></div>
@@ -2211,7 +2212,7 @@ function openLib(){
   try{ $('#relay-url').value=localStorage.getItem(RELAY_KEY)||''; }catch(e){}
   const c=Object.assign({branch:'main',path:'data/recipes.json'},ghGuess(),GH.load());
   $('#gh-owner').value=c.owner||''; $('#gh-repo').value=c.repo||''; $('#gh-branch').value=c.branch; $('#gh-path').value=c.path; $('#gh-token').value=c.token||'';
-  const ah=$('#acct-hint'); if(ah) ah.hidden=!acctCfg();
+  const ah=$('#acct-hint'); if(ah) ah.hidden=!acctCfg(); acctNote();
   libStatus(''); $('#dlg-lib').showModal();
 }
 function toB64(str){ const b=new TextEncoder().encode(str); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); }
@@ -2366,10 +2367,17 @@ async function acctSync(push){
       }
       sent.forEach(id=>a.dirty.delete(id));
     }
-    a.fail=0;
-  }catch(e){ if(!a.fail++) toast(e&&e.gh===409?'Sync conflict, retrying shortly.':'Could not sync with GitHub. Your recipes are still saved here.',true); a.again=a.again||(e&&e.gh===409); }
+    a.fail=0; a.last=new Date(); a.err='';
+  }catch(e){ a.err=e&&e.gh?('GitHub error '+e.gh):String(e&&e.message||e); if(!a.fail++) toast(e&&e.gh===409?'Sync conflict, retrying shortly.':'Could not sync with GitHub. Your recipes are still saved here.',true); a.again=a.again||(e&&e.gh===409); }
   finally{ a.busy=false; a.quiet=false; if(a.again){ a.again=false; a.timer=setTimeout(()=>acctSync(true),1500); } }
 }
+
+function acctNote(){ const n=$('#acct-note'); if(!n) return; const a=ACS; n.textContent=!a?'':(a.err?'Last attempt failed: '+a.err:(a.last?'Last synced at '+a.last.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' ('+S.recipes.length+' recipes here).':'')); }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') try{ acctSync(true); }catch(e){} });
+document.addEventListener('click',async e=>{
+  if(!e.target.closest('#acct-now')) return;
+  const n=$('#acct-note'); n.textContent='Syncing...'; await acctSync(true); await new Promise(r=>setTimeout(r,300)); while(ACS&&ACS.busy) await new Promise(r=>setTimeout(r,200)); acctNote();
+});
 
 boot();
 
