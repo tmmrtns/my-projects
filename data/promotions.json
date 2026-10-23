@@ -56,20 +56,6 @@
   "createdAt": 1791112049710
  },
  {
-  "shop": "Lidl Online",
-  "item": "Soepmaker",
-  "discount": "39,99",
-  "category": null,
-  "startDate": "2026-10-14",
-  "endDate": "2026-10-20",
-  "notes": null,
-  "imageKey": "ba6ad3f8-0934-452e-b447-e1c33f130f4b.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "259b85d5-1ea5-41df-8a37-097e962b8797",
-  "createdAt": 1791111653615
- },
- {
   "shop": "Lidl BE",
   "item": "Kippenworst",
   "discount": "6,69 per kg",
@@ -124,20 +110,6 @@
   "rank": 3,
   "id": "ed9192a0-39b9-4439-831d-d76fa47d8d85",
   "createdAt": 1792352058422
- },
- {
-  "shop": "Delhaize",
-  "item": "Pepsi Max",
-  "discount": "0,87 per L",
-  "category": null,
-  "startDate": "2026-10-15",
-  "endDate": "2026-10-21",
-  "notes": null,
-  "imageKey": "d55e023c-c0bb-468b-a2e7-a46898bfd853.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "6a99f578-5aae-43ee-bb5a-ed3336f4f637",
-  "createdAt": 1792352221409
  },
  {
   "shop": "Naanhof",
