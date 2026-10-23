@@ -2226,12 +2226,12 @@ function ghErr(e){
 async function ghGet(c){
   const base='https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo)+'/contents/'+c.path.split('/').map(encodeURIComponent).join('/');
   const H={Authorization:'Bearer '+c.token,'X-GitHub-Api-Version':'2022-11-28'}, q='?ref='+encodeURIComponent(c.branch);
-  const meta=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github+json'},H)});
-  if(meta.status===404){ const rp=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo),{headers:H}); if(!rp.ok) throw {gh:404}; return {base,H,sha:null,list:[],deleted:[]}; }
+  const meta=await fetch(base+q,{cache:'no-store',headers:Object.assign({Accept:'application/vnd.github+json'},H)});
+  if(meta.status===404){ const rp=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo),{cache:'no-store',headers:H}); if(!rp.ok) throw {gh:404}; return {base,H,sha:null,list:[],deleted:[]}; }
   if(!meta.ok) throw {gh:meta.status};
   const sha=(await meta.json()).sha;
-  const raw=await fetch(base+q,{headers:Object.assign({Accept:'application/vnd.github.raw+json'},H)}); if(!raw.ok) throw {gh:raw.status};
-  let j=[]; try{ j=JSON.parse(await raw.text()); }catch(e){}
+  const raw=await fetch(base+q,{cache:'no-store',headers:Object.assign({Accept:'application/vnd.github.raw+json'},H)}); if(!raw.ok) throw {gh:raw.status};
+  let j=[]; const txt=await raw.text(); try{ j=JSON.parse(txt); }catch(e){ if(txt.trim()) throw {gh:'unreadable file'}; }
   return {base,H,sha,list:Array.isArray(j)?j:(j&&j.recipes)||[],deleted:(j&&!Array.isArray(j)&&Array.isArray(j.deleted))?j.deleted:[]};
 }
 async function ghSync(pushToo){
@@ -2358,6 +2358,8 @@ async function acctSync(push){
     delSave(tomb); refreshAll();
     if(push){
       const here=new Set(S.recipes.map(x=>x.id)), del=[...new Set([...r.deleted,...tomb])].filter(id=>!here.has(id));
+      const lost=r.list.filter(x=>x&&x.id&&!here.has(x.id)&&!tomb.has(x.id));
+      if(lost.length) throw {gh:'merge incomplete ('+lost.length+' recipes would be lost)'};
       const sig=l=>JSON.stringify(l.map(x=>[x.id,x.updatedAt||'']).sort());
       if(sig(S.recipes)!==sig(r.list)||del.length!==r.deleted.length){
         const body={message:'Update recipes from Cookbook Creator',content:toB64(JSON.stringify({recipes:S.recipes,deleted:del},null,1)),branch:c.branch}; if(r.sha) body.sha=r.sha;
@@ -2368,7 +2370,7 @@ async function acctSync(push){
       sent.forEach(id=>a.dirty.delete(id));
     }
     a.fail=0; a.last=new Date(); a.err='';
-  }catch(e){ a.err=e&&e.gh?('GitHub error '+e.gh):String(e&&e.message||e); if(!a.fail++) toast(e&&e.gh===409?'Sync conflict, retrying shortly.':'Could not sync with GitHub. Your recipes are still saved here.',true); a.again=a.again||(e&&e.gh===409); }
+  }catch(e){ a.err=e&&e.gh?('GitHub '+e.gh):String(e&&e.message||e); if(!a.fail++) toast(e&&e.gh===409?'Sync conflict, retrying shortly.':'Could not sync ('+a.err+'). Your recipes are still saved here.',true); a.again=a.again||(e&&e.gh===409); }
   finally{ a.busy=false; a.quiet=false; if(a.again){ a.again=false; a.timer=setTimeout(()=>acctSync(true),1500); } }
 }
 
