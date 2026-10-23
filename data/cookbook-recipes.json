@@ -24,6 +24,31 @@
    "createdAt": "2026-10-23T07:25:50.039Z",
    "updatedAt": "2026-10-23T07:25:50.040Z",
    "id": "r_mvknbar9k3wgb"
+  },
+  {
+   "title": "Tedt2",
+   "description": "",
+   "ingredients": [],
+   "steps": [],
+   "servings": "",
+   "prepMin": null,
+   "cookMin": null,
+   "totalMin": null,
+   "category": "",
+   "cuisine": "",
+   "tags": [],
+   "notes": "",
+   "source": "",
+   "rating": 0,
+   "favorite": false,
+   "image": "",
+   "imageW": 0,
+   "imageH": 0,
+   "origin": "manual",
+   "person": "",
+   "createdAt": "2026-10-23T07:32:22.236Z",
+   "updatedAt": "2026-10-23T07:32:22.242Z",
+   "id": "r_mvknjq8vs1u7n"
   }
  ],
  "deleted": []
