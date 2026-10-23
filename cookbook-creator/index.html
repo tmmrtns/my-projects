@@ -102,6 +102,14 @@ button.chip{cursor:pointer;border:0}
 .banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;border-radius:14px;margin-bottom:20px;background:var(--bchip);border:1px dashed var(--bline);font-size:15px;color:var(--bink)}
 .banner .btn{margin-left:auto}
 
+/* import picker */
+.pickbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}.pickbar b{margin-right:auto}
+.picklist{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.picklist label{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:8px;cursor:pointer}
+.picklist label:hover{background:var(--tint)}
+.picklist input{width:20px;height:20px;margin-top:1px;flex:none;accent-color:var(--accent)}
+.picklist small{color:var(--ink-3);display:block}
+.dlg-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
 /* filters, view tabs and table view */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font:500 13.5px/1 var(--font-display)}
@@ -369,6 +377,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
   <b id="sel-n">0 selected</b>
   <button class="btn" id="sel-all">Select all shown</button>
   <button class="btn" id="sel-none">Clear</button>
+  <button class="btn" id="sel-json">Export JSON</button>
   <button class="btn primary" id="sel-book"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>Make cookbook</button>
   <button class="icon-btn" id="sel-done" aria-label="Leave selection mode" style="color:inherit"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
 </div></div>
@@ -487,6 +496,7 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
       <div class="fld"><label for="imp-lang">Language of the recipe</label>
         <select id="imp-lang"><option value="eng">English</option><option value="nld">Nederlands</option><option value="fra">Français</option><option value="deu">Deutsch</option><option value="ita">Italiano</option><option value="spa">Español</option><option value="nld+eng">Nederlands + English</option><option value="fra+eng">Français + English</option></select></div>
       <p class="hint" id="imp-photo-hint">Text is read on your device with Tesseract. The first scan downloads the language data (a few MB). Printed text works well; handwriting does not.</p>
+      <p class="hint" id="imp-claude-wrap"><button class="btn" type="button" id="imp-claude">Not reading well? Open in Claude</button><br>Only works if you were invited to the Claude version. It copies your first picture so you can paste it there, reads it with Claude, and you bring the result back with Select, Export JSON here and Backup, Import in this app.</p>
     </div>
     <div class="pane" data-pane="web" hidden>
       <p class="hint" style="margin:0">Paste the web address and press Read recipe: the page is fetched and the recipe details are filled in. Fetching tries the site directly, then free public relays (they can fail, and a relay sees the address). If it fails, save the page from your browser (File, Save Page As, "Webpage, HTML only") and drop the file, or paste the text below.</p>
@@ -510,6 +520,16 @@ details.scanbox summary{cursor:pointer;font:600 14px/1.2 var(--font-display)}
     <button class="btn" id="imp-stop" hidden>Stop</button>
     <button class="btn" data-i="close">Cancel</button>
     <button class="btn primary" id="imp-go">Read recipe</button></div>
+</dialog>
+
+<!-- choose which recipes to import -->
+<dialog class="dlg narrow" id="dlg-pick" aria-label="Choose recipes to import">
+  <div class="dlg-head"><h2>Choose recipes to import</h2>
+    <button class="icon-btn" data-pick="close" aria-label="Close"><svg class="ic" viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+  <div class="dlg-body"><div class="pickbar"><b id="pick-n"></b>
+    <button class="btn" type="button" data-pick="all">Select all</button><button class="btn" type="button" data-pick="none">Select none</button></div>
+    <ul id="pick-list" class="picklist"></ul></div>
+  <div class="dlg-foot"><button class="btn primary" type="button" id="pick-go" data-pick="go">Import selected</button></div>
 </dialog>
 
 <!-- export -->
@@ -2238,7 +2258,7 @@ document.addEventListener('click',async e=>{
 });
 $('#lib-import').addEventListener('change',async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ const j=JSON.parse(await f.text()); const list=Array.isArray(j)?j:(j&&j.recipes)||[]; const m=await mergeRecipes(list,true); libStatus('Imported: '+m.added+' new, '+m.updated+' updated, '+(list.length-m.added-m.updated)+' already up to date or skipped.'); }
+  try{ const j=JSON.parse(await f.text()); const all=Array.isArray(j)?j:(j&&j.recipes)||[]; const list=await pickBackup(all.filter(r=>r&&typeof r==='object'&&typeof r.id==='string'&&r.id)); if(!list){ libStatus(''); return; } const m=await mergeRecipes(list,true); libStatus('Imported: '+m.added+' new, '+m.updated+' updated, '+(list.length-m.added-m.updated)+' already up to date or skipped.'); }
   catch(err){ libStatus('That file is not a recipe backup.','err'); }
 });
 
@@ -2279,7 +2299,50 @@ async function addImageFiles(list){
 
 $('#relay-url').addEventListener('change',e=>{ try{ localStorage.setItem(RELAY_KEY,e.target.value.trim()); }catch(err){} libStatus('Relay saved.'); });
 
+/* ---- hand a hard-to-read scan over to the Claude version (invited users only) ---- */
+const CLAUDE_APP='https://claude.ai/artifact/UdV3Agx8qFpBwkqBkJKWqs';
+document.addEventListener('click',async e=>{
+  if(!e.target.closest('#imp-claude')) return;
+  let copied=false;
+  try{
+    const f=IMP.files[0]&&IMP.files[0].file;
+    if(f&&navigator.clipboard&&window.ClipboardItem){
+      const bmp=await createImageBitmap(f), c=document.createElement('canvas'); c.width=bmp.width; c.height=bmp.height; c.getContext('2d').drawImage(bmp,0,0);
+      const png=await new Promise(r=>c.toBlob(r,'image/png')); await navigator.clipboard.write([new ClipboardItem({'image/png':png})]); copied=true;
+    }
+  }catch(err){}
+  window.open(CLAUDE_APP,'_blank','noopener');
+  impStatus(copied?'Opened Claude in a new tab. Your picture is on the clipboard: press Add recipe there and paste it (Ctrl/Cmd+V). Then Select, Export JSON, and import that file here under Library, Import backup.':'Opened Claude in a new tab. Add the picture or PDF there. Then Select, Export JSON, and import that file here under Library, Import backup.');
+});
+
 boot();
+
+/* ---- choose which recipes to export / import ---- */
+function exportable(list){ return list.map(r=>{ const c=Object.assign({},r); delete c._h; return c; }); }
+function pickBackup(list){
+  return new Promise(res=>{
+    const dlg=$('#dlg-pick'), ul=$('#pick-list'); let done=false;
+    ul.innerHTML=list.map((r,i)=>{ const cur=S.recipes.find(x=>x.id===r.id);
+      const st=!cur?'new':(String(r.updatedAt||'')>String(cur.updatedAt||'')?'newer than yours':'already up to date');
+      return '<li><label><input type="checkbox" data-i="'+i+'"'+(st==='already up to date'?'':' checked')+'><span><b>'+esc(r.title||'Untitled')+'</b><small>'+esc([r.person,r.category].filter(Boolean).concat(st).join(' \u00b7 '))+'</small></span></label></li>'; }).join('');
+    const upd=()=>{ const n=$$('#pick-list input:checked').length; $('#pick-n').textContent=n+' of '+list.length+' selected'; $('#pick-go').disabled=!n; };
+    const finish=v=>{ if(done) return; done=true; dlg.removeEventListener('click',onClick); dlg.removeEventListener('change',upd); dlg.removeEventListener('close',onClose); if(dlg.open) dlg.close(); res(v); };
+    const onClose=()=>finish(null);
+    const onClick=e=>{ const t=e.target.closest('[data-pick]'); if(!t) return; const k=t.dataset.pick;
+      if(k==='close') finish(null);
+      else if(k==='all'||k==='none'){ $$('#pick-list input').forEach(c=>c.checked=k==='all'); upd(); }
+      else if(k==='go') finish($$('#pick-list input:checked').map(c=>list[+c.dataset.i])); };
+    dlg.addEventListener('click',onClick); dlg.addEventListener('change',upd); dlg.addEventListener('close',onClose);
+    upd(); dlg.showModal();
+  });
+}
+document.addEventListener('click',async e=>{
+  if(e.target.id!=='sel-json'&&!e.target.closest('#sel-json')) return;
+  const list=exportable(orderedSel().map(id=>S.recipes.find(r=>r.id===id)).filter(Boolean)); if(!list.length){ toast('Select at least one recipe first.'); return; }
+  if(!DL){ toast('Saving files is not available in this view.'); return; }
+  try{ await DL.save({filename:'recipes-'+new Date().toISOString().slice(0,10)+'-'+list.length+'.json',data:JSON.stringify(list,null,1)}); toast(list.length+' recipe'+(list.length===1?'':'s')+' exported'); }
+  catch(err){ toast('The file could not be saved.'); }
+});
 
 })();
 
