@@ -194,5 +194,19 @@
   "rank": 5,
   "id": "a724397d-2e9c-4857-b357-ebec42854bf7",
   "createdAt": 1792353420185
+ },
+ {
+  "shop": "Nettorama",
+  "item": "Rookworst",
+  "discount": "0,80€",
+  "category": null,
+  "startDate": "2026-10-19",
+  "endDate": "2026-10-25",
+  "notes": null,
+  "imageKey": "7dd62496-f7bf-45ae-a184-c1d3341718d7.png",
+  "redeemed": false,
+  "rank": 5,
+  "id": "7a520490-f8e8-425b-9f4a-7a45a71b2f5e",
+  "createdAt": 1792782447407
  }
 ]
