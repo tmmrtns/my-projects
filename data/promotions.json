@@ -208,5 +208,19 @@
   "rank": 5,
   "id": "7a520490-f8e8-425b-9f4a-7a45a71b2f5e",
   "createdAt": 1792782447407
+ },
+ {
+  "shop": "Nettorama",
+  "item": "Hertenpicanha",
+  "discount": "28,9 per kg",
+  "category": null,
+  "startDate": "2026-10-19",
+  "endDate": "2026-10-25",
+  "notes": null,
+  "imageKey": "68c1861f-5697-4170-b8b4-8fd17be54924.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "204d9610-f19c-44e5-9ebb-da3c43934bef",
+  "createdAt": 1792782525078
  }
 ]
