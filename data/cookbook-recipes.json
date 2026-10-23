@@ -184,8 +184,24 @@
     "50 gram chocoladeschilfers"
    ],
    "steps": [
+    "# De bodem",
     "Meng de boter met de bloemsuiker tot een romig geheel.",
-    "Voeg het ei toe en meng goed door de boter en bloemsuiker."
+    "Voeg het ei toe en meng goed door de boter en bloemsuiker.",
+    "Doe er het amandelpoeder, de bloem en een snuif zout bij. Kneed alles snel tot een egaal deeg.",
+    "Wikkel het deeg in folie en laat het even rusten in de koelkast.",
+    "Rol het deeg dun uit en bekleed er een taartvorm mee. Snijd de randen af.",
+    "Bak de bodem blind in een voorverwarmde oven van 180°C gedurende 20 minuten, tot hij goudbruin is.",
+    "# De vulling",
+    "Zet de blikjes gecondenseerde melk in een kookpot en vul de pot met water tot de blikjes volledig onderstaan.",
+    "Breng het water aan de kook en laat de blikjes 3 uur zachtjes pruttelen. Zorg ervoor dat de blikjes steeds onder water blijven.",
+    "Haal de blikjes uit het water en spoel ze kort af onder koud water. Laat ze afkoelen en open ze pas als ze koud zijn.",
+    "Schep de dulce de leche in een kom, roer er wat grof zout onder en stort alles gelijkmatig over de gebakken bodem.",
+    "Laat de taart afkoelen tot de vulling is opgesteven en de taart snijdbaar is.",
+    "Pel de bananen en snijd ze in mooie plakjes. Verdeel de plakjes over de dulce de leche.",
+    "# Afwerking",
+    "Klop de room stijf met de bloemsuiker tot een luchtige slagroom.",
+    "Schep de slagroom in een spuitzak met een spuitmond met een smalle opening aan de zijkant en spuit hem in slierten over de taart.",
+    "Werk de banoffee pie af met een royale portie chocoladeschilfers."
    ],
    "servings": "4 servings",
    "prepMin": 30,
@@ -208,7 +224,7 @@
    "origin": "web",
    "person": "Tom",
    "createdAt": "2026-10-23T11:13:27.244Z",
-   "updatedAt": "2026-10-23T11:13:27.244Z",
+   "updatedAt": "2026-10-23T11:14:59.980Z",
    "id": "r_mvkvg1vxt0edw"
   }
  ],
