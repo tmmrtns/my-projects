@@ -152,5 +152,19 @@
   "rank": 3,
   "id": "c5ec2fd7-551a-44a8-b19d-17deb420cbf8",
   "createdAt": 1792954828143
+ },
+ {
+  "shop": "Aldi BE",
+  "item": "Langhe Nebbiolo",
+  "discount": "3,99 per fles",
+  "category": null,
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-07",
+  "notes": null,
+  "imageKey": "74d7879f-6fbc-4c5a-a466-3e6668fa08d0.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "2c3b4d7f-ec2b-4318-87a6-a4e4826587d5",
+  "createdAt": 1792954949275
  }
 ]
