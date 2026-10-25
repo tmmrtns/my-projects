@@ -138,5 +138,19 @@
   "rank": 3,
   "id": "5239ca02-0934-4879-a60a-21a1dc7d22d7",
   "createdAt": 1792954554984
+ },
+ {
+  "shop": "Aldi BE",
+  "item": "Kalkoenfillet",
+  "discount": "9,36 per kg",
+  "category": null,
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-07",
+  "notes": null,
+  "imageKey": "004ed794-acaa-45d5-a310-444c7c16a09b.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "c5ec2fd7-551a-44a8-b19d-17deb420cbf8",
+  "createdAt": 1792954828143
  }
 ]
