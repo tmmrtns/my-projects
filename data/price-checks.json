@@ -10,5 +10,17 @@
    "description": "Aldi BE Douwe Egberts"
   },
   "createdAt": 1792952992489
+ },
+ {
+  "id": "54f1abb8-5133-422d-9a65-641ef57bf5d4",
+  "category": "coffeecups",
+  "subtype": null,
+  "unitPrice": 0.14950000000000002,
+  "inputs": {
+   "totalPrice": 2.99,
+   "amount": 20,
+   "description": "Action BE Palazzo Lungo"
+  },
+  "createdAt": 1792953028909
  }
 ]
