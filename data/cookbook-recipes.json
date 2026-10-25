@@ -1,109 +1,6 @@
 {
  "recipes": [
   {
-   "category": "Breakfast",
-   "cookMin": 25,
-   "createdAt": "2026-10-22T20:00:03.000Z",
-   "cuisine": "Middle Eastern",
-   "description": "Eggs poached in a spiced tomato and pepper sauce, served straight from the pan.",
-   "example": false,
-   "favorite": true,
-   "image": "",
-   "imageH": 0,
-   "imageW": 0,
-   "ingredients": [
-    "2 tbsp olive oil",
-    "1 onion, finely chopped",
-    "1 red pepper, diced",
-    "3 garlic cloves, minced",
-    "1 tsp ground cumin",
-    "1 tsp sweet paprika",
-    "1/4 tsp chili flakes",
-    "1 can (400 g) crushed tomatoes",
-    "4 eggs",
-    "Salt and pepper",
-    "Fresh parsley or coriander, to serve"
-   ],
-   "notes": "Crumble feta over the top for a salty finish.",
-   "origin": "manual",
-   "person": "Tom",
-   "prepMin": 10,
-   "rating": 5,
-   "servings": "2 to 3 servings",
-   "source": "",
-   "steps": [
-    "Warm the oil in a wide, deep skillet over medium heat. Cook the onion and pepper for 6 to 8 minutes until soft.",
-    "Stir in the garlic and spices and cook for 1 minute until fragrant.",
-    "Add the tomatoes, season, and simmer for 10 minutes until thickened.",
-    "Make four wells in the sauce and crack in the eggs. Cover and cook for 5 to 7 minutes, until the whites are set and the yolks are still soft.",
-    "Scatter over the herbs and serve with bread."
-   ],
-   "tags": [
-    "vegetarian",
-    "one-pan",
-    "eggs"
-   ],
-   "title": "Shakshuka",
-   "totalMin": null,
-   "updatedAt": "2026-10-22T22:27:38.310Z",
-   "id": "r_example_shakshuka"
-  },
-  {
-   "category": "Mains",
-   "cookMin": 6,
-   "createdAt": "2026-10-22T21:03:04.532Z",
-   "cuisine": "Chinese",
-   "description": "My everyday Hokkien Noodles recipe. A great sauce. Strips of chicken. Lots of vegetables. 6 minute cook. Dinner in 20 minutes flat!",
-   "favorite": false,
-   "image": "",
-   "imageH": 0,
-   "imageW": 0,
-   "ingredients": [
-    "500g/ 1 lb hokkien noodles, (fridge best) (Note 1)",
-    "350g/ 12 oz chicken thighs (boneless, skinless), cut into lot of thin 0.5 x 3cm / 0.2 x 1.2\" pieces (Note 2)",
-    "2 tbsp canola oil (or vegetable, cottonseed, peanut oil)",
-    "2 garlic cloves, finely minced",
-    "8 green onion stems, cut into 5cm / 2″ lengths, white part separated from green part (Note 3)",
-    "1 red capsicum (bell peppers), cut into thin 0.5cm / 0.2″ strips",
-    "3 heaped cups green cabbage, cut into thin 1 x 5cm / 0.5 x 2\" strips",
-    "# Sauce:",
-    "2 tbsp light soy sauce (Note 4)",
-    "1 1/2 tbsp dark soy sauce (Note 4)",
-    "2 tbsp oyster sauce (Note 5)",
-    "1 tbsp Mirin or Chinese cooking wine (Note 6)",
-    "1 tbsp sesame oil, toasted (Note 7)",
-    "1/8 tsp white pepper (sub black pepper)",
-    "# Optional garnishes",
-    "White sesame seeds",
-    "Finely sliced green onion"
-   ],
-   "notes": "Easy substitutions (without altering cook times, order or method): Chicken – 2 heaped cups extra vegetables. Green onion – finely sliced regular onion, cooked before adding the chicken. Cabbage – sliced Tuscan kale, Chinese cabbage (wombok), baby spinach, bean sprouts. Capsicum – carrot or zucchini batons, thin asparagus, broccolini cut into thin batons, snow peas cut on diagonal. 1. Noodles – Hokkien noodles from the fridge are better than the vac pack ones from the aisle. Use the same amount of other fresh noodles from the fridge, or 350g / 12oz any dried noodles or 250g/8oz dried vermicelli. 2. Chicken – Thigh is best as it stays juicier, however, breast or tenderloin can be used too. Lean pork would also be great. For beef, use any steak but velvet it so it stays tender and juicy (thin strips of beef will overcook in less than 2 minutes). 3. Green onion stems – The firmer white/pale green part takes longer to cook so add it first, whereas the soft dark green part wilts quickly so add it at the end. 4. Soy sauce – You can substitute the light soy with all purpose soy, and dark soy with more light soy (but noodles won't stain dark). Don't substitute the light soy with more dark soy (too intense, will overpower dish). 5. Oyster sauce – Adds sweetness, depth of flavour and thickens sauce. Vegetarian oyster sauce can be used, or hoisin sauce (adds lovely hint of five spice). 6. Mirin adds depth of flavour and touch of sweet into this otherwise simple sauce. Chinese cooking win",
-   "origin": "text",
-   "prepMin": 14,
-   "rating": 0,
-   "servings": "4 servings",
-   "source": "https://www.recipetineats.com/hokkien-noodles/",
-   "steps": [
-    "Sauce – Mix the sauce in a small bowl.",
-    "Briefly marinate chicken – Toss the chicken with 1 1/2 tbsp of the Sauce. Marinate for 10 minutes while you prepare the noodles and vegetables.",
-    "Rinse noodles – Prepare the noodles per the packet directions (soak in boiling water or briefly boil). Drain in a colander then rinse briefly under tap water (Note 8)",
-    "Sear chicken – Heat the oil in a large non-stick pan over high heat until very hot (mine is 30cm/12\", Note 9 re: wok). Add the chicken and toss for 1 minute. Add the garlic and white part of the green onion, then toss for another 1 minute or until the surface of the chicken is sealed (but still a bit raw inside)",
-    "Cook veg & noodles – Add the capsicum and cabbage. Toss for 2 minutes until the cabbage is mostly wilted. Add the green part of the green onions, noodles and sauce. Toss for 1 1/2 to 2 minutes until the noodles are stained a lovely mahogany colour.",
-    "Serve immediately, sprinkled with sesame seeds and green onion if desired!"
-   ],
-   "tags": [
-    "noodles",
-    "stir fry",
-    "chicken",
-    "quick",
-    "one-pan"
-   ],
-   "title": "Everyday Hokkien Noodles",
-   "totalMin": null,
-   "updatedAt": "2026-10-22T21:03:04.533Z",
-   "id": "r_mvk128yxetu6u"
-  },
-  {
    "title": "Hokkien noodles with chicken",
    "description": "Recipe video above. My everyday Hokkien Noodles recipe. A great sauce. Strips of chicken. Lots of vegetables. 6 minute cook. Dinner in 20 minutes flat!",
    "ingredients": [
@@ -611,6 +508,8 @@
   "r_mvk0rdoikv176",
   "r_mvk1yh2on0dxe",
   "r_example_leeksoup",
-  "r_example_lemoncake"
+  "r_example_lemoncake",
+  "r_example_shakshuka",
+  "r_mvk128yxetu6u"
  ]
 }
