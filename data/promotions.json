@@ -56,48 +56,6 @@
   "createdAt": 1791112049710
  },
  {
-  "shop": "Lidl BE",
-  "item": "Kippenworst",
-  "discount": "6,69 per kg",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "16783dfc-5703-45e0-8859-b44adbe8a656.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "00139675-d976-4520-8c8d-8f1687da9f1b",
-  "createdAt": 1792351449300
- },
- {
-  "shop": "Lidl BE",
-  "item": "Brood",
-  "discount": "0,99 per brood",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "35ab3911-970e-4108-9b08-d0149b5ce15e.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "2b2aeb6f-680f-445c-93ca-55811c603c60",
-  "createdAt": 1792351503291
- },
- {
-  "shop": "Lidl BE",
-  "item": "Kreeftensoep",
-  "discount": "3,99",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "87bb96af-9a8b-47ec-a96d-60a322880fd2.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "ae88a8a5-931c-43cd-bf40-b255f536e5aa",
-  "createdAt": 1792351575298
- },
- {
   "shop": "AH BE",
   "item": "Twister fries",
   "discount": "3,75 voor 2",
@@ -110,48 +68,6 @@
   "rank": 3,
   "id": "ed9192a0-39b9-4439-831d-d76fa47d8d85",
   "createdAt": 1792352058422
- },
- {
-  "shop": "Naanhof",
-  "item": "Kipdijfilet",
-  "discount": "4,99 per kg",
-  "category": null,
-  "startDate": "2026-10-18",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "b20246e2-21bf-4864-9084-6f4385aa0866.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "c1faf5a0-f1a1-4d05-be26-8a1011bc8352",
-  "createdAt": 1792352330447
- },
- {
-  "shop": "Naanhof",
-  "item": "Paardenpoelet",
-  "discount": "8,99 per kg",
-  "category": null,
-  "startDate": "2026-10-18",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "405599fc-c44f-46ef-8fa9-6f13ec4223f4.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "882988fd-7714-42bc-9f93-8ae26ce4190b",
-  "createdAt": 1792352360622
- },
- {
-  "shop": "Naanhof",
-  "item": "Fazantborstfilet",
-  "discount": "12,99 per kg",
-  "category": null,
-  "startDate": "2026-10-18",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "7ba8ca7d-122f-46e3-a973-863ed1f53311.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "bb9faac2-94c5-4b08-8364-4577eb7d61d7",
-  "createdAt": 1792352446438
  },
  {
   "shop": "Aldi BE",
@@ -180,20 +96,6 @@
   "rank": 3,
   "id": "0c970039-6f4e-470b-ac6c-ad1f778c45ff",
   "createdAt": 1792353003260
- },
- {
-  "shop": "Lidl DE",
-  "item": "Kalkoenbout",
-  "discount": "4,99 per kg",
-  "category": null,
-  "startDate": "2026-10-22",
-  "endDate": "2026-10-24",
-  "notes": null,
-  "imageKey": "fc5fa594-0aa5-480f-b8d5-7c73e24d036e.png",
-  "redeemed": false,
-  "rank": 5,
-  "id": "a724397d-2e9c-4857-b357-ebec42854bf7",
-  "createdAt": 1792353420185
  },
  {
   "shop": "Nettorama",
