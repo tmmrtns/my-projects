@@ -1,0 +1,14 @@
+[
+ {
+  "id": "b4246fc6-5eb1-4aa4-8231-d8c23a680389",
+  "category": "coffeecups",
+  "subtype": null,
+  "unitPrice": 0.22475,
+  "inputs": {
+   "totalPrice": 8.99,
+   "amount": 40,
+   "description": "Aldi BE Douwe Egberts"
+  },
+  "createdAt": 1792952992489
+ }
+]
