@@ -22,5 +22,17 @@
    "description": "Action BE Palazzo Lungo"
   },
   "createdAt": 1792953028909
+ },
+ {
+  "id": "27e2e65d-5e18-4439-8e2a-9673b46bbf87",
+  "category": "coffeecups",
+  "subtype": null,
+  "unitPrice": 0.1398,
+  "inputs": {
+   "totalPrice": 6.99,
+   "amount": 50,
+   "description": "KaffeK Lungo"
+  },
+  "createdAt": 1792953136236
  }
 ]
