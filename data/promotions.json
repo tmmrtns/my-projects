@@ -56,20 +56,6 @@
   "createdAt": 1791112049710
  },
  {
-  "shop": "AH BE",
-  "item": "Twister fries",
-  "discount": "3,75 voor 2",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-25",
-  "notes": null,
-  "imageKey": "17989973-8a07-4d55-aee2-2da7d51e4294.png",
-  "redeemed": false,
-  "rank": 3,
-  "id": "ed9192a0-39b9-4439-831d-d76fa47d8d85",
-  "createdAt": 1792352058422
- },
- {
   "shop": "Aldi BE",
   "item": "Zalmfillet",
   "discount": "13,38 per kg",
@@ -96,34 +82,6 @@
   "rank": 3,
   "id": "0c970039-6f4e-470b-ac6c-ad1f778c45ff",
   "createdAt": 1792353003260
- },
- {
-  "shop": "Nettorama",
-  "item": "Rookworst",
-  "discount": "0,80€",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-25",
-  "notes": null,
-  "imageKey": "7dd62496-f7bf-45ae-a184-c1d3341718d7.png",
-  "redeemed": false,
-  "rank": 5,
-  "id": "7a520490-f8e8-425b-9f4a-7a45a71b2f5e",
-  "createdAt": 1792782447407
- },
- {
-  "shop": "Nettorama",
-  "item": "Hertenpicanha",
-  "discount": "28,9 per kg",
-  "category": null,
-  "startDate": "2026-10-19",
-  "endDate": "2026-10-25",
-  "notes": null,
-  "imageKey": "68c1861f-5697-4170-b8b4-8fd17be54924.png",
-  "redeemed": false,
-  "rank": 4,
-  "id": "204d9610-f19c-44e5-9ebb-da3c43934bef",
-  "createdAt": 1792782525078
  },
  {
   "shop": "Lidl NL",
