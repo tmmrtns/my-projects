@@ -124,5 +124,19 @@
   "rank": 3,
   "id": "2c3b4d7f-ec2b-4318-87a6-a4e4826587d5",
   "createdAt": 1792954949275
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Bananen",
+  "discount": "0,99 per kg",
+  "category": null,
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-07",
+  "notes": null,
+  "imageKey": "0b3b38d5-2795-4320-b8e9-dcabc2197314.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "2b0c713b-f8fb-4e6d-912c-cd1607aff4be",
+  "createdAt": 1793046187264
  }
 ]
