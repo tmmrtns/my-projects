@@ -138,5 +138,19 @@
   "rank": 4,
   "id": "2b0c713b-f8fb-4e6d-912c-cd1607aff4be",
   "createdAt": 1793046187264
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Chicken nuggets",
+  "discount": "4,99 per kg",
+  "category": null,
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-07",
+  "notes": null,
+  "imageKey": "4ea8ae67-f72a-4865-9b09-03831b925bfb.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "8b7ec036-ef78-48e4-ba2e-fe5ad3e3f7d9",
+  "createdAt": 1793046283343
  }
 ]
