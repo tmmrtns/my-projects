@@ -96,5 +96,19 @@
   "rank": 4,
   "id": "624a7345-4200-44be-a60c-6d4b2cff516d",
   "createdAt": 1795270822801
+ },
+ {
+  "shop": "Aldi BE",
+  "item": "Zalmfillet",
+  "discount": "11,98 per kg",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-28",
+  "notes": null,
+  "imageKey": "d1924889-8d28-499b-957b-11648980d0e5.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "88936c44-56f4-4dc2-bb3d-f644946cfb86",
+  "createdAt": 1795270872166
  }
 ]
