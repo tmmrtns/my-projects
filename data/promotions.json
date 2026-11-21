@@ -54,5 +54,19 @@
   "rank": 3,
   "id": "3e92b7db-c583-4264-89a6-0ed7cad19400",
   "createdAt": 1791112049710
+ },
+ {
+  "shop": "AH BE",
+  "item": "Pizza Crosta Mollica",
+  "discount": "2+3",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-29",
+  "notes": null,
+  "imageKey": "34cfcd36-a658-4977-8032-1fcfb4b46649.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "0cb5fc27-8bb1-4db0-8e49-ee82d9e67abe",
+  "createdAt": 1795270668738
  }
 ]
