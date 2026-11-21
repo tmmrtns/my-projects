@@ -82,5 +82,19 @@
   "rank": 3,
   "id": "271fae55-2b7c-45c4-8502-b755b52923e2",
   "createdAt": 1795270718038
+ },
+ {
+  "shop": "AH BE",
+  "item": "Pauwels Mayonaise",
+  "discount": "1+2",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-29",
+  "notes": null,
+  "imageKey": "1bd262e9-e7fe-488d-93a0-0b99ad87cf3f.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "624a7345-4200-44be-a60c-6d4b2cff516d",
+  "createdAt": 1795270822801
  }
 ]
