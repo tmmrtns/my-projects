@@ -62,5 +62,17 @@
    "description": "Everyday 2L"
   },
   "createdAt": 1795271193355
+ },
+ {
+  "id": "8a8cbae5-694c-4f8a-b110-027d4e5a09c4",
+  "category": "coffeecups",
+  "subtype": null,
+  "unitPrice": 0.1399,
+  "inputs": {
+   "totalPrice": 13.99,
+   "amount": 100,
+   "description": "Aldi NL Promo"
+  },
+  "createdAt": 1795271698936
  }
 ]
