@@ -124,5 +124,19 @@
   "rank": 5,
   "id": "4d7e093b-9933-4b87-b92d-011dad8cf59b",
   "createdAt": 1795271289924
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Pittavlees",
+  "discount": "6,99 per kg",
+  "category": null,
+  "startDate": "2026-11-27",
+  "endDate": "2026-11-28",
+  "notes": null,
+  "imageKey": "43f9b806-38fc-4a81-a122-8dde86dded6a.png",
+  "redeemed": false,
+  "rank": 3,
+  "id": "b7197364-d7ba-4e67-bd09-cc378db2d600",
+  "createdAt": 1795271395253
  }
 ]
