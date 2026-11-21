@@ -138,5 +138,19 @@
   "rank": 3,
   "id": "b7197364-d7ba-4e67-bd09-cc378db2d600",
   "createdAt": 1795271395253
+ },
+ {
+  "shop": "Aldi NL",
+  "item": "Varkensfilet",
+  "discount": "7,99 per kg",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-29",
+  "notes": null,
+  "imageKey": "f87b70ac-d06f-4360-bfca-cb768919c4b9.png",
+  "redeemed": false,
+  "rank": 4,
+  "id": "ee380592-fa63-48c1-b824-be9ee4915842",
+  "createdAt": 1795271629661
  }
 ]
