@@ -110,5 +110,19 @@
   "rank": 4,
   "id": "88936c44-56f4-4dc2-bb3d-f644946cfb86",
   "createdAt": 1795270872166
+ },
+ {
+  "shop": "Lidl BE",
+  "item": "Tonijn in olijfolie",
+  "discount": "1,25 per",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-28",
+  "notes": null,
+  "imageKey": "685d161e-2642-4604-bfb0-ca12b50f3e9a.png",
+  "redeemed": false,
+  "rank": 5,
+  "id": "4d7e093b-9933-4b87-b92d-011dad8cf59b",
+  "createdAt": 1795271289924
  }
 ]
