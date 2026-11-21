@@ -74,5 +74,17 @@
    "description": "Aldi NL Promo"
   },
   "createdAt": 1795271698936
+ },
+ {
+  "id": "356e605b-20bd-4c35-bb30-a55fabbb5b60",
+  "category": "coffeecups",
+  "subtype": null,
+  "unitPrice": 0.22475,
+  "inputs": {
+   "totalPrice": 8.99,
+   "amount": 40,
+   "description": "Nettorama L'Or"
+  },
+  "createdAt": 1795272250421
  }
 ]
