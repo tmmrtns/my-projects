@@ -48,5 +48,19 @@
    "description": "Lidl BE"
   },
   "createdAt": 1795271153913
+ },
+ {
+  "id": "d03e18e4-dd80-4a39-b97d-ccae7a8f05dc",
+  "category": "toiletpaper",
+  "subtype": null,
+  "unitPrice": 0.5082070707070707,
+  "inputs": {
+   "totalPrice": 4.83,
+   "rolls": 12,
+   "plies": 2,
+   "sheets": 396,
+   "description": "Everyday 2L"
+  },
+  "createdAt": 1795271193355
  }
 ]
