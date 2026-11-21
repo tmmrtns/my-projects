@@ -34,5 +34,19 @@
    "description": "KaffeK Lungo"
   },
   "createdAt": 1792953136236
+ },
+ {
+  "id": "ec05bcf6-85a5-444d-9525-a389f9de0ef4",
+  "category": "toiletpaper",
+  "subtype": null,
+  "unitPrice": 0.5825,
+  "inputs": {
+   "totalPrice": 6.99,
+   "rolls": 20,
+   "plies": 3,
+   "sheets": 200,
+   "description": "Lidl BE"
+  },
+  "createdAt": 1795271153913
  }
 ]
