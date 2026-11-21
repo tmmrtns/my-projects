@@ -152,5 +152,19 @@
   "rank": 4,
   "id": "ee380592-fa63-48c1-b824-be9ee4915842",
   "createdAt": 1795271629661
+ },
+ {
+  "shop": "Aldi NL",
+  "item": "Koffiecapsules",
+  "discount": "13,99 voor 100",
+  "category": null,
+  "startDate": "2026-11-23",
+  "endDate": "2026-11-29",
+  "notes": null,
+  "imageKey": "22146523-95d4-4677-81f1-06236b40d53e.png",
+  "redeemed": false,
+  "rank": 5,
+  "id": "48395282-d1c2-4205-8e28-b8f8d9c9d5ec",
+  "createdAt": 1795271677817
  }
 ]
